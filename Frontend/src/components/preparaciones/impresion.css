@@ -1,0 +1,86 @@
+.documento-impresion-preparaciones {
+  display: none;
+}
+.pagina-hoja-preparacion {
+  margin-bottom: 2rem;
+  min-width: 45rem;
+}
+.cabecera-hoja-preparacion {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+.cabecera-hoja-preparacion h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.cabecera-hoja-preparacion p,
+.nota-hoja-preparacion {
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.nota-hoja-preparacion {
+  margin-bottom: 0.5rem;
+}
+.pagina-hoja-preparacion .marca-hortyfru-clara {
+  display: block !important;
+}
+.pagina-hoja-preparacion .marca-hortyfru-oscura {
+  display: none !important;
+}
+.tabla-hoja-preparacion {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.tabla-hoja-preparacion th,
+.tabla-hoja-preparacion td {
+  border: 1px solid var(--color-gray-300);
+  padding: 0.4rem;
+  text-align: center;
+}
+.tabla-hoja-preparacion tbody th {
+  text-align: start;
+  font-weight: 500;
+}
+.tabla-hoja-preparacion thead {
+  background: var(--color-gray-50);
+}
+@media print {
+  @page hoja-preparacion {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+  body.impresion-preparaciones > * {
+    display: none !important;
+  }
+  body.impresion-preparaciones > .documento-impresion-preparaciones {
+    page: hoja-preparacion;
+    display: block !important;
+    background: white !important;
+    color: black !important;
+    font-family: Arial, sans-serif;
+  }
+  .documento-impresion-preparaciones * {
+    color: black !important;
+    box-shadow: none !important;
+  }
+  .documento-impresion-preparaciones .pagina-hoja-preparacion {
+    min-width: 0;
+    break-after: page;
+    margin: 0;
+  }
+  .documento-impresion-preparaciones .pagina-hoja-preparacion:last-child {
+    break-after: auto;
+  }
+  .documento-impresion-preparaciones .tabla-hoja-preparacion {
+    font-size: 9pt;
+  }
+  .documento-impresion-preparaciones thead {
+    display: table-header-group;
+  }
+  .documento-impresion-preparaciones tr {
+    break-inside: avoid;
+  }
+}
