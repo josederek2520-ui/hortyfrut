@@ -1,5 +1,6 @@
 import type {
   AsignacionEditable,
+  LotePreparacion,
   DocumentoEditable,
   NecesidadPreparacion,
   Preparacion,
@@ -7,6 +8,11 @@ import type {
 } from "./tipos";
 const cero = BigInt(0);
 const mil = BigInt(1000);
+
+export function compactarCantidadPreparacion(valor: string): string {
+  if (!/^-?\d+\.\d+$/.test(valor)) return valor;
+  return valor.replace(/0+$/, "").replace(/\.$/, "");
+}
 
 export function aMiles(valor: string): bigint {
   if (!/^\d{1,11}(\.\d{1,3})?$/.test(valor || "0")) return cero;
@@ -26,6 +32,41 @@ export function asignadoLote(
     (total, asignacion) =>
       total + aMiles(asignacion.aportes[lote]?.cantidad || "0"),
     cero,
+  );
+}
+
+export function consumidoLotePreparacion(
+  documento: DocumentoEditable,
+  lote: number,
+): bigint {
+  const linea = documento.lineas.find((fila) => fila.lote.id === lote);
+  return (
+    asignadoLote(documento, lote) +
+    aMiles(linea?.merma || "0") +
+    aMiles(linea?.aprovechable || "0")
+  );
+}
+
+export function consumosLotesPreparacion(documento: DocumentoEditable) {
+  return documento.lineas
+    .map((linea) => ({
+      lote: linea.lote.id,
+      cantidad: consumidoLotePreparacion(documento, linea.lote.id),
+    }))
+    .filter((fila) => fila.cantidad > cero)
+    .map((fila) => ({ lote: fila.lote, cantidad: deMiles(fila.cantidad) }));
+}
+
+export function disponibleLotePreparacion(
+  documento: DocumentoEditable,
+  lote: LotePreparacion,
+  asignacion?: AsignacionEditable,
+): bigint | null {
+  if (lote.saldo === undefined) return null;
+  return (
+    aMiles(lote.saldo) -
+    consumidoLotePreparacion(documento, lote.id) +
+    aMiles(asignacion?.aportes[lote.id]?.cantidad || "0")
   );
 }
 export function desdeNecesidad(
@@ -62,11 +103,12 @@ export function desdePreparacion(preparacion?: Preparacion): DocumentoEditable {
           unidad_nombre: linea.unidad_nombre,
           unidad_abreviatura: linea.unidad_abreviatura,
           es_kg: linea.es_kg,
+          saldo: linea.saldo_lote ?? undefined,
           producto_imagen: linea.producto_imagen,
           producto_categoria: linea.producto_categoria,
         },
-        merma: linea.merma,
-        aprovechable: linea.aprovechable,
+        merma: compactarCantidadPreparacion(linea.merma),
+        aprovechable: compactarCantidadPreparacion(linea.aprovechable),
         motivo: linea.motivo_separacion,
       })) || [],
     asignaciones: Object.fromEntries(
@@ -94,7 +136,10 @@ export function desdePreparacion(preparacion?: Preparacion): DocumentoEditable {
             aportes: Object.fromEntries(
               asignacion.aportes.map((aporte) => [
                 aporte.lote,
-                { cantidad: aporte.cantidad, pesoKg: aporte.peso_kg || "" },
+                {
+                  cantidad: compactarCantidadPreparacion(aporte.cantidad),
+                  pesoKg: compactarCantidadPreparacion(aporte.peso_kg || ""),
+                },
               ]),
             ),
             imagen: asignacion.producto_imagen,
@@ -107,7 +152,14 @@ export function desdePreparacion(preparacion?: Preparacion): DocumentoEditable {
       preparacion?.cajillas.map((fila) => ({
         clave: String(fila.id),
         sucursal: { id: fila.sucursal, nombre: fila.sucursal_nombre },
-        color: { id: fila.cajilla, nombre: fila.color },
+        producto: fila.producto
+          ? { id: fila.producto, nombre: fila.producto_nombre || "" }
+          : null,
+        color: {
+          id: fila.cajilla,
+          nombre: fila.color,
+          saldo: fila.saldo_almacen,
+        },
         cantidad: String(fila.cantidad),
       })) || [],
   };
@@ -142,6 +194,7 @@ export function serializarDocumento(documento: DocumentoEditable) {
     })),
     cajillas: documento.cajillas.map((fila) => ({
       sucursal: fila.sucursal.id,
+      producto: fila.producto?.id || null,
       cajilla: fila.color.id,
       cantidad: Number(fila.cantidad || "0"),
     })),

@@ -7,10 +7,12 @@ export default function ImagenProducto({
   origen,
   nombre,
   grande = false,
+  sinRecorte = false,
 }: {
   origen: string | null;
   nombre: string;
   grande?: boolean;
+  sinRecorte?: boolean;
 }) {
   const [origenFallido, establecerOrigenFallido] = useState<string | null>(
     null,
@@ -26,7 +28,7 @@ export default function ImagenProducto({
           fill
           unoptimized
           sizes={grande ? "320px" : "44px"}
-          className="object-cover"
+          className={sinRecorte ? "object-contain p-1" : "object-cover"}
           onError={() => establecerOrigenFallido(origen)}
         />
       ) : (

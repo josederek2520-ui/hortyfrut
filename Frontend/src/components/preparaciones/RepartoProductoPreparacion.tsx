@@ -1,36 +1,30 @@
 "use client";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import {
+  ArrowLeft as IconoAnterior,
+  ArrowRight as IconoSiguiente,
+  MapPin as IconoSucursal,
+  Info as IconoAyuda,
+} from "lucide-react";
 import Button from "@/components/ui/button/Button";
 import PaginadorCompras from "@/components/compras/PaginadorCompras";
-import type { PaginaCompra } from "@/components/compras/tipos";
-import FilaSucursalPreparacion, {
-  columnasSucursalPreparacion,
-} from "./FilaSucursalPreparacion";
-import useConsultaPreparacion from "./useConsultaPreparacion";
-import { desdeNecesidad } from "./calculos";
+import FilaSucursalPreparacion from "./FilaSucursalPreparacion";
+import CargaTrabajoPreparacion from "./CargaTrabajoPreparacion";
+import CajillasProductoPreparacion, {
+  type EntradaCajillasProducto,
+} from "./CajillasProductoPreparacion";
+import SelectorSucursalesPreparacion from "./SelectorSucursalesPreparacion";
+import useRepartoSucursalPreparacion from "./useRepartoSucursalPreparacion";
+import estilos from "./estilosTrabajo.module.css";
 import type {
   AsignacionEditable,
   DocumentoEditable,
   LotePreparacion,
-  NecesidadPreparacion,
   ProductoPreparacion,
 } from "./tipos";
 
-export default function RepartoProductoPreparacion({
-  producto,
-  documento,
-  contexto,
-  almacen,
-  ocupado,
-  errores,
-  alCambiar,
-  alQuitar,
-  alElegirLote,
-  alError,
-  paginaInicial = 1,
-  mostrarAnotadas = false,
-}: {
+interface PropiedadesReparto {
   producto: ProductoPreparacion;
   documento: DocumentoEditable;
   contexto: string;
@@ -38,83 +32,129 @@ export default function RepartoProductoPreparacion({
   ocupado: boolean;
   errores: Record<string, string[]>;
   alCambiar: (asignacion: AsignacionEditable) => void;
+  alCambiarDocumento: (documento: DocumentoEditable) => void;
   alQuitar: (clave: string) => void;
   alElegirLote: (asignacion: AsignacionEditable, lote: LotePreparacion) => void;
   alError: (error: unknown) => void;
   paginaInicial?: number;
   mostrarAnotadas?: boolean;
-}) {
-  const t = useTranslations("preparaciones");
-  const [pagina, establecerPagina] = useState(paginaInicial);
-  const [anotadas, establecerAnotadas] = useState(mostrarAnotadas);
-  const { datos, cargando, fallo, recargar } = useConsultaPreparacion<
-    PaginaCompra<NecesidadPreparacion>
-  >(
-    anotadas
-      ? null
-      : `preparaciones/necesidades/?${contexto}&producto=${producto.id}&pagina=${pagina}`,
+}
+
+export default function RepartoProductoPreparacion(
+  propiedades: PropiedadesReparto,
+) {
+  const {
+    producto,
+    documento,
+    contexto,
+    almacen,
+    ocupado,
+    errores,
+    alCambiar,
+    alCambiarDocumento,
+    alQuitar,
+    alElegirLote,
     alError,
-  );
-  const guardadas = Object.values(documento.asignaciones);
-  const delProducto = guardadas.filter((fila) => fila.producto === producto.id);
-  const paginaActual = anotadas
-    ? Math.min(pagina, Math.max(1, Math.ceil(delProducto.length / 10)))
-    : pagina;
-  const filas = anotadas
-    ? delProducto.slice((paginaActual - 1) * 10, paginaActual * 10)
-    : (datos?.results || []).map((fuente) => ({
-        ...(documento.asignaciones[String(fuente.id)] ||
-          desdeNecesidad(fuente)),
-        pendiente: fuente.pendiente,
-        disponible: fuente.disponible,
-        imagen: producto.imagen,
-        categoria: producto.categoria || undefined,
-      }));
+  } = propiedades;
+  const t = useTranslations("preparaciones");
+  const reparto = useRepartoSucursalPreparacion(propiedades);
+  const [entradasCajillas, establecerEntradasCajillas] = useState<
+    Partial<Record<number, EntradaCajillasProducto>>
+  >({});
+  const sucursal = reparto.elegida;
+  const anotadas = new Set(reparto.delProducto.map((fila) => fila.sucursal));
+  documento.cajillas
+    .filter((fila) => fila.producto?.id === producto.id)
+    .forEach((fila) => anotadas.add(fila.sucursal.id));
+  const mostrarCajillas =
+    !!sucursal &&
+    (reparto.delProducto.some(
+      (fila) => fila.sucursal === sucursal.id && Number(fila.cantidad) > 0,
+    ) ||
+      documento.cajillas.some(
+        (fila) =>
+          fila.producto?.id === producto.id && fila.sucursal.id === sucursal.id,
+      ));
+  const cargando = reparto.cargandoSucursales || reparto.cargandoPedidos;
   return (
     <section
       className="border-t border-gray-100 dark:border-gray-800"
       aria-labelledby="pedidos-producto-preparacion"
     >
-      <div className="space-y-3 p-5">
-        <h3
-          id="pedidos-producto-preparacion"
-          className="font-semibold text-gray-900 dark:text-white"
-        >
-          {t("quePreparasSucursalTrabajo")}
-        </h3>
-        <p className="text-theme-xs leading-5 text-gray-500 dark:text-gray-400">
-          {t("repartoProductoAyuda")}
-        </p>
-        <div
-          role="group"
-          aria-label={t("repartoVistas")}
-          className="flex w-fit gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800"
-        >
-          <Button
-            size="sm"
-            variant="outline"
-            className="pestana-hortyfru"
-            aria-pressed={!anotadas}
-            onClick={() => {
-              establecerAnotadas(false);
-              establecerPagina(1);
-            }}
+      <div className="space-y-3 px-4 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3
+            id="pedidos-producto-preparacion"
+            className={`${estilos.titulo} text-base font-semibold text-gray-900 dark:text-white`}
           >
-            {t("pendientes")}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="pestana-hortyfru"
-            aria-pressed={anotadas}
-            onClick={() => {
-              establecerAnotadas(true);
-              establecerPagina(1);
-            }}
+            {t("sucursalProductoTitulo")}
+          </h3>
+          <button
+            type="button"
+            disabled={ocupado}
+            onClick={reparto.cambiarVista}
+            className="min-h-11 rounded-lg px-2 text-theme-xs font-medium text-brand-700 focus-visible:ring-2 focus-visible:ring-brand-400 disabled:opacity-50 dark:text-brand-300"
           >
-            {t("sucursalesAnotadasTrabajo", { cantidad: delProducto.length })}
-          </Button>
+            {t(
+              reparto.anotadas
+                ? "verPendientesProducto"
+                : "verAnotadasProducto",
+              { cantidad: reparto.totalAnotadas },
+            )}
+          </button>
         </div>
+        {reparto.anotadas && (
+          <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+            {t("anotadasBorradorProducto")}
+          </p>
+        )}
+        {reparto.cargandoSucursales ? (
+          <CargaTrabajoPreparacion />
+        ) : reparto.falloSucursales ? (
+          <div role="alert" className="space-y-2">
+            <p>{t("errorCarga")}</p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={reparto.recargarSucursales}
+            >
+              {t("recargar")}
+            </Button>
+          </div>
+        ) : !reparto.sucursales.length ? (
+          <p
+            role="status"
+            className="py-4 text-sm text-gray-500 dark:text-gray-400"
+          >
+            {t(reparto.anotadas ? "sinAsignaciones" : "sinPendientes")}
+          </p>
+        ) : (
+          <>
+            <SelectorSucursalesPreparacion
+              sucursales={reparto.sucursales}
+              elegida={sucursal?.id ?? null}
+              anotadas={anotadas}
+              ocupado={ocupado}
+              alElegir={reparto.elegir}
+            />
+            <div className="flex flex-wrap items-center justify-between gap-2 text-theme-xs text-gray-500 dark:text-gray-400">
+              <span role="status">
+                {t("posicionSucursalProducto", {
+                  actual: reparto.posicionSucursal + 1,
+                  total: reparto.totalSucursales,
+                })}
+              </span>
+              {reparto.totalSucursales > 10 && (
+                <PaginadorCompras
+                  pagina={reparto.pagina}
+                  total={reparto.totalSucursales}
+                  ocupado={ocupado || reparto.cargandoSucursales}
+                  alCambiar={reparto.cambiarPagina}
+                />
+              )}
+            </div>
+          </>
+        )}
         {!!errores.asignaciones?.length && (
           <p
             role="alert"
@@ -124,98 +164,168 @@ export default function RepartoProductoPreparacion({
           </p>
         )}
       </div>
-      {cargando ? (
-        <p
-          role="status"
-          className="p-8 text-center text-sm text-gray-500 dark:text-gray-400"
-        >
-          {t("cargando")}
-        </p>
-      ) : fallo ? (
-        <div role="alert" className="space-y-3 p-5">
-          <p>{t("errorCarga")}</p>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              establecerPagina(1);
-              recargar();
-            }}
+      {sucursal && !reparto.falloSucursales && (
+        <div className="px-4 pb-4">
+          <section
+            id="ficha-sucursal-producto"
+            aria-labelledby="nombre-sucursal-producto"
+            className="@container/ficha overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
           >
-            {t("recargar")}
-          </Button>
-        </div>
-      ) : !filas.length ? (
-        <p
-          role="status"
-          className="p-8 text-center text-sm text-gray-500 dark:text-gray-400"
-        >
-          {t(anotadas ? "sinAsignaciones" : "sinPendientes")}
-        </p>
-      ) : (
-        <div className="custom-scrollbar overflow-x-auto">
-          <div
-            role="table"
-            aria-label={t("repartoSucursal")}
-            className="lg:min-w-188"
-          >
-            <div
-              role="rowgroup"
-              className="hidden bg-gray-50 px-4 py-3 lg:block dark:bg-gray-800/40"
-            >
-              <div
-                role="row"
-                className={`grid gap-3 ${columnasSucursalPreparacion}`}
+            <header className="flex items-center gap-2 border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+              <IconoSucursal
+                className="size-5 shrink-0 text-brand-600 dark:text-brand-400"
+                aria-hidden="true"
+              />
+              <h4
+                id="nombre-sucursal-producto"
+                aria-live="polite"
+                aria-atomic="true"
+                className="text-lg font-semibold text-gray-900 dark:text-white"
               >
-                {[
-                  "sucursal",
-                  "medidaPedidoTrabajo",
-                  "faltaPrepararTrabajo",
-                  "prepararAhoraTrabajo",
-                  "cantidadRealUsadaTrabajo",
-                  "accionesTrabajo",
-                ].map((campo) => (
-                  <div
-                    role="columnheader"
-                    key={campo}
-                    className="text-theme-xs font-medium text-gray-500 dark:text-gray-400"
-                  >
-                    {t(campo)}
-                  </div>
-                ))}
+                {sucursal.nombre}
+              </h4>
+            </header>
+            {reparto.cargandoPedidos ? (
+              <CargaTrabajoPreparacion />
+            ) : reparto.falloPedidos ? (
+              <div role="alert" className="space-y-3 p-4">
+                <p>{t("errorCarga")}</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={reparto.recargarPedidos}
+                >
+                  {t("recargar")}
+                </Button>
               </div>
-            </div>
-            <div role="rowgroup">
-              {filas.map((asignacion) => (
-                <FilaSucursalPreparacion
-                  key={asignacion.clave}
-                  asignacion={asignacion}
-                  documento={documento}
-                  contexto={contexto}
-                  almacen={almacen}
-                  indice={guardadas.findIndex(
-                    (fila) => fila.clave === asignacion.clave,
+            ) : (
+              <>
+                {!reparto.filas.length && (
+                  <p className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                    {t(
+                      reparto.anotadas
+                        ? "sinAsignacionesSucursalProducto"
+                        : "sinPendientes",
+                    )}
+                  </p>
+                )}
+                <div
+                  className={`grid items-start ${mostrarCajillas ? "@4xl/ficha:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]" : ""}`}
+                >
+                  <div>
+                    <div key={sucursal.id}>
+                      {reparto.filas.map((asignacion) => (
+                        <FilaSucursalPreparacion
+                          key={asignacion.clave}
+                          integrada
+                          asignacion={asignacion}
+                          documento={documento}
+                          contexto={contexto}
+                          almacen={almacen}
+                          indice={reparto.guardadas.findIndex(
+                            (fila) => fila.clave === asignacion.clave,
+                          )}
+                          ocupado={ocupado}
+                          errores={errores}
+                          alError={alError}
+                          alCambiar={alCambiar}
+                          alCambiarDocumento={alCambiarDocumento}
+                          alQuitar={() => alQuitar(asignacion.clave)}
+                          alElegirLote={(lote) =>
+                            alElegirLote(asignacion, lote)
+                          }
+                        />
+                      ))}
+                    </div>
+                    {reparto.totalPedidos > 10 && (
+                      <div
+                        className="space-y-2 px-4 pb-4"
+                        aria-label={t("pedidosSucursalProducto")}
+                      >
+                        <p className="text-theme-xs font-medium text-gray-600 dark:text-gray-300">
+                          {t("pedidosSucursalProducto")}
+                        </p>
+                        <PaginadorCompras
+                          pagina={reparto.paginaPedidos}
+                          total={reparto.totalPedidos}
+                          ocupado={ocupado}
+                          alCambiar={reparto.cambiarPaginaPedidos}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {mostrarCajillas && (
+                    <div
+                      className={`${estilos.panelCajillas} m-4 mt-0 p-4 @4xl/ficha:ms-0 @4xl/ficha:mt-4`}
+                    >
+                      <CajillasProductoPreparacion
+                        key={`${producto.id}:${sucursal.id}`}
+                        documento={documento}
+                        producto={{ id: producto.id, nombre: producto.nombre }}
+                        sucursal={{ id: sucursal.id, nombre: sucursal.nombre }}
+                        almacen={almacen}
+                        ocupado={ocupado}
+                        errores={errores}
+                        alCambiar={alCambiarDocumento}
+                        alError={alError}
+                        entrada={
+                          entradasCajillas[sucursal.id] ?? {
+                            cantidadManual: null,
+                            agregando: false,
+                          }
+                        }
+                        alEntrada={(cambio) =>
+                          establecerEntradasCajillas((anteriores) => ({
+                            ...anteriores,
+                            [sucursal.id]: {
+                              cantidadManual: null,
+                              agregando: false,
+                              ...anteriores[sucursal.id],
+                              ...cambio,
+                            },
+                          }))
+                        }
+                      />
+                    </div>
                   )}
-                  ocupado={ocupado}
-                  errores={errores}
-                  alError={alError}
-                  alCambiar={alCambiar}
-                  alQuitar={() => alQuitar(asignacion.clave)}
-                  alElegirLote={(lote) => alElegirLote(asignacion, lote)}
-                />
-              ))}
+                </div>
+              </>
+            )}
+          </section>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="flex items-center gap-2 text-theme-xs text-gray-500 dark:text-gray-400">
+              <IconoAyuda className="size-4 shrink-0" aria-hidden="true" />
+              {t("conservarSucursalProducto")}
+            </p>
+            <div className="flex w-full justify-end gap-2 sm:w-auto">
+              <Button
+                size="sm"
+                variant="outline"
+                className="min-h-11 min-w-11"
+                disabled={ocupado || cargando || reparto.posicionSucursal === 0}
+                aria-label={t("sucursalAnteriorProducto")}
+                onClick={() => reparto.moverSucursal(-1)}
+              >
+                <IconoAnterior className="size-4 rtl:rotate-180" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="min-h-11"
+                disabled={
+                  ocupado ||
+                  cargando ||
+                  reparto.posicionSucursal + 1 >= reparto.totalSucursales
+                }
+                onClick={() => reparto.moverSucursal(1)}
+                endIcon={<IconoSiguiente className="size-4 rtl:rotate-180" />}
+              >
+                {t("siguienteSucursalProducto")}
+              </Button>
             </div>
           </div>
         </div>
       )}
-      <div className="p-5">
-        <PaginadorCompras
-          pagina={paginaActual}
-          total={anotadas ? delProducto.length : datos?.count || 0}
-          ocupado={ocupado || cargando || fallo}
-          alCambiar={establecerPagina}
-        />
-      </div>
     </section>
   );
 }

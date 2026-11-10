@@ -119,6 +119,14 @@ class SerializadorPedido(serializers.ModelSerializer):
 
 class SerializadorPedidoCompleto(SerializadorPedido):
     detalles = SerializadorDetalle(many=True, read_only=True)
+    recepcion_confirmada = serializers.SerializerMethodField()
+
+    def get_recepcion_confirmada(self, obj):
+        from django.db.models import Sum
+        from entregas.models import LineaEntrega
+        filas = LineaEntrega.objects.filter(entrega__pedido=obj, entrega__estado='confirmada').values('producto').annotate(
+            cajas=Sum('cajas_recibidas'), unidades=Sum('unidades_recibidas'), peso_kg=Sum('peso_recibido_kg'), rechazado_kg=Sum('peso_rechazado_kg'))
+        return [{**fila, 'peso_kg': str(fila['peso_kg']), 'rechazado_kg': str(fila['rechazado_kg'])} for fila in filas]
 
     def to_representation(self, instance):
         from preparaciones.consultas import avance_detalles
@@ -126,4 +134,4 @@ class SerializadorPedidoCompleto(SerializadorPedido):
         return super().to_representation(instance)
 
     class Meta(SerializadorPedido.Meta):
-        fields = (*SerializadorPedido.Meta.fields, 'direccion', 'observaciones', 'detalles', 'cancelado_en', 'motivo_cancelacion')
+        fields = (*SerializadorPedido.Meta.fields, 'direccion', 'observaciones', 'detalles', 'cancelado_en', 'motivo_cancelacion', 'recepcion_confirmada')

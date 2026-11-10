@@ -14,6 +14,9 @@ Los contadores corresponden a la búsqueda/fecha/compra y no se reducen por el
 estado seleccionado. Los listados mantienen páginas fijas de 10.
 
 La hoja reúne Compra, Almacén y Fecha de llegada en una cabecera compacta.
+En escritorio, el selector de origen, los campos y el acceso a Notas comparten
+una sola fila, sin partir el texto de las pestañas. Abrir Notas despliega su
+campo a todo el ancho; el motivo de ingresos sin compra permanece visible.
 Hoy es el valor inicial y, cuando existe un único almacén activo, se selecciona
 automáticamente. Los selectores tienen búsqueda y se abren anclados al campo.
 El origen Sin compra conserva un motivo visible; las notas de compras son
@@ -27,12 +30,43 @@ su unidad no la contabiliza como recibida: las filas sin cantidades ni datos
 adicionales se omiten del documento enviado. Los errores se reasignan al índice
 visible correspondiente después de omitirlas.
 
+La hoja captura nuevas cantidades y pesos con un máximo de un decimal, usando
+coma o punto. Al cargar el borrador y al salir del campo elimina solo ceros
+sobrantes: 1.000 se muestra como 1 y 1.500 como 1.5. No redondea ni trunca
+mediciones históricas: una precisión anterior se conserva al guardar sin cambiar
+ese valor y unidad. Los valores nuevos con más de un decimal se rechazan en la
+hoja. La API, almacenamiento y cálculo de pendientes conservan sus tres decimales
+para mantener contratos, trazabilidad e ingresos confirmados existentes.
+
 Llegó hoy expresa lo recibido de la compra y Para el almacén expresa la medición
 real. Cuando no hay presentación y la unidad base comprada coincide exactamente
 con la elegida para inventario, un único campo escribe ambas cantidades. No hay
 conversión por nombre ni por abreviatura. Cambiar la unidad borra la medición
-y el peso anteriores; Más datos muestra vencimiento y peso adicional opcionales.
+y el peso anteriores. Vencimiento aparece como columna editable opcional con
+el calendario compartido y no admite fechas anteriores al ingreso. Más datos
+muestra solo el peso adicional opcional para unidades distintas de kg; no se
+ofrece cuando no existen campos adicionales.
 En pantallas pequeñas se conservan los mismos campos en tarjetas por producto.
+
+La hoja compacta usa el título «Productos» y las columnas visibles Producto,
+Llegó hoy, Para el almacén y Vencimiento. El pendiente se muestra junto al producto;
+al anotar la llegada, el saldo restante o el exceso aparece debajo de ese campo.
+No se repiten dos columnas de pendientes ni las ayudas de cada fila: la precisión
+se explica al enfocar la cantidad. La medida de compra se integra como sufijo y
+la unidad de inventario conserva su selector. El contador de Anotados aparece
+una sola vez y omite las filas sin mediciones ni datos adicionales. La cabecera
+reúne volver y título sin migas duplicadas; conserva notas opcionales y el motivo
+visible para ingresos sin compra. La barra inferior muestra Borrador, el aviso
+de que aún no ingresa al inventario y las acciones existentes según permisos.
+Estos cambios son de presentación: no cambian cálculo, API, guardado, revisión,
+confirmación, precisión histórica ni movimientos de inventario.
+
+Las fotos actuales del catálogo aparecen en el selector de productos sin compra,
+pendientes, anotados, revisión y detalle. Se consultan con el permiso de lectura
+de Recepciones, sin exigir administrar Productos ni acceder a Compras, y conservan
+un icono de respaldo si no hay foto o falla la carga. También se consultan para
+productos inactivos desde recepciones históricas. Son datos informativos y no
+forman parte de la escritura, las cantidades, el inventario ni las versiones.
 
 Guardar borrador conserva datos incompletos. Revisar ingreso valida todas las
 líneas anotadas, guarda el borrador y abre el resumen que devuelve el servidor.
@@ -93,6 +127,7 @@ completo (máximo 500 líneas); la interfaz muestra 10 líneas por página.
 | `recepciones/resumen/` | GET contadores por los filtros actuales |
 | `recepciones/compras/` | GET compras registradas con pendiente |
 | `recepciones/compra-origen/?compra={id}` | GET código, fecha y existencia de pendientes |
+| `recepciones/imagenes/{producto_id}/` | GET foto actual con permiso de Recepciones y caché privada |
 | `recepciones/compra-detalles/?compra={id}` | GET líneas y avance recibido, sin precios |
 | `recepciones/almacenes/` | GET almacenes activos |
 | `recepciones/productos/` | GET productos activos para ingreso directo |

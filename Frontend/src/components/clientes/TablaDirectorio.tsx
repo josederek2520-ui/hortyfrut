@@ -154,21 +154,28 @@ export default function TablaDirectorio({
                         {registro.referencia}
                       </p>
                     )}
-                    {registro.latitud !== null &&
-                      registro.longitud !== null && (
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${registro.latitud},${registro.longitud}`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 inline-flex min-h-8 items-center gap-1.5 rounded text-theme-xs text-brand-600 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-brand-300"
-                          aria-label={t("verMapaSucursal", {
-                            nombre: registro.nombre,
-                          })}
-                        >
-                          <IconoUbicacion className="size-3.5" />
-                          {t("verMapa")}
-                        </a>
-                      )}
+                    {registro.latitud !== null && registro.longitud !== null ? (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${registro.latitud},${registro.longitud}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-flex min-h-8 items-center gap-1.5 rounded text-theme-xs text-brand-600 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-brand-300"
+                        aria-label={t("verMapaSucursal", {
+                          nombre: registro.nombre,
+                        })}
+                      >
+                        <IconoUbicacion className="size-3.5" />
+                        {t("verMapa")}
+                      </a>
+                    ) : (
+                      <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-warning-50 px-2 py-1 text-theme-xs text-warning-800 dark:bg-warning-500/10 dark:text-warning-300">
+                        <IconoUbicacion
+                          className="size-3.5"
+                          aria-hidden="true"
+                        />
+                        {t("ubicacionPendiente")}
+                      </p>
+                    )}
                   </div>
                 )}
               </Celda>

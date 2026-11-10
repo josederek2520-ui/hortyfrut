@@ -322,3 +322,65 @@ class PruebasPedidos(TestCase):
         call_command('preparar_roles',verbosity=0)
         self.assertEqual(rol.permissions.count(),0)
         self.assertEqual(Group.objects.get(name='Administrador de pedidos').permissions.count(),6)
+
+    def test_rol_encargado_aisla_listado_contadores_y_acceso_directo(self):
+        call_command('preparar_roles', verbosity=0)
+        rol = Group.objects.get(name='Encargado de pedidos')
+        self.assertFalse(rol.permissions.filter(codename__in=['ver_todos_pedidos', 'gestionar_todos_pedidos']).exists())
+        self.encargado.user_permissions.clear()
+        self.encargado.groups.set([rol])
+        encargado = Usuario.objects.get(pk=self.encargado.pk)
+        propios = [guardar_pedido(encargado, self.datos())[0] for _ in range(11)]
+        ajeno = guardar_pedido(self.administrador, self.datos(sucursal=self.otra_sucursal.pk))[0]
+        Pedido.objects.filter(pk=propios[0].pk).update(estado=Pedido.Estado.PREPARADO)
+        Pedido.objects.filter(pk=propios[1].pk).update(estado=Pedido.Estado.CANCELADO)
+        self.client.force_authenticate(encargado)
+
+        primera = self.client.get('/api/v1/pedidos/')
+        segunda = self.client.get('/api/v1/pedidos/?pagina=2')
+        self.assertEqual(primera.data['count'], 11)
+        self.assertEqual(len(primera.data['results']), 10)
+        self.assertEqual(len(segunda.data['results']), 1)
+        visibles = {fila['id'] for respuesta in (primera, segunda) for fila in respuesta.data['results']}
+        self.assertEqual(visibles, {pedido.pk for pedido in propios})
+        self.assertNotIn(ajeno.pk, visibles)
+        self.assertEqual(self.client.get('/api/v1/pedidos/resumen/').data,
+                         {'total': 11, 'pendientes': 9, 'preparados': 1, 'cancelados': 1})
+        self.assertEqual(self.client.get('/api/v1/pedidos/', {'buscar': ajeno.codigo}).data['count'], 0)
+        self.assertEqual(self.client.get('/api/v1/pedidos/resumen/', {'buscar': ajeno.codigo}).data['total'], 0)
+        self.assertEqual(self.client.get('/api/v1/pedidos/', {'fecha': str(timezone.localdate())}).data['count'], 11)
+        self.assertEqual(self.client.get('/api/v1/pedidos/sucursales/').data['count'], 1)
+
+        self.assertEqual(self.client.get(f'/api/v1/pedidos/{ajeno.pk}/').status_code, 404)
+        self.assertEqual(self.client.patch(f'/api/v1/pedidos/{ajeno.pk}/', self.datos_edicion(ajeno), format='json').status_code, 404)
+        self.assertEqual(self.client.post(f'/api/v1/pedidos/{ajeno.pk}/cancelar/', {'version': obtener_version(ajeno)}, format='json').status_code, 404)
+        self.assertEqual(self.client.get('/api/v1/pedidos/catalogo/', {'pedido': ajeno.pk}).status_code, 404)
+        self.assertEqual(self.client.get(f'/api/v1/pedidos/{propios[2].pk}/').status_code, 200)
+        with self.assertRaises(PermissionDenied):
+            guardar_pedido(encargado, self.datos_edicion(ajeno), ajeno)
+        with self.assertRaises(PermissionDenied):
+            cancelar_pedido(encargado, ajeno, {'version': obtener_version(ajeno)})
+
+    def test_corregir_rol_administrador_a_encargado_restringe_sin_modificar_otros_roles(self):
+        from usuarios.services import guardar_usuario
+
+        call_command('preparar_roles', verbosity=0)
+        rol_global = Group.objects.get(name='Administrador de pedidos')
+        rol_encargado = Group.objects.get(name='Encargado de pedidos')
+        propios = self.crear()
+        ajeno = guardar_pedido(self.administrador, self.datos(sucursal=self.otra_sucursal.pk))[0]
+        self.encargado.user_permissions.clear()
+        self.encargado.groups.set([rol_global])
+        self.client.force_authenticate(Usuario.objects.get(pk=self.encargado.pk))
+        self.assertEqual(self.client.get('/api/v1/pedidos/').data['count'], 2)
+
+        guardar_usuario(self.administrador, {'groups': [rol_encargado]}, self.encargado)
+
+        self.client.force_authenticate(Usuario.objects.get(pk=self.encargado.pk))
+        respuesta = self.client.get('/api/v1/pedidos/')
+        self.assertEqual(respuesta.data['count'], 1)
+        self.assertEqual(respuesta.data['results'][0]['id'], propios.pk)
+        self.assertEqual(self.client.get(f'/api/v1/pedidos/{ajeno.pk}/').status_code, 404)
+        self.assertEqual(rol_global.permissions.count(), 6)
+        registro = RegistroActividad.objects.get(modulo='usuarios', objeto_id=str(self.encargado.pk), accion='editar')
+        self.assertEqual(registro.cambios['roles']['despues'][0]['nombre'], 'Encargado de pedidos')

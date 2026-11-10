@@ -219,6 +219,7 @@ export default function CampoFecha({
             : hayError
               ? "border-error-500 bg-error-50 text-gray-900 ring-1 ring-error-500/10 focus:border-error-600 focus:ring-error-500/20 dark:border-error-400 dark:bg-error-500/10 dark:text-gray-100"
               : "border-gray-300 bg-white text-gray-800 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100",
+          !hayError && !disabled && "campo-suave-hortyfru",
           className,
         )}
       />

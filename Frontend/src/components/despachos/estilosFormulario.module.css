@@ -1,0 +1,66 @@
+/* Movimiento discreto y superficies del tema existente de HortyFru. */
+.formulario {
+  --despacho-curva: cubic-bezier(0.23, 1, 0.32, 1);
+  --despacho-entrada: 220ms;
+  font-optical-sizing: auto;
+}
+
+.titulo {
+  letter-spacing: -0.014em;
+  line-height: 1.25;
+}
+
+.entrada {
+  animation: entrarPaso var(--despacho-entrada) var(--despacho-curva) backwards;
+}
+
+.paso {
+  transition:
+    transform 100ms var(--despacho-curva),
+    background-color 160ms ease-out,
+    border-color 160ms ease-out,
+    color 160ms ease-out;
+  touch-action: manipulation;
+}
+
+.paso:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.paso:disabled {
+  cursor: not-allowed;
+}
+.barra {
+  padding-block-end: max(1rem, env(safe-area-inset-bottom));
+}
+
+@keyframes entrarPaso {
+  from {
+    opacity: 0.5;
+    transform: translateY(0.375rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aparecerPaso {
+  from {
+    opacity: 0.75;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entrada {
+    animation: aparecerPaso 80ms linear backwards;
+  }
+  .paso:active:not(:disabled) {
+    transform: none;
+  }
+  .paso {
+    transition: none;
+  }
+}

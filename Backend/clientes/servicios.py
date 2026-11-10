@@ -8,7 +8,7 @@ from auditoria.servicios import registrar_actividad, diferencias
 from .models import Cliente, Sucursal
 
 CAMPOS_CLIENTE = ('razon_social', 'nit', 'telefono', 'email')
-CAMPOS_SUCURSAL = ('nombre', 'direccion', 'telefono', 'referencia', 'latitud', 'longitud', 'encargado_pedidos_id')
+CAMPOS_SUCURSAL = ('nombre', 'direccion', 'telefono', 'referencia', 'latitud', 'longitud', 'encargado_pedidos_id', 'encargado_recepcion_id')
 
 
 class ConflictoComercial(APIException):
@@ -65,14 +65,15 @@ def guardar_registro(modelo, actor, datos, instancia=None, cliente_id=None):
             antes = estado_registro(registro) if instancia else {}
             for campo in campos_registro(modelo):
                 if campo in datos:
-                    if campo == 'encargado_pedidos_id':
+                    if campo in ('encargado_pedidos_id', 'encargado_recepcion_id'):
                         if not actor.has_perm('clientes.asignar_encargado'):
                             raise PermissionDenied('No tienes permiso para asignar encargados.')
                         if datos[campo] is not None:
                             from django.contrib.auth import get_user_model
                             encargado = get_object_or_404(get_user_model().objects.select_for_update(), pk=datos[campo], is_active=True)
-                            if not encargado.has_perm('pedidos.view_pedido') or not encargado.has_perm('pedidos.add_pedido'):
-                                raise ValidationError({'encargado_pedidos_id': 'El encargado necesita los permisos Ver pedidos y Crear pedidos.'})
+                            aplicacion, modelo_permiso = ('pedidos', 'pedido') if campo == 'encargado_pedidos_id' else ('entregas', 'entrega')
+                            if not encargado.has_perm(f'{aplicacion}.view_{modelo_permiso}') or not encargado.has_perm(f'{aplicacion}.add_{modelo_permiso}'):
+                                raise ValidationError({campo: 'El encargado necesita los permisos de consultar y registrar en el módulo correspondiente.'})
                     setattr(registro, campo, datos[campo])
             try:
                 registro.full_clean(validate_unique=False, validate_constraints=False)

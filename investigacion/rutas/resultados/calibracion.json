@@ -1,0 +1,84 @@
+{
+  "entorno": {
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "plataforma": "Windows-11-10.0.26200-SP0",
+    "algoritmo": "genetico-hortyfru-1",
+    "paquetes": {
+      "deap": "1.4.4",
+      "numpy": "2.5.4",
+      "matplotlib": "3.11.2",
+      "ortools": "9.15.6755"
+    }
+  },
+  "matrices": [
+    {
+      "puntos": 13,
+      "semilla": 7731
+    },
+    {
+      "puntos": 26,
+      "semilla": 7732
+    }
+  ],
+  "semillas_ejecucion": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "configuraciones": [
+    {
+      "configuracion": 0,
+      "parametros": {
+        "poblacion": 60,
+        "generaciones": 100,
+        "probabilidad_cruce": 0.85,
+        "probabilidad_mutacion": 0.2,
+        "elite": 2,
+        "torneo": 3
+      },
+      "costo_relativo_promedio": 0.32598050191248207,
+      "tiempo_mediano_s": 0.08842629997525364
+    },
+    {
+      "configuracion": 1,
+      "parametros": {
+        "poblacion": 100,
+        "generaciones": 160,
+        "probabilidad_cruce": 0.85,
+        "probabilidad_mutacion": 0.2,
+        "elite": 2,
+        "torneo": 3
+      },
+      "costo_relativo_promedio": 0.32244938111686244,
+      "tiempo_mediano_s": 0.2385009500430897
+    },
+    {
+      "configuracion": 2,
+      "parametros": {
+        "poblacion": 100,
+        "generaciones": 160,
+        "probabilidad_cruce": 0.85,
+        "probabilidad_mutacion": 0.35,
+        "elite": 2,
+        "torneo": 3
+      },
+      "costo_relativo_promedio": 0.32175672790103366,
+      "tiempo_mediano_s": 0.24223859998164698
+    }
+  ],
+  "recomendado": {
+    "configuracion": 2,
+    "parametros": {
+      "poblacion": 100,
+      "generaciones": 160,
+      "probabilidad_cruce": 0.85,
+      "probabilidad_mutacion": 0.35,
+      "elite": 2,
+      "torneo": 3
+    },
+    "costo_relativo_promedio": 0.32175672790103366,
+    "tiempo_mediano_s": 0.24223859998164698
+  }
+}

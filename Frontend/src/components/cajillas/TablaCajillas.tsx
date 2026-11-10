@@ -24,17 +24,19 @@ export default function TablaCajillas({ registros }: { registros: Cajilla[] }) {
             className="rounded-xl border border-gray-200 p-4 dark:border-gray-800"
           >
             <ColorCajilla color={cajilla.color} />
-            <dl className="mt-5 grid grid-cols-3 gap-3">
-              {["en_almacen", "en_sucursales", "total"].map((clave) => (
-                <div key={clave}>
-                  <dt className="text-theme-xs text-gray-500 dark:text-gray-400">
-                    {t(clave)}
-                  </dt>
-                  <dd className="mt-1 text-lg font-semibold text-gray-900 tabular-nums dark:text-white">
-                    {numero(cajilla[clave as "total"])}
-                  </dd>
-                </div>
-              ))}
+            <dl className="mt-5 grid grid-cols-2 gap-3">
+              {["en_almacen", "en_transito", "en_sucursales", "total"].map(
+                (clave) => (
+                  <div key={clave}>
+                    <dt className="text-theme-xs text-gray-500 dark:text-gray-400">
+                      {t(clave)}
+                    </dt>
+                    <dd className="mt-1 text-lg font-semibold text-gray-900 tabular-nums dark:text-white">
+                      {numero(cajilla[clave as "total"])}
+                    </dd>
+                  </div>
+                ),
+              )}
             </dl>
             <p className="my-4 text-theme-xs text-gray-500 dark:text-gray-400">
               {t("creadaEl", { fecha: fecha(cajilla.creado_en) })}
@@ -56,6 +58,7 @@ export default function TablaCajillas({ registros }: { registros: Cajilla[] }) {
               {[
                 "color",
                 "en_almacen",
+                "en_transito",
                 "en_sucursales",
                 "total",
                 "fechaCreacion",
@@ -85,16 +88,19 @@ export default function TablaCajillas({ registros }: { registros: Cajilla[] }) {
                     <ColorCajilla color={cajilla.color} />
                   </Link>
                 </td>
-                {[cajilla.en_almacen, cajilla.en_sucursales, cajilla.total].map(
-                  (cantidad, indice) => (
-                    <td
-                      key={indice}
-                      className="px-4 py-4 font-medium tabular-nums"
-                    >
-                      {numero(cantidad)}
-                    </td>
-                  ),
-                )}
+                {[
+                  cajilla.en_almacen,
+                  cajilla.en_transito,
+                  cajilla.en_sucursales,
+                  cajilla.total,
+                ].map((cantidad, indice) => (
+                  <td
+                    key={indice}
+                    className="px-4 py-4 font-medium tabular-nums"
+                  >
+                    {numero(cantidad)}
+                  </td>
+                ))}
                 <td className="px-4 py-4 whitespace-nowrap">
                   {fecha(cajilla.creado_en)}
                 </td>

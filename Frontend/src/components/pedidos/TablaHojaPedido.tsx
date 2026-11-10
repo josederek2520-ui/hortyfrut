@@ -15,11 +15,13 @@ export default function TablaHojaPedido({
   errores,
   ocupado,
   alCambiar,
+  recepciones = {},
 }: {
   productos: ProductoHoja[];
   cantidades: CantidadesHoja;
   errores: Record<string, string[]>;
   ocupado: boolean;
+  recepciones?: Record<number, { cajas: number; unidades: number }>;
   alCambiar: (
     producto: ProductoHoja,
     columna: ColumnaPedido,
@@ -145,12 +147,27 @@ export default function TablaHojaPedido({
                     </td>
                   );
                 })}
-                <td
-                  colSpan={2}
-                  className="bg-gray-50/70 px-4 text-center text-xs text-gray-400 dark:bg-gray-800/35"
-                >
-                  {t("alEntregar")}
-                </td>
+                {recepciones[producto.id] ? (
+                  ["cajas", "unidades"].map((columna) => (
+                    <td
+                      key={`recibido-${columna}`}
+                      className="bg-brand-25 px-4 text-center text-sm font-medium text-brand-700 dark:bg-brand-950/20 dark:text-brand-300"
+                    >
+                      {
+                        recepciones[producto.id][
+                          columna as "cajas" | "unidades"
+                        ]
+                      }
+                    </td>
+                  ))
+                ) : (
+                  <td
+                    colSpan={2}
+                    className="bg-gray-50/70 px-4 text-center text-xs text-gray-400 dark:bg-gray-800/35"
+                  >
+                    {t("alEntregar")}
+                  </td>
+                )}
               </tr>
             );
           })}

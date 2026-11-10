@@ -21,6 +21,12 @@ from recepciones.permisos import permisos_recepciones
 from inventario.permisos import permisos_inventario
 from cajillas.permisos import permisos_cajillas
 from preparaciones.permisos import permisos_preparaciones
+from vehiculos.permisos import permisos_vehiculos
+from despachos.permisos import permisos_despachos
+from entregas.permisos import permisos_entregas
+from devoluciones.permisos import permisos_devoluciones
+from precios.permisos import permisos_precios
+from respaldos.permisos import permisos_respaldos
 from .serializers import LoginSerializer, UsuarioListaSerializer, UsuarioDetalleSerializer, PerfilSerializer, PasswordSerializer
 
 
@@ -61,6 +67,10 @@ def session_data(request):
         'permisos_sucursales': permisos_comerciales(user, 'sucursal'),
         'puede_asignar_encargado': user.has_perm('clientes.asignar_encargado'),
         'permisos_pedidos': permisos_pedidos(user),
+        'permisos_entregas': permisos_entregas(user),
+        'permisos_devoluciones': permisos_devoluciones(user),
+        'permisos_precios': permisos_precios(user),
+        'permisos_respaldos': permisos_respaldos(user),
         'permisos_proveedores': permisos_proveedores(user),
         'permisos_compras': permisos_compras(user),
         'permisos_almacenes': permisos_almacenes(user),
@@ -68,6 +78,14 @@ def session_data(request):
         'permisos_inventario': permisos_inventario(user),
         'permisos_cajillas': permisos_cajillas(user),
         'permisos_preparaciones': permisos_preparaciones(user),
+        'permisos_vehiculos': permisos_vehiculos(user),
+        'permisos_despachos': permisos_despachos(user),
+        'permisos_chofer': {
+            'ver': all(user.has_perm('despachos.' + permiso) for permiso in
+                       ('conducir_despacho', 'ver_despachos_propios')),
+            'operar': all(user.has_perm('despachos.' + permiso) for permiso in
+                          ('conducir_despacho', 'ver_despachos_propios', 'operar_despachos_propios')),
+        },
     }
 
 
@@ -77,13 +95,20 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
     throttle_classes = [LoginThrottle]
 
+    def autorizar_usuario(self, usuario):
+        """El acceso habitual conserva sus permisos; los accesos acotados amplían esta validación."""
+
+    def datos_sesion(self, request):
+        return session_data(request)
+
     def post(self, request):
         serializer = LoginSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
+        self.autorizar_usuario(serializer.validated_data['user'])
         login(request, serializer.validated_data['user'])
         request.session.set_expiry(60 * 60 * 24 * 14 if serializer.validated_data['remember'] else 0)
         registrar_actividad('autenticacion', 'iniciar_sesion', actor=request.user, descripcion='Inicio de sesión exitoso')
-        return Response({**session_data(request), 'csrfToken': get_token(request)})
+        return Response({**self.datos_sesion(request), 'csrfToken': get_token(request)})
 
 
 class SessionView(APIView):
@@ -100,6 +125,8 @@ class LogoutView(APIView):
 
     def post(self, request):
         registrar_actividad('autenticacion', 'cerrar_sesion', actor=request.user, descripcion='Cierre de sesión')
+        from .acceso_chofer_web import cerrar_acceso_chofer_web
+        cerrar_acceso_chofer_web(request)
         logout(request)
         return Response({'detail': 'Sesión cerrada.'})
 

@@ -19,6 +19,7 @@ export interface ProductoConsolidado {
   id: number;
   nombre: string;
   categoria: string;
+  categoria_id?: number;
   cajas: number;
   unidades: number;
   preparadas_cajas: number;
@@ -32,6 +33,27 @@ export interface ProductoPreparacion extends OpcionCompra {
   imagen?: string | null;
   pendientes_cajas?: number;
   pendientes_unidades?: number;
+  cajas?: number;
+  unidades?: number;
+}
+
+export interface EstadoTrabajoPreparacion {
+  modificado: boolean;
+  guardando: boolean;
+}
+export interface JornadaAgrupadaPreparacion {
+  cliente: number;
+  cliente_nombre: string;
+  cliente_activo: boolean;
+  fecha_pedidos: string;
+  pedidos: number;
+  sucursales: number;
+  productos: number;
+  borradores: number;
+  confirmadas: number;
+  canceladas: number;
+  borrador_id: number | null;
+  estado: "pendiente" | "parcial" | "preparado" | "sin_pedidos";
 }
 export interface HojaConsolidada extends PaginaCompra<ProductoConsolidado> {
   cliente: OpcionPreparacion;
@@ -61,6 +83,7 @@ export interface NecesidadPreparacion {
   disponible: boolean;
 }
 export interface LotePreparacion extends OpcionCompra {
+  disponible_preparacion?: string;
   producto: number;
   producto_nombre: string;
   unidad: number;
@@ -73,6 +96,7 @@ export interface LotePreparacion extends OpcionCompra {
   producto_categoria?: OpcionCompra;
 }
 export interface LineaPreparacion {
+  saldo_lote?: string | null;
   id: number;
   lote: number;
   lote_codigo: string;
@@ -119,7 +143,10 @@ export interface AsignacionPreparacion {
   producto_categoria?: OpcionCompra;
 }
 export interface CajillaPrevista {
+  saldo_almacen?: number;
   id: number;
+  producto?: number | null;
+  producto_nombre?: string;
   sucursal: number;
   sucursal_nombre: string;
   cajilla: number;
@@ -184,6 +211,7 @@ export interface AsignacionEditable {
 }
 export interface CajillaEditable {
   clave: string;
+  producto?: OpcionPreparacion | null;
   sucursal: OpcionPreparacion;
   color: OpcionPreparacion;
   cantidad: string;

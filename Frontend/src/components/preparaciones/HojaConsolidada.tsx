@@ -28,21 +28,25 @@ export default function HojaConsolidada({
   alError,
   clienteInicial,
   fechaInicial,
+  soloConsulta = false,
 }: {
   puedeCrear: boolean;
   alError: (error: unknown) => void;
   clienteInicial?: number;
   fechaInicial?: string;
+  soloConsulta?: boolean;
 }) {
   const t = useTranslations("preparaciones");
   const [fecha, establecerFecha] = useState(fechaInicial || fechaLocal);
-  const [cliente, establecerCliente] = useState<OpcionPreparacion | null>(clienteInicial ? { id: clienteInicial, nombre: t("cliente") } : null);
+  const [cliente, establecerCliente] = useState<OpcionPreparacion | null>(
+    clienteInicial ? { id: clienteInicial, nombre: t("cliente") } : null,
+  );
   const [categoria, establecerCategoria] = useState<OpcionPreparacion | null>(
     null,
   );
   const [buscar, establecerBuscar] = useState("");
   const [vista, establecerVista] = useState<"solicitado" | "pendiente">(
-    "solicitado",
+    "pendiente",
   );
   const [pagina, establecerPagina] = useState(1);
   const [paginaSucursales, establecerPaginaSucursales] = useState(1);
@@ -69,44 +73,53 @@ export default function HojaConsolidada({
     establecerPaginaSucursales(1);
   };
   return (
-    <div className="space-y-6">
-      <section className={`${clasePanel} p-5 sm:p-6`}>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          {t("elegirJornada")}
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
-          {t("jornadaAyuda")}
-        </p>
-        <div className="mt-5 grid gap-5 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="fecha-hoja-preparacion">{t("fechaPedidos")}</Label>
-            <CampoFecha
-              id="fecha-hoja-preparacion"
-              value={fecha}
-              required
-              alCambiar={(valor) => {
-                establecerFecha(valor);
-                establecerCliente(null);
+    <div className="space-y-4">
+      {!soloConsulta && (
+        <section className={`${clasePanel} p-5 sm:p-6`}>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            {t("elegirJornada")}
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+            {t("jornadaAyuda")}
+          </p>
+          <div className="mt-5 grid gap-5 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="fecha-hoja-preparacion">
+                {t("fechaPedidos")}
+              </Label>
+              <CampoFecha
+                id="fecha-hoja-preparacion"
+                value={fecha}
+                required
+                alCambiar={(valor) => {
+                  establecerFecha(valor);
+                  establecerCliente(null);
+                  establecerCategoria(null);
+                  reiniciar();
+                }}
+              />
+            </div>
+            <DesplegableCompra<OpcionPreparacion>
+              tipo="general"
+              key={fecha}
+              ruta={`preparaciones/clientes/?fecha_pedidos=${fecha}`}
+              etiqueta={t("cliente")}
+              valor={
+                datos && datos.cliente.id === cliente?.id
+                  ? datos.cliente
+                  : cliente
+              }
+              deshabilitado={!fecha}
+              alElegir={(valor) => {
+                establecerCliente(valor);
                 establecerCategoria(null);
                 reiniciar();
               }}
+              alError={alError}
             />
           </div>
-          <DesplegableCompra<OpcionPreparacion> tipo="general"
-            key={fecha}
-            ruta={`preparaciones/clientes/?fecha_pedidos=${fecha}`}
-            etiqueta={t("cliente")}
-            valor={datos && datos.cliente.id === cliente?.id ? datos.cliente : cliente}
-            deshabilitado={!fecha}
-            alElegir={(valor) => {
-              establecerCliente(valor);
-              establecerCategoria(null);
-              reiniciar();
-            }}
-            alError={alError}
-          />
-        </div>
-      </section>
+        </section>
+      )}
       {!cliente ? (
         <div
           className={`${clasePanel} p-10 text-center text-sm text-gray-500 dark:text-gray-400`}
@@ -120,17 +133,17 @@ export default function HojaConsolidada({
       ) : (
         <>
           {datos && (
-            <dl className="grid gap-3 sm:grid-cols-3">
+            <dl className="flex flex-wrap gap-x-5 gap-y-2 px-1">
               {[
                 ["pedidosDelDia", datos.resumen.pedidos],
                 ["sucursales", datos.sucursales.count],
                 ["productos", datos.resumen.productos],
               ].map(([clave, cantidad]) => (
-                <div key={clave} className={`${clasePanel} p-5`}>
+                <div key={clave} className="flex items-center gap-2">
                   <dt className="text-sm text-gray-500 dark:text-gray-400">
                     {t(String(clave))}
                   </dt>
-                  <dd className="mt-2 text-2xl font-semibold text-gray-900 tabular-nums dark:text-white">
+                  <dd className="text-sm font-semibold text-gray-900 tabular-nums dark:text-white">
                     {cantidad}
                   </dd>
                 </div>
@@ -169,7 +182,8 @@ export default function HojaConsolidada({
                     {t("imprimirHoja")}
                   </Link>
                 )}
-                {puedeCrear &&
+                {!soloConsulta &&
+                  puedeCrear &&
                   datos &&
                   datos.resumen.lineas_pendientes > 0 &&
                   datos.cliente.activo && (
@@ -214,7 +228,8 @@ export default function HojaConsolidada({
                 </Button>
               ))}
               {(categorias?.count || 0) > 10 && (
-                <DesplegableCompra<OpcionPreparacion> tipo="general"
+                <DesplegableCompra<OpcionPreparacion>
+                  tipo="general"
                   agregar
                   ruta={`preparaciones/categorias/?${contexto}`}
                   etiqueta={t("masCategorias")}

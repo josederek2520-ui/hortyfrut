@@ -57,7 +57,7 @@ export default function SelectorPedido({
       establecerFallo(false);
       try {
         const respuesta = await api<PaginaResultados<OpcionPedido>>(
-          `${ruta}?${new URLSearchParams({ buscar, pagina: String(pagina) })}`,
+          `${ruta}${ruta.includes("?") ? "&" : "?"}${new URLSearchParams({ buscar, pagina: String(pagina) })}`,
           { signal: controlador.signal },
         );
         establecerDatos(respuesta);

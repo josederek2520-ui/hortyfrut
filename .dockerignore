@@ -1,0 +1,10 @@
+.git
+.backups
+**/.env
+**/.venv
+**/node_modules
+**/.next
+**/__pycache__
+**/dist
+**/.datos
+Backend/media

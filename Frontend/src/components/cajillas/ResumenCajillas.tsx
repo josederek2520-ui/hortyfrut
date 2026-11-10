@@ -4,6 +4,7 @@ import {
   Warehouse as IconoAlmacen,
   Store as IconoSucursal,
   Container as IconoCajilla,
+  Truck as IconoVehiculo,
 } from "lucide-react";
 import type { ResumenCajillas as DatosResumen } from "./tipos";
 
@@ -15,7 +16,7 @@ export default function ResumenCajillas({
   const t = useTranslations("cajillas");
   const idioma = useLocale();
   return (
-    <dl className="grid gap-3 sm:grid-cols-3">
+    <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {[
         { clave: "en_almacen", Icono: IconoAlmacen, ayuda: "disponiblesAyuda" },
         {
@@ -23,6 +24,7 @@ export default function ResumenCajillas({
           Icono: IconoSucursal,
           ayuda: "prestadasAyuda",
         },
+        { clave: "en_transito", Icono: IconoVehiculo, ayuda: "transitoAyuda" },
         { clave: "total", Icono: IconoCajilla, ayuda: "totalAyuda" },
       ].map(({ clave, Icono, ayuda }) => (
         <div

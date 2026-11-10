@@ -30,6 +30,7 @@ export interface DetalleRecepcion {
   detalle_compra: number | null;
   producto: number;
   producto_nombre: string;
+  producto_imagen?: string | null;
   unidad_inventario: number;
   unidad_nombre: string;
   unidad_abreviatura: string;
@@ -84,4 +85,10 @@ export interface LineaRecepcion {
   proveedorNombre?: string;
   unidadCompra?: number | null;
   disponible?: boolean;
+  medicionesGuardadas?: {
+    unidad: number;
+    cantidadCompra: string;
+    cantidadInventario: string;
+    pesoKg: string;
+  };
 }

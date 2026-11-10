@@ -3,6 +3,7 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { CloseIcon } from "@/icons";
+import { bloquearDesplazamiento } from "@/lib/bloqueoDesplazamiento";
 
 interface ModalProps {
   isOpen: boolean;
@@ -13,6 +14,8 @@ interface ModalProps {
   isFullscreen?: boolean; // Default to false for backwards compatibility
   labelledBy?: string;
   closeLabel?: string;
+  posicion?: "centro" | "derecha";
+  claseFondo?: string;
 }
 
 const suscribirMontaje = () => () => {};
@@ -28,6 +31,8 @@ export const Modal: React.FC<ModalProps> = ({
   isFullscreen = false,
   labelledBy,
   closeLabel = "Close",
+  posicion = "centro",
+  claseFondo,
 }) => {
   const montado = useSyncExternalStore(
     suscribirMontaje,
@@ -52,6 +57,14 @@ export const Modal: React.FC<ModalProps> = ({
       focoInicial?.focus();
     }
     const handleEscape = (event: KeyboardEvent) => {
+      const abiertos = document.querySelectorAll(
+        '[role="dialog"][aria-modal="true"]',
+      );
+      if (
+        abiertos[abiertos.length - 1] !== modalRef.current ||
+        event.defaultPrevented
+      )
+        return;
       if (event.key === "Escape") {
         onCloseRef.current();
       }
@@ -85,25 +98,22 @@ export const Modal: React.FC<ModalProps> = ({
 
   useEffect(() => {
     if (!montado || !isOpen) return;
-    const desbordamientoAnterior = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = desbordamientoAnterior;
-    };
+    return bloquearDesplazamiento(document);
   }, [isOpen, montado]);
 
   if (!isOpen || !montado) return null;
 
   const contentClasses = isFullscreen
     ? "w-full h-full"
-    : "superficie-cristal superficie-cristal-modal relative w-full rounded-3xl border bg-white dark:bg-gray-900";
+    : `superficie-cristal superficie-cristal-modal relative w-full border bg-white dark:bg-gray-900 ${posicion === "derecha" ? "h-full" : "rounded-3xl"}`;
 
   return createPortal(
-    <div className="modal fixed inset-0 z-99999 flex items-center justify-center overflow-y-auto p-4 sm:p-6">
+    <div
+      className={`modal fixed inset-0 z-99999 flex ${posicion === "derecha" ? "items-stretch justify-end overflow-hidden" : "items-center justify-center overflow-y-auto p-4 sm:p-6"}`}
+    >
       {!isFullscreen && (
         <div
-          className="fixed inset-0 h-full w-full bg-gray-900/50 backdrop-blur-sm dark:bg-black/60"
+          className={`fixed inset-0 h-full w-full ${claseFondo || "bg-gray-900/50 backdrop-blur-sm dark:bg-black/60"}`}
           onClick={onClose}
         ></div>
       )}
@@ -120,12 +130,14 @@ export const Modal: React.FC<ModalProps> = ({
             onClick={onClose}
             type="button"
             aria-label={closeLabel}
-            className="absolute end-4 top-4 z-999 inline-flex size-9 items-center justify-center rounded-xl text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none sm:end-6 sm:top-5 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+            className="control-suave-hortyfru absolute end-4 top-4 z-999 inline-flex size-11 items-center justify-center rounded-xl text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none sm:end-6 sm:top-5 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-200"
           >
             <CloseIcon aria-hidden="true" className="size-4.5" />
           </button>
         )}
-        <div>{children}</div>
+        <div className={posicion === "derecha" ? "h-full" : undefined}>
+          {children}
+        </div>
       </div>
     </div>,
     document.body,

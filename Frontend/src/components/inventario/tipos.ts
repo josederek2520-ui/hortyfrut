@@ -14,7 +14,7 @@ export interface UnidadInventario {
   version: string;
 }
 export interface Lote {
-  calidad: "apto" | "aprovechable";
+  calidad: "apto" | "aprovechable" | "devuelto";
   lote_origen: number | null;
   preparacion: { id: number; codigo: string } | null;
   id: number;
@@ -37,9 +37,16 @@ export interface Lote {
   creado_en: string;
 }
 export interface MovimientoInventario {
-  tipo: "entrada_recepcion" | "salida_preparacion" | "entrada_aprovechable";
+  tipo:
+    | "entrada_recepcion"
+    | "salida_preparacion"
+    | "entrada_aprovechable"
+    | "entrada_devolucion"
+    | "salida_aprovechable_devolucion"
+    | "entrada_aprovechable_devolucion"
+    | "salida_merma_devolucion";
   naturaleza: "entrada" | "salida";
-  referencia_tipo: "recepcion" | "preparacion";
+  referencia_tipo: "recepcion" | "preparacion" | "devolucion";
   id: number;
   codigo: string;
   almacen_nombre: string;

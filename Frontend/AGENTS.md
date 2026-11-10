@@ -142,12 +142,12 @@ la gestión logística de frutas y verduras.
 
 - Verde principal: #16803C
 - Verde oscuro: #14532D
-- Fondo general neutro con luces suaves verdes y naranjas, según `src/app/tema-hortyfru.css`.
+- Tema Cristal salvia claro compartido mediante `src/app/tema-hortyfru.css`: fondo salvia tenue con iluminación estática y discreta, separado de las tarjetas blancas; en oscuro, carbón con matiz salvia.
 - Texto principal casi negro y grises neutros; en oscuro, texto claro sobre carbón.
-- Bordes grises suaves y tarjetas blancas; superficies carbón en oscuro.
-- Sidebar y navbar con cristal transparente; tarjetas y formularios con superficies neutras sólidas.
-- Los avisos compartidos de ToastViewport usan cristal ahumado, texto claro y acento según estado, abajo al extremo derecho. Conservar cierre, pausa por cursor/foco/pestaña oculta y preferencias de movimiento/transparencia.
-- Verde para acciones principales y naranja para acentos y selección de pestañas mediante `pestana-hortyfru`.
+- Bordes suaves y tarjetas blancas opacas con sombra discreta; superficies carbón con texto claro en oscuro.
+- Sidebar y navbar con cristal esmerilado, reflejo superior y borde iluminado; alternativa sólida sin soporte o con transparencia reducida. Controles suaves y campos claros con relieve interior sutil; capas flotantes opacas. Conservar el nombre compatible `superficie-cristal` y usar `control-suave-hortyfru`, `campo-suave-hortyfru` y `superficie-flotante-suave` para los papeles correspondientes. Los campos inválidos o de éxito conservan sus colores y validaciones. Alto contraste retira luces y desenfoque; conservar movimiento reducido y limitar la animación del sidebar a su ancho/desplazamiento.
+- Los avisos compartidos de ToastViewport se adaptan al tema: cristal blanco y texto oscuro en claro, cristal ahumado y texto claro en oscuro, con icono, cierre, barra y acento según estado. Se ubican abajo al extremo derecho. Conservar cierre, pausa por cursor/foco/pestaña oculta y preferencias de movimiento, transparencia y contraste.
+- Verde para acciones principales. `pestana-hortyfru` usa relieve blanco y texto verde en la selección, con equivalente oscuro; los indicadores seleccionables usan menta suave y borde tenue. Animar solo opacidad y transformación, sin subrayados naranjas, con movimiento reducido y foco visibles.
 - Utilizar colores de estado coherentes.
 
 ## Componentes

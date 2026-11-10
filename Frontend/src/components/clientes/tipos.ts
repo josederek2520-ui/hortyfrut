@@ -13,6 +13,7 @@ export interface Cliente extends RegistroComercial {
 }
 export interface Sucursal extends RegistroComercial {
   encargado_pedidos: { id: number; nombre: string; activo: boolean } | null;
+  encargado_recepcion?: { id: number; nombre: string; activo: boolean } | null;
   cliente: number;
   nombre: string;
   direccion: string;

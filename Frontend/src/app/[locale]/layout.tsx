@@ -1,6 +1,7 @@
 import { SidebarProvider } from "@/context/SidebarContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import FondoBotanico from "@/components/common/FondoBotanico";
+import ProveedorChat from "@/components/chat/ProveedorChat";
 import { isRtl } from "@/i18n/languages";
 import { type Locale, routing } from "@/i18n/routing";
 import "flatpickr/dist/flatpickr.css";
@@ -41,7 +42,9 @@ export default async function RootLayout({
         <FondoBotanico />
         <NextIntlClientProvider>
           <ThemeProvider>
-            <SidebarProvider>{children}</SidebarProvider>
+            <SidebarProvider>
+              <ProveedorChat>{children}</ProveedorChat>
+            </SidebarProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

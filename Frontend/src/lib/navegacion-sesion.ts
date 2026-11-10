@@ -19,5 +19,16 @@ export function rutaInicial(sesion: Sesion | null): string {
     return "/movimientos-inventario";
   if (sesion?.permisos_cajillas?.ver) return "/cajillas";
   if (sesion?.permisos_preparaciones?.ver) return "/preparaciones";
+  if (sesion?.permisos_despachos?.ver) return "/despachos";
+  if (sesion?.permisos_chofer?.ver) return "/mis-viajes";
+  if (sesion?.permisos_entregas?.ver) return "/entregas";
+  if (!sesion?.acceso_publico && sesion?.permisos_devoluciones?.ver)
+    return "/devoluciones";
+  if (sesion?.permisos_vehiculos?.ver) return "/vehiculos";
+  if (!sesion?.acceso_publico && sesion?.permisos_precios?.ver)
+    return "/precios-acordados";
+  if (!sesion?.acceso_publico && sesion?.permisos_respaldos?.ver)
+    return "/respaldos";
+  if (sesion?.user.is_active) return "/chat";
   return "/profile";
 }

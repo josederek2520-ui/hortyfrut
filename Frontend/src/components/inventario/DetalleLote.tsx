@@ -85,7 +85,7 @@ export default function DetalleLote({
             variant="outline"
             size="sm"
             disabled={
-              (lote.vencido || lote.calidad === "aprovechable") &&
+              (lote.vencido || lote.calidad !== "apto") &&
               lote.estado === "bloqueado"
             }
             onClick={() => {
@@ -139,13 +139,15 @@ export default function DetalleLote({
             t(
               lote.vencido
                 ? "vencido"
-                : lote.calidad === "aprovechable"
-                  ? "aprovechableAyuda"
-                  : lote.estado === "bloqueado"
-                    ? "bloqueado"
-                    : lote.disponible
-                      ? "disponible"
-                      : "noDisponible",
+                : lote.calidad === "devuelto"
+                  ? "devolucionRetenida"
+                  : lote.calidad === "aprovechable"
+                    ? "aprovechableAyuda"
+                    : lote.estado === "bloqueado"
+                      ? "bloqueado"
+                      : lote.disponible
+                        ? "disponible"
+                        : "noDisponible",
             ),
           ],
           [

@@ -8,6 +8,21 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        for nombre, codigos in [
+            ('Encargado de recepción de sucursal', ['view_entrega', 'add_entrega', 'change_entrega', 'enviar_entrega']),
+            ('Administrador de entregas', ['view_entrega', 'add_entrega', 'change_entrega', 'enviar_entrega', 'confirmar_entrega', 'ver_todas_entregas', 'gestionar_todas_entregas'])]:
+            rol, creado = Group.objects.get_or_create(name=nombre)
+            if creado:
+                rol.permissions.set(Permission.objects.filter(content_type__app_label='entregas', codename__in=codigos))
+                from auditoria.servicios import registrar_actividad
+                registrar_actividad('entregas', 'crear_rol', objeto=rol, objeto_nombre=nombre, origen='sistema')
+        for nombre_rol, aplicacion, modelo in [('Administrador de vehículos', 'vehiculos', 'vehiculo'), ('Administrador de despachos', 'despachos', 'despacho')]:
+            rol, creado = Group.objects.get_or_create(name=nombre_rol)
+            if creado:
+                rol.permissions.set(Permission.objects.filter(content_type__app_label=aplicacion, content_type__model=modelo))
+        choferes, creado = Group.objects.get_or_create(name='Chofer de despachos')
+        if creado:
+            choferes.permissions.set(Permission.objects.filter(content_type__app_label='despachos', codename__in=['conducir_despacho', 'ver_despachos_propios', 'operar_despachos_propios']))
         admin, created = Group.objects.get_or_create(name='Administrador de usuarios')
         if created:
             admin.permissions.set(Permission.objects.filter(content_type__app_label='usuarios', content_type__model='usuario').exclude(codename='delete_usuario'))

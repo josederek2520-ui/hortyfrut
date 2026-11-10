@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import PaginadorCompras from "./PaginadorCompras";
 import { mostrarFecha, mostrarImporte } from "./calculos";
 import type { Compra } from "./tipos";
+import ImagenProducto from "@/components/productos/ImagenProducto";
 
 export default function ResumenRegistroCompra({
   compra,
@@ -54,8 +55,7 @@ export default function ResumenRegistroCompra({
                 "proveedor",
                 "presentacionCompra",
                 "cantidadCorta",
-                "precioCorto",
-                "subtotal",
+                "totalProductoPagado",
               ].map((campo) => (
                 <th
                   key={campo}
@@ -77,9 +77,15 @@ export default function ResumenRegistroCompra({
                 >
                   <th
                     scope="row"
-                    className="min-w-28 px-3 py-3 text-start font-medium text-gray-900 dark:text-white"
+                    className="min-w-48 px-3 py-3 text-start font-medium text-gray-900 dark:text-white"
                   >
-                    {linea.producto_nombre}
+                    <span className="flex items-center gap-3">
+                      <ImagenProducto
+                        origen={linea.producto_imagen || null}
+                        nombre={linea.producto_nombre}
+                      />
+                      <span>{linea.producto_nombre}</span>
+                    </span>
                   </th>
                   <td className="min-w-28 px-3 py-3">
                     {linea.proveedor_nombre || "—"}
@@ -91,9 +97,6 @@ export default function ResumenRegistroCompra({
                     {new Intl.NumberFormat(idioma, {
                       maximumFractionDigits: 3,
                     }).format(Number(linea.cantidad))}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap tabular-nums">
-                    {mostrarImporte(linea.precio_unitario, idioma)}
                   </td>
                   <td className="px-3 py-3 font-medium whitespace-nowrap tabular-nums">
                     {mostrarImporte(linea.subtotal, idioma)}

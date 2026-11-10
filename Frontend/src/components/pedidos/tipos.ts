@@ -54,6 +54,13 @@ export interface LineaPedido {
   categoria_nombre: string;
 }
 export interface Pedido {
+  recepcion_confirmada?: {
+    producto: number;
+    cajas: number;
+    unidades: number;
+    peso_kg: string;
+    rechazado_kg: string;
+  }[];
   bloqueado_preparacion: boolean;
   puede_editar: boolean;
   puede_cancelar: boolean;

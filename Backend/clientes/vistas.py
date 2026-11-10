@@ -106,8 +106,9 @@ class VistaClientes(VistaDirectorio):
         if not request.user.has_perm('clientes.asignar_encargado') or not request.user.has_perm('clientes.view_cliente'):
             raise PermissionDenied()
         consulta = get_user_model().objects.filter(is_active=True)
-        for codigo in ('view_pedido', 'add_pedido'):
-            consulta = consulta.filter(Q(is_superuser=True) | Q(user_permissions__content_type__app_label='pedidos', user_permissions__codename=codigo) | Q(groups__permissions__content_type__app_label='pedidos', groups__permissions__codename=codigo))
+        aplicacion, modelo = ('entregas', 'entrega') if request.query_params.get('tipo') == 'recepcion' else ('pedidos', 'pedido')
+        for codigo in (f'view_{modelo}', f'add_{modelo}'):
+            consulta = consulta.filter(Q(is_superuser=True) | Q(user_permissions__content_type__app_label=aplicacion, user_permissions__codename=codigo) | Q(groups__permissions__content_type__app_label=aplicacion, groups__permissions__codename=codigo))
         buscar = request.query_params.get('buscar', '')[:150]
         consulta = consulta.filter(Q(first_name__icontains=buscar) | Q(last_name__icontains=buscar)).distinct().order_by('first_name', 'last_name', 'pk')
         return self.get_paginated_response([{'id': usuario.pk, 'nombre': usuario.get_full_name() or f'Cuenta #{usuario.pk}', 'activo': True} for usuario in self.paginate_queryset(consulta)])

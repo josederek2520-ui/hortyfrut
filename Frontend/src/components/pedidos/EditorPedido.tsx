@@ -490,9 +490,6 @@ export default function EditorPedido({
                   <h2 className="font-semibold text-gray-900 dark:text-white">
                     {t("productos")}
                   </h2>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {t("cantidadesAyuda")}
-                  </p>
                   <p className="mt-1 text-xs text-gray-400">
                     {t("configurarAyuda")}
                   </p>
@@ -627,6 +624,12 @@ export default function EditorPedido({
                   cantidades={cantidades}
                   errores={errores}
                   ocupado={guardando}
+                  recepciones={Object.fromEntries(
+                    (pedido?.recepcion_confirmada ?? []).map((fila) => [
+                      fila.producto,
+                      fila,
+                    ]),
+                  )}
                   alCambiar={cambiarCantidad}
                 />
               ) : (

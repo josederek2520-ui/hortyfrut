@@ -20,12 +20,13 @@ class SerializadorDetalleEscritura(SerializadorEstricto):
     proveedor = serializers.IntegerField(min_value=1, required=False, allow_null=True, default=None)
     cantidad = serializers.DecimalField(max_digits=12, decimal_places=3, min_value=Decimal('0'), default=Decimal('0'))
     precio_unitario = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('0'), default=Decimal('0'))
+    importe_total = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=Decimal('0'), required=False)
 
 
 class SerializadorEscrituraCompra(SerializadorEstricto):
     fecha_pedidos = serializers.DateField()
     fecha_compra = serializers.DateField()
-    observaciones = serializers.CharField(max_length=1000, allow_blank=True, required=False, default='')
+    observaciones = serializers.CharField(max_length=1000, allow_blank=True, required=False)
     detalles = SerializadorDetalleEscritura(many=True, max_length=500)
     clave_operacion = serializers.UUIDField(required=False)
     version = serializers.RegexField(r'\A[0-9a-f]{64}\Z', required=False)
@@ -52,8 +53,14 @@ class SerializadorCancelacionCompra(SerializadorAccionCompra):
 
 
 class SerializadorDetalleCompra(serializers.ModelSerializer):
+    importe_total = serializers.DecimalField(source='subtotal', max_digits=14, decimal_places=2, read_only=True)
+    producto_imagen = serializers.SerializerMethodField()
     cantidad_recibida = serializers.SerializerMethodField()
     cantidad_pendiente = serializers.SerializerMethodField()
+
+    def get_producto_imagen(self, obj):
+        from .consultas import ruta_imagen_compra
+        return ruta_imagen_compra(obj.producto_id, self.context.get('imagenes_productos', {}).get(obj.producto_id))
 
     def get_cantidad_recibida(self, obj):
         return str(self.context.get('avance_recepcion', {}).get(obj.pk, Decimal('0')))
@@ -64,7 +71,7 @@ class SerializadorDetalleCompra(serializers.ModelSerializer):
     class Meta:
         model = DetalleCompra
         fields = ('id', 'producto', 'presentacion', 'proveedor', 'producto_nombre', 'presentacion_nombre', 'unidad_nombre',
-                  'proveedor_nombre', 'cantidad', 'precio_unitario', 'subtotal', 'cantidad_recibida', 'cantidad_pendiente')
+                  'proveedor_nombre', 'cantidad', 'precio_unitario', 'subtotal', 'importe_total', 'cantidad_recibida', 'cantidad_pendiente', 'producto_imagen')
         read_only_fields = fields
 
 
@@ -103,7 +110,11 @@ class SerializadorCompraCompleta(SerializadorCompra):
 
     def to_representation(self, instance):
         from recepciones.consultas import avance_compra
+        from productos.models import Producto
         self.context['avance_recepcion'] = avance_compra(instance.pk)
+        # Una consulta para todas las fotos, también después de guardar/registrar.
+        self.context['imagenes_productos'] = dict(Producto.objects.filter(
+            pk__in=[detalle.producto_id for detalle in instance.detalles.all()]).values_list('pk', 'imagen'))
         return super().to_representation(instance)
 
     class Meta(SerializadorCompra.Meta):
@@ -118,10 +129,29 @@ class SerializadorFiltrosCompras(serializers.Serializer):
     fecha_compra = serializers.DateField(required=False)
 
 
+class CampoIdentificadoresProductos(serializers.CharField):
+    def __init__(self, **kwargs):
+        super().__init__(max_length=10500, allow_blank=True, **kwargs)
+
+    def to_internal_value(self, data):
+        texto = super().to_internal_value(data)
+        if not texto:
+            return []
+        partes = texto.split(',')
+        if len(partes) > 500:
+            raise serializers.ValidationError('Se admiten hasta 500 productos seleccionados.')
+        identificador = serializers.IntegerField(min_value=1, max_value=9223372036854775807)
+        return sorted({identificador.run_validation(parte) for parte in partes})
+
+
 class SerializadorNecesidades(serializers.Serializer):
     fecha_pedidos = serializers.DateField()
     vista = serializers.ChoiceField(choices=['resumen', 'sucursales'], default='resumen')
     buscar = serializers.CharField(max_length=150, allow_blank=True, required=False)
+    categoria = serializers.IntegerField(min_value=1, required=False)
+    solo_disponibles = serializers.BooleanField(default=False)
+    excluir_productos = CampoIdentificadoresProductos(required=False, default=list)
+    productos = CampoIdentificadoresProductos(required=False, default=list)
 
 
 class SerializadorOpcionesCompras(serializers.Serializer):
@@ -129,3 +159,5 @@ class SerializadorOpcionesCompras(serializers.Serializer):
     producto = serializers.IntegerField(min_value=1, required=False)
     categoria = serializers.IntegerField(min_value=1, required=False)
     todos = serializers.BooleanField(default=False)
+    fecha_pedidos = serializers.DateField(required=False)
+    excluir_productos = CampoIdentificadoresProductos(required=False, default=list)

@@ -12,6 +12,7 @@ import Button from "@/components/ui/button/Button";
 import { api, ApiError as ErrorApi } from "@/lib/api";
 import PaginadorCompras from "./PaginadorCompras";
 import ListaNecesidadesCompra from "./ListaNecesidadesCompra";
+import ImagenProducto from "@/components/productos/ImagenProducto";
 import {
   clasePanel,
   type PaginaNecesidades,
@@ -89,34 +90,47 @@ export default function NecesidadesCompra({
   }, [fecha, vista, buscar, pagina, revision, alError]);
   return (
     <section
-      className={`${clasePanel} space-y-4 p-5 ${compacta ? "" : "sm:p-6"}`}
+      className={`${clasePanel} space-y-4 ${compacta ? "p-4" : "p-5 sm:p-6"}`}
       aria-labelledby="titulo-necesidades-compra"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <h2
             id="titulo-necesidades-compra"
-            className="text-lg font-semibold text-gray-900 dark:text-white"
+            className={`${compacta ? "text-base" : "text-lg"} font-semibold text-gray-900 dark:text-white`}
           >
             {t(compacta ? "necesidadesDia" : "pedidosTitulo")}
           </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">
-            {t(compacta ? "necesidadesAyuda" : "pedidosAyuda")}
+            {t(compacta ? "necesidadesReferenciaBreve" : "pedidosAyuda")}
           </p>
         </div>
-        {fecha && (
-          <Button
-            size="sm"
-            variant="outline"
+        {fecha && compacta ? (
+          <button
+            type="button"
             disabled={cargando || deshabilitado}
-            startIcon={<IconoActualizar className="size-4" />}
             aria-label={t("actualizar")}
             title={t("actualizar")}
-            className={compacta ? "px-3!" : ""}
             onClick={() => establecerRevision((valor) => valor + 1)}
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-brand-400 disabled:opacity-40 dark:text-gray-400 dark:hover:bg-gray-800"
           >
-            {!compacta && t("actualizar")}
-          </Button>
+            <IconoActualizar className="size-4" aria-hidden="true" />
+          </button>
+        ) : (
+          fecha && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={cargando || deshabilitado}
+              startIcon={<IconoActualizar className="size-4" />}
+              aria-label={t("actualizar")}
+              title={t("actualizar")}
+              className={compacta ? "px-3!" : ""}
+              onClick={() => establecerRevision((valor) => valor + 1)}
+            >
+              {!compacta && t("actualizar")}
+            </Button>
+          )
         )}
       </div>
       {!fecha ? (
@@ -134,11 +148,13 @@ export default function NecesidadesCompra({
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div
+            className={`flex flex-wrap items-center justify-between ${compacta ? "gap-3" : "gap-4"}`}
+          >
             <div
               role="group"
               aria-label={t("vistaPedidos")}
-              className="inline-flex rounded-lg bg-gray-100 p-1 dark:bg-gray-800"
+              className={`inline-flex rounded-lg bg-gray-100 p-1 dark:bg-gray-800 ${compacta ? "w-full" : ""}`}
             >
               {(["resumen", "sucursales"] as const).map((valor) => (
                 <button
@@ -149,7 +165,7 @@ export default function NecesidadesCompra({
                     establecerVista(valor);
                     establecerPagina(1);
                   }}
-                  className={`pestana-hortyfru min-h-10 rounded-md px-3 py-2 text-sm font-medium focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none ${vista === valor ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white" : "text-gray-500 dark:text-gray-400"}`}
+                  className={`pestana-hortyfru min-h-10 rounded-md px-3 py-2 text-sm font-medium focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none ${compacta ? "flex-1" : ""} ${vista === valor ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white" : "text-gray-500 dark:text-gray-400"}`}
                 >
                   {t(`vistas.${valor}`)}
                 </button>
@@ -276,7 +292,13 @@ export default function NecesidadesCompra({
                         <>
                           <td className="min-w-40 px-4 py-3">
                             <span className="font-medium break-words text-gray-800 dark:text-gray-100">
-                              {fila.nombre}
+                              <span className="flex items-center gap-3">
+                                <ImagenProducto
+                                  origen={fila.imagen || null}
+                                  nombre={fila.nombre}
+                                />
+                                <span>{fila.nombre}</span>
+                              </span>
                             </span>
                             {!fila.disponible && (
                               <p className="mt-1 text-theme-xs text-warning-600 dark:text-warning-400">
@@ -315,7 +337,13 @@ export default function NecesidadesCompra({
                             </p>
                           </td>
                           <td className="min-w-36 px-4 py-3 text-gray-700 dark:text-gray-200">
-                            <p>{fila.producto_nombre}</p>
+                            <div className="flex items-center gap-3">
+                              <ImagenProducto
+                                origen={fila.producto_imagen || null}
+                                nombre={fila.producto_nombre}
+                              />
+                              <p>{fila.producto_nombre}</p>
+                            </div>
                             <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
                               {fila.presentacion_nombre}
                             </p>

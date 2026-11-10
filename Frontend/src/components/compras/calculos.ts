@@ -22,12 +22,17 @@ export function subtotalCentavos(
   return subtotal <= maximoCentavos ? subtotal : null;
 }
 
+export function importeCentavos(valor: string): bigint | null {
+  const importe = numeroEscalado(valor, 2);
+  return importe !== null && importe <= maximoCentavos ? importe : null;
+}
+
 export function totalCentavos(
-  lineas: { cantidad: string; precioUnitario: string }[],
+  lineas: { importeTotal: string }[],
 ): bigint | null {
   let total = BigInt(0);
   for (const linea of lineas) {
-    const subtotal = subtotalCentavos(linea.cantidad, linea.precioUnitario);
+    const subtotal = importeCentavos(linea.importeTotal);
     if (subtotal === null) return null;
     total += subtotal;
   }

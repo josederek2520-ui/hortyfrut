@@ -42,7 +42,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
     <div
       ref={dropdownRef}
       className={cn(
-        "absolute inset-e-0 z-40 mbs-2 rounded-xl border border-gray-200 bg-white shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark",
+        "superficie-flotante-suave absolute inset-e-0 z-40 mbs-2 rounded-xl border border-gray-200 bg-white shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark",
         className,
       )}
     >

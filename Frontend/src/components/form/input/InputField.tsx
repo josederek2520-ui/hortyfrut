@@ -41,6 +41,12 @@ const Input: FC<InputProps> = ({
         className={cn(
           "h-11 w-full appearance-none rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs transition-colors outline-none placeholder:text-gray-400 focus:ring-3 dark:placeholder:text-white/30",
           state,
+          !invalid &&
+            !success &&
+            !["checkbox", "radio", "range", "color", "file", "hidden"].includes(
+              type,
+            ) &&
+            "campo-suave-hortyfru",
           className,
         )}
       />

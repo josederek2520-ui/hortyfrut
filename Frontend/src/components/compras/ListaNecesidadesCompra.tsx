@@ -1,7 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 import { Check as IconoAgregado, Plus as IconoAgregar } from "lucide-react";
-import Button from "@/components/ui/button/Button";
+import ImagenProducto from "@/components/productos/ImagenProducto";
 import type {
   NecesidadProducto,
   NecesidadSucursal,
@@ -21,88 +21,81 @@ export default function ListaNecesidadesCompra({
 }) {
   const t = useTranslations("compras");
   return (
-    <ul className="custom-scrollbar divide-y divide-gray-100 overflow-y-auto rounded-xl border border-gray-200 2xl:max-h-[max(16rem,calc(100dvh-34rem))] dark:divide-gray-800 dark:border-gray-800">
-      {filas.map((fila) => (
-        <li key={fila.id} className="space-y-3 p-3">
-          {"cajas" in fila ? (
-            <>
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm font-semibold break-words text-gray-900 dark:text-white">
-                  {fila.nombre}
+    <ul className="custom-scrollbar divide-y divide-gray-100 overflow-y-auto 2xl:max-h-[max(18rem,calc(100dvh-27rem))] dark:divide-gray-800">
+      {filas.map((fila) => {
+        const resumen = "cajas" in fila;
+        const producto = resumen ? fila.id : fila.producto;
+        const nombre = resumen ? fila.nombre : fila.producto_nombre;
+        const imagen = resumen ? fila.imagen : fila.producto_imagen;
+        return (
+          <li key={fila.id} className="py-3 first:pt-0 last:pb-1">
+            {!resumen && (
+              <p className="mb-2 text-theme-xs leading-5 text-gray-500 dark:text-gray-400">
+                {fila.codigo} · {fila.cliente} · {fila.sucursal}
+              </p>
+            )}
+            <div className="flex items-start gap-3">
+              <ImagenProducto origen={imagen || null} nombre={nombre} />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm leading-5 font-semibold break-words text-gray-900 dark:text-white">
+                  {nombre}
                 </p>
-                {alAgregar && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={!fila.disponible || deshabilitado}
-                    className="shrink-0 px-2.5!"
-                    aria-label={t("agregarACompra", { nombre: fila.nombre })}
-                    startIcon={<IconoAgregar className="size-4" />}
-                    onClick={() => alAgregar(fila)}
-                  >
-                    {t("agregar")}
-                  </Button>
+                <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-theme-xs text-gray-600 tabular-nums dark:text-gray-300">
+                  {resumen ? (
+                    <>
+                      <span>
+                        <strong className="font-semibold">{fila.cajas}</strong>{" "}
+                        CANT
+                      </span>
+                      <span>
+                        <strong className="font-semibold">
+                          {fila.unidades}
+                        </strong>{" "}
+                        UNI
+                      </span>
+                    </>
+                  ) : (
+                    <span>
+                      {fila.cantidad} · {fila.presentacion_nombre} ·{" "}
+                      {fila.columna === "cajas" ? "CANT" : "UNI"}
+                    </span>
+                  )}
+                </p>
+                {!!productosAgregados[producto] && (
+                  <p className="mt-1.5 flex items-center gap-1 text-theme-xs font-medium text-brand-700 dark:text-brand-300">
+                    <IconoAgregado
+                      className="size-3.5 shrink-0"
+                      aria-hidden="true"
+                    />
+                    {t("enLaCompra")}
+                  </p>
+                )}
+                {resumen && !fila.disponible && (
+                  <p className="mt-1.5 text-theme-xs text-warning-600 dark:text-warning-400">
+                    {t("productoNoDisponible")}
+                  </p>
                 )}
               </div>
-              <dl className="grid grid-cols-2 gap-2 rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-800/50">
-                <div>
-                  <dt className="text-theme-xs text-gray-500 dark:text-gray-400">
-                    {t("cajas")}
-                  </dt>
-                  <dd className="mt-0.5 text-sm font-medium text-gray-800 tabular-nums dark:text-gray-100">
-                    {fila.cajas}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-theme-xs text-gray-500 dark:text-gray-400">
-                    {t("unidades")}
-                  </dt>
-                  <dd className="mt-0.5 text-sm font-medium text-gray-800 tabular-nums dark:text-gray-100">
-                    {fila.unidades}
-                  </dd>
-                </div>
-              </dl>
-              {!!productosAgregados[fila.id] && (
-                <p className="flex items-center gap-1.5 text-theme-xs text-brand-700 dark:text-brand-300">
-                  <IconoAgregado
-                    className="size-3.5 shrink-0"
-                    aria-hidden="true"
-                  />
-                  {t("yaAgregado", { cantidad: productosAgregados[fila.id] })}
-                </p>
+              {resumen && alAgregar && (
+                <button
+                  type="button"
+                  disabled={
+                    !fila.disponible ||
+                    deshabilitado ||
+                    !!productosAgregados[producto]
+                  }
+                  aria-label={t("agregarACompra", { nombre })}
+                  title={t("agregarACompra", { nombre })}
+                  onClick={() => alAgregar(fila)}
+                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-brand-100 bg-brand-50 text-brand-700 hover:bg-brand-100 focus-visible:ring-2 focus-visible:ring-brand-400 disabled:opacity-40 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/20"
+                >
+                  <IconoAgregar className="size-4" aria-hidden="true" />
+                </button>
               )}
-              {!fila.disponible && (
-                <p className="text-theme-xs text-warning-600 dark:text-warning-400">
-                  {t("productoNoDisponible")}
-                </p>
-              )}
-            </>
-          ) : (
-            <>
-              <div>
-                <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                  {fila.codigo} · {fila.cliente} · {fila.sucursal}
-                </p>
-                <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-                  {fila.producto_nombre}
-                </p>
-              </div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                {fila.cantidad} · {fila.presentacion_nombre} ·{" "}
-                {t(fila.columna === "cajas" ? "cajas" : "unidades")}
-              </p>
-              {!!productosAgregados[fila.producto] && (
-                <p className="flex items-center gap-1.5 text-theme-xs text-brand-700 dark:text-brand-300">
-                  <IconoAgregado className="size-3.5" aria-hidden="true" />
-                  {t("yaAgregado", {
-                    cantidad: productosAgregados[fila.producto],
-                  })}
-                </p>
-              )}
-            </>
-          )}
-        </li>
-      ))}
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }

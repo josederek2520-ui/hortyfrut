@@ -124,7 +124,14 @@ export default function HistorialCajillas({
             }}
           >
             <option value="">{t("todosTipos")}</option>
-            {["inicial", "ingreso", "salida", "devolucion"].map((valor) => (
+            {[
+              "inicial",
+              "ingreso",
+              "salida",
+              "devolucion",
+              "carga",
+              "entrega",
+            ].map((valor) => (
               <option key={valor} value={valor}>
                 {t(`tipos.${valor}`)}
               </option>

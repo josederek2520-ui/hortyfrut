@@ -13,11 +13,11 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({
   const t = useTranslations("common");
   return (
     <div
-      className={`flex flex-wrap items-center gap-3 ${ocultarTitulo ? "justify-end" : "mb-6 justify-between"}`}
+      className={`flex flex-wrap items-center gap-3 ${ocultarTitulo ? "justify-end" : "mb-3 justify-between"}`}
     >
       {!ocultarTitulo && (
         <h2
-          className="text-xl font-semibold text-gray-800 dark:text-white/90"
+          className="text-2xl font-semibold tracking-tight text-gray-800 sm:text-title-sm dark:text-white/90"
           x-text="pageName"
         >
           {pageTitle}

@@ -12,6 +12,7 @@ import { Link } from "@/i18n/navigation";
 import MigasPagina from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
 import PaginadorCompras from "./PaginadorCompras";
+import ImagenProducto from "@/components/productos/ImagenProducto";
 import { mostrarFecha, mostrarImporte } from "./calculos";
 import {
   clasePanel,
@@ -46,7 +47,7 @@ export default function DetalleCompra({
       (linea) =>
         !!linea.proveedor &&
         Number(linea.cantidad) > 0 &&
-        Number(linea.precio_unitario) > 0,
+        Number(linea.subtotal) > 0,
     );
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -199,16 +200,6 @@ export default function DetalleCompra({
             </p>
           </div>
         )}
-        {compra.observaciones && (
-          <div className="mt-5 border-t border-gray-100 pt-4 dark:border-gray-800">
-            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              {t("observaciones")}
-            </p>
-            <p className="mt-2 text-sm break-words whitespace-pre-wrap text-gray-700 dark:text-gray-200">
-              {compra.observaciones}
-            </p>
-          </div>
-        )}
       </section>
       <section className={`${clasePanel} space-y-5 p-5 sm:p-6`}>
         <div
@@ -246,8 +237,7 @@ export default function DetalleCompra({
                       "cantidadComprada",
                       "cantidadRecibida",
                       "cantidadPendiente",
-                      "precioUnitario",
-                      "subtotal",
+                      "totalProductoPagado",
                     ].map((clave) => (
                       <th
                         key={clave}
@@ -267,8 +257,14 @@ export default function DetalleCompra({
                         key={linea.id}
                         className="border-t border-gray-100 text-gray-700 dark:border-gray-800 dark:text-gray-200"
                       >
-                        <td className="min-w-36 px-4 py-4 font-medium break-words">
-                          {linea.producto_nombre}
+                        <td className="min-w-48 px-4 py-4 font-medium break-words">
+                          <span className="flex items-center gap-3">
+                            <ImagenProducto
+                              origen={linea.producto_imagen || null}
+                              nombre={linea.producto_nombre}
+                            />
+                            <span>{linea.producto_nombre}</span>
+                          </span>
                         </td>
                         <td className="min-w-36 px-4 py-4 break-words">
                           {linea.proveedor_nombre || t("sinProveedor")}
@@ -290,9 +286,6 @@ export default function DetalleCompra({
                           {new Intl.NumberFormat(idioma, {
                             maximumFractionDigits: 3,
                           }).format(Number(linea.cantidad_pendiente))}
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap tabular-nums">
-                          {mostrarImporte(linea.precio_unitario, idioma)}
                         </td>
                         <td className="px-4 py-4 font-medium whitespace-nowrap tabular-nums">
                           {mostrarImporte(linea.subtotal, idioma)}

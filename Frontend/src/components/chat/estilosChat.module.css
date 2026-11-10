@@ -1,0 +1,35 @@
+.chat {
+  display: flex;
+  min-width: 0;
+  height: var(--altura-chat, max(24rem, calc(100dvh - 17rem)));
+  overflow: hidden;
+  border: 1px solid var(--borde-contenido);
+}
+.lista,
+.conversacion {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.lista {
+  width: 100%;
+}
+.conversacion {
+  flex: 1;
+}
+.ocultoMovil {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .chat {
+    min-height: 34rem;
+  }
+  .lista {
+    width: clamp(17rem, 28%, 23rem);
+    flex-shrink: 0;
+    border-inline-end: 1px solid var(--borde-contenido);
+  }
+  .ocultoMovil {
+    display: flex;
+  }
+}

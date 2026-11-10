@@ -9,7 +9,7 @@ export default function DialogoTrabajoPreparacion({
   alCerrar,
   alConfirmar,
 }: {
-  tipo: "volver" | "recargar" | "almacen" | "lote";
+  tipo: "volver" | "recargar" | "almacen" | "lote" | "jornada";
   ocupado: boolean;
   alCerrar: () => void;
   alConfirmar: () => void;
@@ -31,22 +31,26 @@ export default function DialogoTrabajoPreparacion({
           className="pe-7 text-xl font-semibold text-gray-900 dark:text-white"
         >
           {t(
-            tipo === "almacen"
-              ? "cambiarAlmacenTrabajo"
-              : tipo === "lote"
-                ? "quitarLoteTrabajo"
-                : "cambiosSinGuardar",
+            tipo === "jornada"
+              ? "cambiarJornadaTrabajo"
+              : tipo === "almacen"
+                ? "cambiarAlmacenTrabajo"
+                : tipo === "lote"
+                  ? "quitarLoteTrabajo"
+                  : "cambiosSinGuardar",
           )}
         </h2>
         <p className="text-sm leading-6 text-gray-500 dark:text-gray-400">
           {t(
-            tipo === "almacen"
-              ? "cambiarAlmacenTrabajoAyuda"
-              : tipo === "lote"
-                ? "quitarLoteTrabajoAyuda"
-                : tipo === "recargar"
-                  ? "recargarTrabajoAyuda"
-                  : "salirTrabajoAyuda",
+            tipo === "jornada"
+              ? "cambiarJornadaAyudaTrabajo"
+              : tipo === "almacen"
+                ? "cambiarAlmacenTrabajoAyuda"
+                : tipo === "lote"
+                  ? "quitarLoteTrabajoAyuda"
+                  : tipo === "recargar"
+                    ? "recargarTrabajoAyuda"
+                    : "salirTrabajoAyuda",
           )}
         </p>
         <div className="flex flex-wrap justify-end gap-3">
@@ -63,13 +67,15 @@ export default function DialogoTrabajoPreparacion({
             {t(
               ocupado
                 ? "guardando"
-                : tipo === "almacen"
-                  ? "cambiarAlmacenTrabajo"
-                  : tipo === "lote"
-                    ? "quitarLoteTrabajo"
-                    : tipo === "recargar"
-                      ? "recargar"
-                      : "descartarSalir",
+                : tipo === "jornada"
+                  ? "descartarCambiarJornada"
+                  : tipo === "almacen"
+                    ? "cambiarAlmacenTrabajo"
+                    : tipo === "lote"
+                      ? "quitarLoteTrabajo"
+                      : tipo === "recargar"
+                        ? "recargar"
+                        : "descartarSalir",
             )}
           </Button>
         </div>

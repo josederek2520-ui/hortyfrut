@@ -90,7 +90,9 @@ def cambiar_estado_lote(actor, instancia, datos):
         raise ConflictoInventario()
     estado = formulario.validated_data['estado']
     if estado == 'disponible' and lote.calidad != 'apto':
-        raise ValidationError({'estado': 'El producto aprovechable conserva su separación para producción y no se habilita para pedidos.'})
+        mensaje = ('El producto devuelto permanece retenido hasta su revisión en Devoluciones.' if lote.calidad == 'devuelto' else
+            'El producto aprovechable conserva su separación para producción y no se habilita para pedidos.')
+        raise ValidationError({'estado': mensaje})
     if estado == 'disponible' and lote.fecha_vencimiento and lote.fecha_vencimiento < timezone.localdate():
         raise ValidationError({'estado': 'Un lote vencido no se puede habilitar como disponible.'})
     if lote.estado != estado:

@@ -33,8 +33,11 @@ class MovimientoCajilla(models.Model):
         INGRESO = 'ingreso', 'Ingreso'
         SALIDA = 'salida', 'Salida a sucursal'
         DEVOLUCION = 'devolucion', 'Devolución de sucursal'
+        CARGA = 'carga', 'Carga de despacho'
+        ENTREGA = 'entrega', 'Entrega de despacho'
 
     cajilla = models.ForeignKey(Cajilla, on_delete=models.PROTECT, related_name='movimientos')
+    despacho = models.ForeignKey('despachos.Despacho', on_delete=models.PROTECT, null=True, blank=True, related_name='movimientos_cajillas')
     color = models.CharField(max_length=60)
     tipo = models.CharField(max_length=12, choices=Tipo.choices)
     cantidad = models.PositiveIntegerField()
@@ -56,8 +59,9 @@ class MovimientoCajilla(models.Model):
         default_permissions = ()
         constraints = [
             models.CheckConstraint(condition=Q(cantidad__gte=1, cantidad__lte=2147483647), name='cajilla_cantidad_positiva'),
-            models.CheckConstraint(condition=(Q(tipo__in=['inicial', 'ingreso'], sucursal__isnull=True) |
-                                              Q(tipo__in=['salida', 'devolucion'], sucursal__isnull=False)), name='cajilla_movimiento_destino_valido'),
+            models.CheckConstraint(condition=(Q(tipo__in=['inicial', 'ingreso', 'carga'], sucursal__isnull=True) |
+                                              Q(tipo__in=['salida', 'devolucion', 'entrega'], sucursal__isnull=False)), name='cajilla_movimiento_destino_valido'),
+            models.CheckConstraint(condition=Q(tipo__in=['carga', 'entrega'], despacho__isnull=False) | Q(tipo__in=['inicial', 'ingreso', 'salida', 'devolucion'], despacho__isnull=True), name='cajilla_despacho_origen_valido'),
             models.UniqueConstraint(fields=['cajilla'], condition=Q(tipo='inicial'), name='cajilla_un_saldo_inicial'),
         ]
         indexes = [models.Index(fields=['cajilla', 'almacen']), models.Index(fields=['cajilla', 'sucursal'])]

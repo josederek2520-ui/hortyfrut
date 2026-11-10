@@ -1,0 +1,51 @@
+.entregas {
+  --superficie-interior: var(--color-white);
+  --superficie-contenido: var(--color-white);
+  --cabecera-contenido: var(--color-gray-50);
+  --texto-suave: var(--color-gray-900);
+  --texto-secundario-suave: var(--color-gray-600);
+  --sombra-hundida: inset 0 1px 2px rgb(16 24 40 / 3%);
+}
+
+:global(.dark) .entregas {
+  --superficie-interior: var(--color-gray-900);
+  --superficie-contenido: var(--color-gray-900);
+  --cabecera-contenido: var(--color-gray-800);
+  --texto-suave: var(--color-gray-100);
+  --texto-secundario-suave: var(--color-gray-300);
+  --sombra-hundida: inset 0 1px 2px rgb(0 0 0 / 12%);
+}
+
+.entregas :global(.boton-secundario-hortyfru) {
+  box-shadow: none;
+}
+
+.columnaRecibida {
+  background: var(--color-brand-25);
+}
+
+:global(.dark) .columnaRecibida {
+  background: var(--color-brand-950);
+}
+
+.barra {
+  padding-block-end: max(1rem, env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 16px -12px rgb(16 24 40 / 16%);
+}
+
+@media (prefers-contrast: more) {
+  .entregas,
+  :global(.dark) .entregas {
+    --sombra-hundida: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .entregas,
+  :global(.dark) .entregas {
+    --superficie-interior: Canvas;
+    --superficie-contenido: Canvas;
+    --texto-suave: CanvasText;
+    --texto-secundario-suave: CanvasText;
+  }
+}

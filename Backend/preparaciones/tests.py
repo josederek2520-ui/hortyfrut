@@ -106,6 +106,28 @@ class PruebasPreparaciones(DatosPreparaciones, TestCase):
         self.assertEqual(respuesta.data['sucursales']['count'], 2)
         self.assertEqual(respuesta.data['results'][0]['sucursales'][str(self.centro.pk)]['cajas']['solicitada'], 2)
 
+    def test_productos_todos_y_pendientes_conservan_solicitado_y_permisos(self):
+        filtros = {'cliente': self.cliente.pk, 'fecha_pedidos': str(self.hoy)}
+        self.confirmar(self.crear())
+        self.client.force_authenticate(self.lector)
+        parcial = self.client.get('/api/v1/preparaciones/productos/', filtros)
+        self.assertEqual(parcial.status_code, 200, parcial.data)
+        producto = parcial.data['results'][0]
+        self.assertEqual((producto['cajas'], producto['unidades']), (5, 10))
+        self.assertEqual((producto['pendientes_cajas'], producto['pendientes_unidades']), (0, 10))
+        self.confirmar(self.crear(lineas=[{'lote': self.lote.pk, 'cantidad_utilizada': '10'}],
+            asignaciones=[self.asignacion(self.centro_uni, 4, '4'), self.asignacion(self.norte_uni, 6, '6')]))
+        self.assertEqual(self.client.get('/api/v1/preparaciones/productos/', filtros).data['count'], 0)
+        todos = self.client.get('/api/v1/preparaciones/productos/', {**filtros, 'solo_pendientes': 'false'})
+        self.assertEqual(todos.data['count'], 1)
+        producto = todos.data['results'][0]
+        self.assertEqual((producto['cajas'], producto['unidades']), (5, 10))
+        self.assertEqual((producto['pendientes_cajas'], producto['pendientes_unidades']), (0, 0))
+        self.assertEqual(self.client.get('/api/v1/preparaciones/productos/', {**filtros, 'solo_pendientes': 'invalido'}).status_code, 400)
+        self.assertEqual(self.client.get('/api/v1/productos/').status_code, 403)
+        consolidado = self.client.get('/api/v1/preparaciones/consolidado/', filtros)
+        self.assertEqual(consolidado.data['results'][0]['categoria_id'], self.categoria.pk)
+
     def test_borrador_no_modifica_inventario_pedidos_ni_cajillas(self):
         preparacion = self.crear(cajillas=[{'sucursal': self.centro.pk, 'cajilla': self.cajilla.pk, 'cantidad': 2}])
         self.assertEqual(preparacion.estado, 'borrador')

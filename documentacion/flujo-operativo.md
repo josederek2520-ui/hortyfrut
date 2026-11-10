@@ -1,16 +1,17 @@
 # Cómo trabajar con HortyFru
 
 Esta guía corresponde a los módulos implementados actualmente. El trabajo diario
-llega hasta la preparación de los pedidos. Vehículos, Despachos, Mis despachos,
-seguimiento GPS y Entregas son las siguientes etapas por implementar.
+incluye Despachos, Mis viajes web con GPS consentido, supervisión y recepción en
+Entregas. La [guía de Entregas](entregas_recepcion_sucursales.md) explica el registro
+por sucursal, los rechazos y la confirmación de oficina.
 
 ## Cómo está organizado el menú
 
 | Bloque | Opciones, en su orden del menú | Para qué se usa |
 | --- | --- | --- |
-| Operación diaria | Pedidos, Compras, Recepciones, Preparación de pedidos | Registrar la demanda, adquirir productos, ingresarlos y preparar lo solicitado. |
+| Operación diaria | Pedidos, Compras, Recepciones, Preparación de pedidos, Despachos, Entregas, Seguimiento de camiones, Mis viajes, Chat | Registrar la demanda, adquirir productos, prepararlos, repartir y conciliar lo recibido. |
 | Inventario | Lotes, Movimientos de inventario, Cajillas, Almacenes | Consultar existencias, trazabilidad, recipientes y lugares de almacenamiento. |
-| Catálogos y contactos | Clientes, Proveedores, Productos, Categorías de productos, Unidades de medida | Mantener los datos con los que se trabaja. |
+| Catálogos y contactos | Clientes, Proveedores, Vehículos, Productos, Categorías de productos, Unidades de medida | Mantener los datos con los que se trabaja. |
 | Administración | Usuarios, Roles y permisos, Registro de actividad | Administrar accesos y revisar quién realizó cada operación. |
 
 **Mi cuenta** queda al pie del menú. Cada persona ve únicamente las opciones
@@ -141,8 +142,9 @@ preparaciones confirmadas conservan su historial y no se editan ni cancelan.
 - **Cajillas:** registra ingresos reales, salidas a sucursales y devoluciones
   parciales. Una salida reduce el disponible del almacén y deja pendiente a la
   sucursal; una devolución lo reduce y devuelve cajillas al almacén receptor.
-  Mientras no exista Despachos, estas operaciones se registran desde Cajillas
-  cuando ocurren físicamente. La previsión en Preparación no las registra.
+  Las operaciones manuales se registran cuando ocurren físicamente. En los
+  despachos, iniciar mueve cajillas al vehículo y descargar las entrega a la
+  sucursal. La previsión de Preparación no registra movimientos.
 - **Registro de actividad:** revisa responsable, fecha y cambios de las
   operaciones, según los permisos asignados.
 - Los listados muestran **10 registros por página**. Las fechas de creación
@@ -164,10 +166,42 @@ Ejemplo ilustrativo; no representa datos cargados automáticamente al sistema:
 5. Si planificas 5 cajillas verdes, el inventario de cajillas todavía conserva
    su saldo. La salida real se registra cuando se envían físicamente.
 
-## 5. Continuación pendiente de implementar
+## 5. Vehículos y despachos
 
-El siguiente tramo será **Vehículos → Despachos → Mis despachos y GPS → Entregas**.
-Permitirá asignar vehículo y usuario chofer, organizar paradas, registrar la salida,
-compartir ubicación voluntariamente, supervisar el viaje y registrar la descarga
-y lo aceptado por la sucursal. El despacho reutilizará la salida de productos
-de la preparación, sin descontarlos de nuevo.
+En **Vehículos**, registra placa y tipo, junto con marca, capacidad declarada y
+foto si corresponden. Asigna a los usuarios choferes el permiso «Ser asignado
+como chofer» desde Roles; no se necesita un módulo de Empleados.
+
+En **Despachos → Nuevo despacho**, sigue la hoja:
+
+1. **Carga:** elige almacén y fecha de reparto; marca las sucursales con carga
+   confirmada. Una sucursal reúne sus productos aunque ocupen varias páginas.
+   En **Ver productos** puedes ajustar las cantidades preparadas que viajarán;
+   cada cantidad conserva todos sus aportes de lotes. La fecha del pedido es un
+   filtro opcional independiente de la fecha del viaje.
+   Cada sucursal muestra sus pedidos con código, fecha requerida y cantidades
+   preparadas. Puedes incluir un pedido o toda la carga de esa sucursal.
+   Cambiar filtros conserva lo elegido y avisa si hay carga de otras fechas.
+2. **Transporte y ruta:** asigna vehículo y usuario chofer, ordena las sucursales
+   y revisa las cajillas reales por color. El resumen muestra el peso y la
+   capacidad del vehículo en toneladas.
+3. **Revisión:** guarda el borrador y comprueba los datos antes de iniciar.
+   Para guardar un borrador también se necesitan vehículo y chofer.
+
+Iniciar registra la salida real y mueve las cajillas del almacén al vehículo.
+La misma carga no se asigna a dos despachos activos, y vehículo/chofer no pueden
+tener dos viajes en ruta. Cancelar un borrador libera su carga y conserva la
+historia. Un viaje iniciado ya no se edita ni cancela como borrador.
+
+En la ficha registra llegada a la siguiente sucursal, comprueba cada producto y
+confirma la descarga. Esto registra cajillas entregadas y su pendiente por
+sucursal. Finaliza el viaje al completar todas las descargas. Los productos
+conservan la salida de Preparaciones, sin otro descuento. La aceptación de pesos
+por la sucursal se conciliará en Entregas.
+
+## 6. Continuación pendiente de implementar
+
+El siguiente tramo es **Mis despachos y GPS → Entregas**, para trabajar desde el
+espacio propio del chofer, compartir ubicación voluntariamente y conciliar los
+pesos aceptados por la sucursal. El recorrido administrativo ya se registra en
+Despachos; no se genera una segunda salida de productos.

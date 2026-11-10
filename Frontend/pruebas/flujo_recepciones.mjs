@@ -64,6 +64,109 @@ const validar = (lineas, confirmar = true, vinculada = true) =>
   validarLineasRecepcion(lineas, vinculada, confirmar, "2026-10-27", mensajes);
 
 prueba(
+  "enteros y decimales guardados se muestran sin ceros sobrantes ni redondeo",
+  () => {
+    for (const [valor, esperado] of [
+      ["1.000", "1"],
+      ["3.000", "3"],
+      ["0.000", "0"],
+      ["1.500", "1.5"],
+      ["2,5", "2.5"],
+      ["6.125", "6.125"],
+      ["", ""],
+    ])
+      afirmar.equal(calculos.compactarCantidadRecepcion(valor), esperado);
+  },
+);
+
+prueba(
+  "la entrada admite enteros, coma o punto y un solo decimal significativo",
+  () => {
+    afirmar.equal(calculos.entradaCantidadRecepcion("1", ""), "1");
+    afirmar.equal(calculos.entradaCantidadRecepcion("1,5", "1,"), "1,5");
+    afirmar.equal(calculos.entradaCantidadRecepcion("1.5", "1."), "1.5");
+    afirmar.equal(calculos.entradaCantidadRecepcion("1.52", "1.5"), null);
+    afirmar.equal(calculos.entradaCantidadRecepcion("1,52", "1,5"), null);
+    afirmar.equal(calculos.entradaCantidadRecepcion("1.500", ""), "1.5");
+    afirmar.equal(calculos.entradaCantidadRecepcion(",5", ""), "0,5");
+    afirmar.equal(calculos.entradaCantidadRecepcion("", "1"), "");
+  },
+);
+
+prueba(
+  "las cantidades nuevas con mas de un decimal se rechazan tambien al guardar borrador",
+  () => {
+    for (const confirmar of [false, true]) {
+      const errores = validar(
+        [
+          {
+            ...linea(),
+            cantidadCompra: "1.25",
+            cantidadInventario: "2.25",
+            unidad: { id: 3, nombre: "Unidad", abreviatura: "u", es_kg: false },
+            pesoKg: "6.25",
+          },
+        ],
+        confirmar,
+      );
+      afirmar.equal(errores.detalle_0_cantidad_compra[0], "cantidad");
+      afirmar.equal(errores.detalle_0_cantidad_inventario[0], "cantidad");
+      afirmar.equal(errores.detalle_0_peso_kg[0], "peso");
+    }
+  },
+);
+
+prueba(
+  "una medicion historica conserva su precision exacta y la excepcion no permite nuevos valores",
+  () => {
+    const historica = calculos.lineasDesdeRecepcion({
+      detalles: [
+        {
+          id: 7,
+          detalle_compra: 1,
+          producto: 10,
+          producto_nombre: "Banana",
+          unidad_inventario: 2,
+          unidad_nombre: "Kilogramo",
+          unidad_abreviatura: "kg",
+          es_kg: true,
+          medida_compra_nombre: "Caja",
+          cantidad_compra: "1.000",
+          cantidad_inventario: "6.125",
+          peso_kg: "6.125",
+        },
+      ],
+    })[0];
+    afirmar.equal(historica.cantidadCompra, "1");
+    afirmar.equal(historica.cantidadInventario, "6.125");
+    afirmar.equal(Object.keys(validar([historica])).length, 0);
+    afirmar.equal(
+      calculos.serializarLineasRecepcion([historica], true)[0]
+        .cantidad_inventario,
+      "6.125",
+    );
+    afirmar.equal(
+      "medicionesGuardadas" in
+        calculos.serializarLineasRecepcion([historica], true)[0],
+      false,
+    );
+    afirmar.equal(
+      validar([{ ...historica, cantidadInventario: "6.12" }])
+        .detalle_0_cantidad_inventario[0],
+      "cantidad",
+    );
+    const otraUnidad = {
+      ...historica,
+      unidad: { id: 3, nombre: "Unidad", abreviatura: "u", es_kg: false },
+    };
+    afirmar.equal(
+      validar([otraUnidad]).detalle_0_cantidad_inventario[0],
+      "cantidad",
+    );
+  },
+);
+
+prueba(
   "cargar pendientes no rellena cantidades ni mezcla proveedores del mismo producto",
   () => {
     const primera = calculos.lineaDesdeOpcion(opcion());
@@ -81,21 +184,21 @@ prueba(
     const nueva = calculos.actualizarMedicion(linea(), { cantidadCompra: "7" });
     afirmar.equal(nueva.cantidadInventario, "120");
     const pesada = calculos.actualizarMedicion(nueva, {
-      cantidadInventario: "113,250",
+      cantidadInventario: "113,2",
     });
     afirmar.equal(pesada.cantidadCompra, "7");
     const carga = calculos.serializarLineasRecepcion([pesada], true)[0];
     afirmar.equal(carga.cantidad_compra, "7");
-    afirmar.equal(carga.cantidad_inventario, "113.250");
+    afirmar.equal(carga.cantidad_inventario, "113.2");
     afirmar.equal(Object.keys(validar([pesada])).length, 0);
   },
 );
 prueba("solo una unidad base idéntica comparte el campo de cantidad", () => {
   const base = { ...linea(), unidadCompra: 2, medidaCompra: "Kilogramo" };
   const nueva = calculos.actualizarMedicion(base, {
-    cantidadInventario: "6,125",
+    cantidadInventario: "6,1",
   });
-  afirmar.equal(nueva.cantidadCompra, "6,125");
+  afirmar.equal(nueva.cantidadCompra, "6,1");
   afirmar.equal(Object.keys(validar([nueva])).length, 0);
   afirmar.equal(calculos.mismaUnidadRecepcion(linea()), false);
   afirmar.equal(
@@ -160,7 +263,7 @@ prueba(
   "la revisión valida también filas de páginas posteriores y el pendiente exacto",
   () => {
     const lineas = Array.from({ length: 11 }, (_, indice) => linea(indice + 1));
-    lineas[10].cantidadCompra = "10.001";
+    lineas[10].cantidadCompra = "10.1";
     afirmar.equal(validar(lineas).detalle_10_cantidad_compra[0], "pendiente");
     lineas[10].cantidadCompra = "9.1234";
     afirmar.equal(validar(lineas).detalle_10_cantidad_compra[0], "cantidad");
@@ -199,7 +302,7 @@ prueba(
   },
 );
 prueba(
-  "peso adicional y vencimiento se validan aun cuando están en Más datos",
+  "el vencimiento visible y el peso adicional conservan sus validaciones",
   () => {
     const adicional = {
       ...linea(),
@@ -210,5 +313,44 @@ prueba(
     const errores = validar([adicional], false);
     afirmar.equal(errores.detalle_0_peso_kg[0], "peso");
     afirmar.equal(errores.detalle_0_fecha_vencimiento[0], "vencimiento");
+  },
+);
+
+prueba(
+  "la foto y el vencimiento sobreviven al guardado sin enviar imágenes ni completar cantidades",
+  () => {
+    const imagen = "/api/v1/recepciones/imagenes/10/?v=prueba";
+    const cargada = calculos.lineaDesdeOpcion({ ...opcion(), imagen });
+    afirmar.equal(cargada.producto.imagen, imagen);
+    afirmar.equal(cargada.cantidadCompra, "");
+    afirmar.equal(cargada.cantidadInventario, "");
+    const guardada = calculos.lineasDesdeRecepcion({
+      detalles: [
+        {
+          id: 7,
+          detalle_compra: 1,
+          producto: 10,
+          producto_nombre: "Banana",
+          producto_imagen: imagen,
+          unidad_inventario: 2,
+          unidad_nombre: "Kilogramo",
+          unidad_abreviatura: "kg",
+          es_kg: true,
+          medida_compra_nombre: "Caja",
+          cantidad_compra: "1.000",
+          cantidad_inventario: "6.000",
+          fecha_vencimiento: "2026-10-31",
+          peso_kg: null,
+        },
+      ],
+    })[0];
+    afirmar.equal(guardada.producto.imagen, imagen);
+    afirmar.equal(guardada.vencimiento, "2026-10-31");
+    const carga = calculos.serializarLineasRecepcion([guardada], true)[0];
+    afirmar.equal(carga.fecha_vencimiento, "2026-10-31");
+    afirmar.equal(carga.cantidad_compra, "1");
+    afirmar.equal(carga.cantidad_inventario, "6");
+    afirmar.equal("producto_imagen" in carga, false);
+    afirmar.equal("imagen" in carga, false);
   },
 );

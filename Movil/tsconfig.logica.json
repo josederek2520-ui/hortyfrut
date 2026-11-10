@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "lib": ["ES2022", "DOM"],
+    "types": [],
+    "paths": { "@/*": ["./src/*"] },
+    "noEmit": true
+  },
+  "include": [
+    "src/compartido/dominio/**/*.ts",
+    "src/infraestructura/api/**/*.ts",
+    "src/modulos/despachos/dominio/**/*.ts",
+    "src/modulos/despachos/datos/**/*.ts",
+    "src/modulos/sesion/dominio/**/*.ts",
+    "src/modulos/sesion/aplicacion/**/*.ts",
+    "src/modulos/recorrido/aplicacion/**/*.ts",
+    "src/modulos/seguimiento/dominio/**/*.ts",
+    "src/modulos/seguimiento/aplicacion/**/*.ts",
+    "src/modulos/seguimiento/datos/RepositorioSeguimientoHttp.ts"
+  ]
+}

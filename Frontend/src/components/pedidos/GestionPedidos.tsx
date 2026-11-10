@@ -5,7 +5,13 @@ import { Link } from "@/i18n/navigation";
 import { api, ApiError as ErrorApi } from "@/lib/api";
 import { CircleX as IconoCancelar } from "lucide-react";
 import { useModal } from "@/hooks/useModal";
-import { PlusIcon, SearchIcon, PencilIcon, IconoPedidos } from "@/icons";
+import {
+  PlusIcon,
+  SearchIcon,
+  PencilIcon,
+  IconoPedidos,
+  EyeIcon,
+} from "@/icons";
 import Button from "@/components/ui/button/Button";
 import CampoFecha from "@/components/form/CampoFecha";
 import MigasPagina from "@/components/common/PageBreadCrumb";
@@ -14,6 +20,7 @@ import type { Session as Sesion } from "@/components/users/types";
 import useAvisosPedidos from "./useAvisosPedidos";
 import PaginadorPedidos from "./PaginadorPedidos";
 import CancelarPedido from "./CancelarPedido";
+import ConsultaRecepcionPedido from "./ConsultaRecepcionPedido";
 import {
   claseEntrada,
   clasePanel,
@@ -29,6 +36,9 @@ export default function GestionPedidos({ sesion }: { sesion: Sesion }) {
     idioma = useLocale();
   const { avisos, notificar, cerrarAviso, tratarError } = useAvisosPedidos();
   const confirmacion = useModal();
+  const [pedidoConsultar, establecerPedidoConsultar] = useState<Pedido | null>(
+    null,
+  );
   const [pedidoCancelar, establecerPedidoCancelar] = useState<Pedido | null>(
     null,
   );
@@ -120,7 +130,8 @@ export default function GestionPedidos({ sesion }: { sesion: Sesion }) {
   const claseAccion =
     "inline-flex size-10 items-center justify-center rounded-lg text-gray-500 hover:bg-brand-50 hover:text-brand-600 focus-visible:outline-2 focus-visible:outline-brand-500 dark:hover:bg-brand-500/10";
   return (
-    <>
+    <
+    >
       <div className="space-y-6">
         <div>
           <MigasPagina pageTitle={t("titulo")} />
@@ -175,6 +186,9 @@ export default function GestionPedidos({ sesion }: { sesion: Sesion }) {
               <SearchIcon className="absolute start-3 top-3.5 size-4 text-gray-400" />
               <input
                 id="buscar-pedidos"
+                type="search"
+                name="filtro_pedidos"
+                autoComplete="off"
                 value={buscar}
                 onChange={(evento) => {
                   establecerBuscar(evento.target.value);
@@ -268,6 +282,15 @@ export default function GestionPedidos({ sesion }: { sesion: Sesion }) {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            className={claseAccion}
+                            title={t("consultarRecepcion")}
+                            aria-label={`${t("consultarRecepcion")} ${pedido.codigo}`}
+                            onClick={() => establecerPedidoConsultar(pedido)}
+                          >
+                            <EyeIcon className="size-4" />
+                          </button>
                           {pedido.puede_editar && (
                             <Link
                               href={`/pedidos/${pedido.id}/editar`}
@@ -331,6 +354,13 @@ export default function GestionPedidos({ sesion }: { sesion: Sesion }) {
           }}
           alRecargar={actualizarListado}
           alError={tratarError}
+        />
+      )}
+      {pedidoConsultar && (
+        <ConsultaRecepcionPedido
+          key={pedidoConsultar.id}
+          pedido={pedidoConsultar}
+          alCerrar={() => establecerPedidoConsultar(null)}
         />
       )}
       <Notificaciones toasts={avisos} onDismiss={cerrarAviso} />

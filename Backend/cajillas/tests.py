@@ -81,7 +81,7 @@ class PruebasCajillas(DatosCajillas, TestCase):
         self.assertEqual(devolucion.data['cajilla']['total'], 100)
 
     def test_saldos_vacios_y_selector_salida_excluye_almacen_inactivo(self):
-        self.assertEqual(self.client.get('/api/v1/cajillas/resumen/').data, {'total': 0, 'en_almacen': 0, 'en_sucursales': 0, 'colores': 0})
+        self.assertEqual(self.client.get('/api/v1/cajillas/resumen/').data, {'total': 0, 'en_almacen': 0, 'en_sucursales': 0, 'en_transito': 0, 'colores': 0})
         cajilla = self.crear()
         self.almacen.activo = False
         self.almacen.save()
@@ -245,7 +245,7 @@ class PruebasCajillas(DatosCajillas, TestCase):
             self.assertEqual(len(datos.data['results']), 10)
         resumen = self.client.get('/api/v1/cajillas/resumen/')
         self.assertEqual(resumen.status_code, 200, resumen.data)
-        self.assertEqual(resumen.data, {'total': 111, 'en_almacen': 111, 'en_sucursales': 0, 'colores': 12})
+        self.assertEqual(resumen.data, {'total': 111, 'en_almacen': 111, 'en_sucursales': 0, 'en_transito': 0, 'colores': 12})
         self.assertEqual(self.client.get(f'/api/v1/cajillas/{cajilla.pk}/saldos-almacenes/').data['results'][0]['cantidad'], 111)
 
     def test_rol_inicial_no_amplia_roles_existentes(self):

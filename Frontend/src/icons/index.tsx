@@ -39,6 +39,8 @@ export { default as UploadIcon } from "./upload.svg";
 export { default as VideoIcon } from "./videos.svg";
 
 // Centralized Lucide icons for consistent geometry and accessible SVG components.
+export { default as IconoAlmacenMapa } from "./almacen-mapa.svg";
+export { default as IconoSucursalMapa } from "./sucursales-mapa.svg";
 export {
   CircleAlert as AlertIcon,
   ArrowRight as ArrowRightIcon,

@@ -5,6 +5,66 @@ import type {
 } from "./tipos";
 import type { FieldErrors as ErroresCampos } from "@/lib/form-validation";
 
+export type CampoCantidadRecepcion =
+  "cantidadCompra" | "cantidadInventario" | "pesoKg";
+
+// Quitar ceros no cambia el valor ni redondea mediciones históricas.
+export function compactarCantidadRecepcion(valor: string): string {
+  let normalizado = valor.trim().replace(",", ".");
+  if (!normalizado) return "";
+  if (normalizado.startsWith(".")) normalizado = `0${normalizado}`;
+  if (!/^\d+(?:\.\d*)?$/.test(normalizado)) return valor;
+  const [entero, decimal = ""] = normalizado.split(".");
+  const parteEntera = entero.replace(/^0+(?=\d)/, "");
+  const parteDecimal = decimal.replace(/0+$/, "");
+  return parteDecimal ? `${parteEntera}.${parteDecimal}` : parteEntera;
+}
+
+export function esMedicionGuardadaRecepcion(
+  linea: LineaRecepcion,
+  campo: CampoCantidadRecepcion,
+  valor: string,
+): boolean {
+  const guardadas = linea.medicionesGuardadas;
+  return (
+    !!guardadas &&
+    (campo === "cantidadCompra" || guardadas.unidad === linea.unidad.id) &&
+    compactarCantidadRecepcion(valor) === guardadas[campo]
+  );
+}
+
+export function precisionCantidadRecepcionValida(
+  linea: LineaRecepcion,
+  campo: CampoCantidadRecepcion,
+): boolean {
+  const valor = compactarCantidadRecepcion(linea[campo]);
+  return (
+    !valor ||
+    /^\d+(?:\.\d)?$/.test(valor) ||
+    esMedicionGuardadaRecepcion(linea, campo, valor)
+  );
+}
+
+export function entradaCantidadRecepcion(
+  siguiente: string,
+  actual: string,
+  enteros = 11,
+): string | null {
+  // Permitir borrar dígitos de una medición histórica sin bloquear el teclado.
+  const decimales =
+    (compactarCantidadRecepcion(actual).split(".")[1]?.length || 0) > 1 ? 3 : 1;
+  if (
+    new RegExp(`^[0-9]{0,${enteros}}(?:[.,][0-9]{0,${decimales}})?$`).test(
+      siguiente,
+    )
+  )
+    return /^[.,]/.test(siguiente) ? `0${siguiente}` : siguiente;
+  const compactado = compactarCantidadRecepcion(siguiente);
+  return new RegExp(`^[0-9]{1,${enteros}}(?:\\.[0-9])?$`).test(compactado)
+    ? compactado
+    : null;
+}
+
 // Elegir una unidad o ver una fila no implica que haya llegado producto.
 export function seleccionarLineasRecepcion(lineas: LineaRecepcion[]) {
   const indices: number[] = [];
@@ -79,7 +139,11 @@ export function lineaDesdeOpcion(
   return {
     clave: `compra-${opcion.id}`,
     detalleCompra: opcion.id,
-    producto: { id: opcion.producto, nombre: opcion.nombre },
+    producto: {
+      id: opcion.producto,
+      nombre: opcion.nombre,
+      imagen: opcion.imagen,
+    },
     unidad: opcion.unidad,
     medidaCompra: opcion.medida_compra || "",
     pendiente: opcion.cantidad_pendiente,
@@ -100,7 +164,11 @@ export function lineasDesdeRecepcion(recepcion?: Recepcion): LineaRecepcion[] {
       : `detalle-${linea.id}`,
     id: linea.id,
     detalleCompra: linea.detalle_compra,
-    producto: { id: linea.producto, nombre: linea.producto_nombre },
+    producto: {
+      id: linea.producto,
+      nombre: linea.producto_nombre,
+      imagen: linea.producto_imagen,
+    },
     unidad: {
       id: linea.unidad_inventario,
       nombre: linea.unidad_nombre,
@@ -111,9 +179,15 @@ export function lineasDesdeRecepcion(recepcion?: Recepcion): LineaRecepcion[] {
     pendiente: linea.cantidad_pendiente ?? undefined,
     proveedorNombre: linea.proveedor_nombre,
     unidadCompra: linea.unidad_compra ?? null,
-    cantidadCompra: linea.cantidad_compra,
-    cantidadInventario: linea.cantidad_inventario,
-    pesoKg: linea.peso_kg || "",
+    cantidadCompra: compactarCantidadRecepcion(linea.cantidad_compra),
+    cantidadInventario: compactarCantidadRecepcion(linea.cantidad_inventario),
+    pesoKg: compactarCantidadRecepcion(linea.peso_kg || ""),
+    medicionesGuardadas: {
+      unidad: linea.unidad_inventario,
+      cantidadCompra: compactarCantidadRecepcion(linea.cantidad_compra),
+      cantidadInventario: compactarCantidadRecepcion(linea.cantidad_inventario),
+      pesoKg: compactarCantidadRecepcion(linea.peso_kg || ""),
+    },
     vencimiento: linea.fecha_vencimiento || "",
   }));
 }
@@ -122,7 +196,8 @@ export function serializarLineasRecepcion(
   lineas: LineaRecepcion[],
   vinculada: boolean,
 ) {
-  const normalizar = (valor: string) => valor.trim().replace(",", ".") || "0";
+  const normalizar = (valor: string) =>
+    compactarCantidadRecepcion(valor) || "0";
   return lineas.map((linea) => ({
     ...(linea.id ? { id: linea.id } : {}),
     detalle_compra: linea.detalleCompra,

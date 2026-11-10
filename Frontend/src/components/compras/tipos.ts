@@ -11,6 +11,7 @@ export interface OpcionCompra {
   nombre: string;
   subtitulo?: string;
   unidad_nombre?: string;
+  imagen?: string | null;
   categoria?: { id: number; nombre: string } | null;
 }
 export interface DetalleCompra {
@@ -19,12 +20,14 @@ export interface DetalleCompra {
   presentacion: number | null;
   proveedor: number | null;
   producto_nombre: string;
+  producto_imagen?: string | null;
   presentacion_nombre: string;
   unidad_nombre: string;
   proveedor_nombre: string;
   cantidad: string;
   precio_unitario: string;
   subtotal: string;
+  importe_total?: string;
   cantidad_recibida: string;
   cantidad_pendiente: string;
 }
@@ -70,7 +73,21 @@ export interface LineaFormularioCompra {
   presentacion: OpcionCompra | null;
   proveedor: OpcionCompra | null;
   cantidad: string;
-  precioUnitario: string;
+  importeTotal: string;
+  precioUnitario?: string;
+}
+export interface ProductoAgregarCompra extends OpcionCompra {
+  cajas?: number;
+  unidades?: number;
+  pedidos?: number;
+  disponible?: boolean;
+}
+export interface DatosProductoCompra {
+  producto: ProductoAgregarCompra;
+  presentacion: OpcionCompra | null;
+  proveedor: OpcionCompra | null;
+  cantidad: string;
+  importeTotal: string;
 }
 export interface PaginaCompra<T> {
   count: number;
@@ -90,6 +107,7 @@ export interface NecesidadSucursal {
   sucursal: string;
   producto: number;
   producto_nombre: string;
+  producto_imagen?: string | null;
   presentacion_nombre: string;
   columna: "cajas" | "unidades";
   cantidad: number;

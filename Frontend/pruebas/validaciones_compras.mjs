@@ -50,7 +50,7 @@ const lineaBase = (producto = 1, proveedor = 1) => ({
   presentacion: null,
   proveedor: proveedor ? { id: proveedor, nombre: "Proveedor" } : null,
   cantidad: "1",
-  precioUnitario: "2.50",
+  importeTotal: "2.50",
 });
 const validar = (lineas, registrar = true) =>
   validarLineasCompra(lineas, registrar, mensajes);
@@ -58,12 +58,12 @@ const validar = (lineas, registrar = true) =>
 prueba(
   "el borrador admite líneas incompletas y el registro exige proveedor e importes positivos",
   () => {
-    const linea = { ...lineaBase(1, null), cantidad: "", precioUnitario: "0" };
+    const linea = { ...lineaBase(1, null), cantidad: "", importeTotal: "0" };
     afirmar.equal(Object.keys(validar([linea], false)).length, 0);
     const errores = validar([linea]);
     afirmar.equal(errores.detalle_0_proveedor[0], "proveedor");
     afirmar.equal(errores.detalle_0_cantidad[0], "cantidadPositiva");
-    afirmar.equal(errores.detalle_0_precio_unitario[0], "precioPositivo");
+    afirmar.equal(errores.detalle_0_importe_total[0], "precioPositivo");
     afirmar.equal(validar([]).detalles[0], "sinLineas");
   },
 );
@@ -72,10 +72,10 @@ prueba("se valida una línea fuera de la primera página", () => {
     lineaBase(indice + 1),
   );
   lineas[10].cantidad = "2.1234";
-  lineas[10].precioUnitario = "-3";
+  lineas[10].importeTotal = "-3";
   const errores = validar(lineas);
   afirmar.equal(errores.detalle_10_cantidad[0], "cantidad");
-  afirmar.equal(errores.detalle_10_precio_unitario[0], "precio");
+  afirmar.equal(errores.detalle_10_importe_total[0], "precio");
 });
 prueba(
   "un producto puede comprarse a distintos proveedores o en distintas presentaciones",
@@ -108,28 +108,29 @@ prueba(
   },
 );
 prueba(
-  "coma decimal y redondeo por línea coinciden con el total exacto",
+  "los importes manuales con coma se suman sin multiplicarlos por la cantidad",
   () => {
     const lineas = [
-      { ...lineaBase(), cantidad: "0,005", precioUnitario: "1,00" },
-      { ...lineaBase(2), cantidad: "0.005", precioUnitario: "1.00" },
+      { ...lineaBase(), cantidad: "5", importeTotal: "150,00" },
+      { ...lineaBase(2), cantidad: "3", importeTotal: "100.00" },
     ];
     afirmar.equal(Object.keys(validar(lineas)).length, 0);
-    afirmar.equal(calculos.totalCentavos(lineas), 2n);
+    afirmar.equal(calculos.totalCentavos(lineas), 25000n);
   },
 );
 prueba(
-  "el registro no permite un total redondeado a cero ni un total fuera del límite",
+  "los centavos ingresados se conservan con cualquier cantidad y el total tiene limite",
   () => {
     afirmar.equal(
-      validar([{ ...lineaBase(), cantidad: "0.001", precioUnitario: "0.01" }])
-        .detalles[0],
-      "totalPositivo",
+      calculos.totalCentavos([
+        { ...lineaBase(), cantidad: "0.001", importeTotal: "0.01" },
+      ]),
+      1n,
     );
     const linea = {
       ...lineaBase(),
       cantidad: "100",
-      precioUnitario: "9999999999.99",
+      importeTotal: "999999999999.99",
     };
     afirmar.equal(
       validar([linea, { ...linea, producto: { id: 2 } }]).detalles[0],
@@ -141,13 +142,13 @@ prueba(
   "los límites de cada campo se comprueban incluso cuando el subtotal sería cero",
   () => {
     const errores = validar(
-      [{ ...lineaBase(), cantidad: "1000000000", precioUnitario: "0" }],
+      [{ ...lineaBase(), cantidad: "1000000000", importeTotal: "0" }],
       false,
     );
     afirmar.equal(errores.detalle_0_cantidad[0], "cantidad");
     afirmar.equal(
-      validar([{ ...lineaBase(), precioUnitario: "10000000000" }], false)
-        .detalle_0_precio_unitario[0],
+      validar([{ ...lineaBase(), importeTotal: "1000000000000" }], false)
+        .detalle_0_importe_total[0],
       "precio",
     );
   },

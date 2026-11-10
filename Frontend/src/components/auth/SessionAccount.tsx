@@ -7,7 +7,9 @@ import { Dropdown } from "@/components/ui/dropdown/Dropdown";
 import UserAvatar from "@/components/users/UserAvatar";
 import type { Session } from "@/components/users/types";
 import { api } from "@/lib/api";
-export default function SessionAccount() {
+export default function SessionAccount({
+  alSalir,
+}: { alSalir?: () => Promise<void> } = {}) {
   const t = useTranslations("users");
   const router = useRouter();
   const pathname = usePathname();
@@ -30,10 +32,13 @@ export default function SessionAccount() {
   const signOut = async () => {
     setBusy(true);
     try {
-      await api("auth/logout/", { method: "POST" });
+      if (alSalir) await alSalir();
+      else await api("auth/logout/", { method: "POST" });
       setSession(null);
-      router.replace("/signin");
-      router.refresh();
+      if (!alSalir) {
+        router.replace("/signin");
+        router.refresh();
+      }
     } catch {
       setBusy(false);
     }
@@ -52,15 +57,16 @@ export default function SessionAccount() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
+        aria-label={t("myAccount")}
         aria-expanded={open}
-        className="flex items-center gap-3 rounded-lg text-start"
+        className="dropdown-toggle flex min-h-11 items-center gap-3 rounded-lg text-start focus-visible:outline-2 focus-visible:outline-brand-400"
       >
         <UserAvatar user={session.user} />
         <span className="hidden sm:block">
           <span className="block text-sm font-medium text-gray-700 dark:text-gray-200">
             {session.user.first_name || t("myAccount")}
           </span>
-          <span className="text-theme-xs text-gray-400 dark:text-gray-500">
+          <span className="text-theme-xs text-gray-500 dark:text-gray-400">
             {session.user.roles[0]?.name || t("myAccount")}
           </span>
         </span>

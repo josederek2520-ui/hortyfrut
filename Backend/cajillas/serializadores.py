@@ -7,6 +7,7 @@ from .consultas import version_cajilla
 
 class SerializadorCajilla(serializers.ModelSerializer):
     total = serializers.IntegerField(read_only=True)
+    en_transito = serializers.IntegerField(read_only=True)
     en_almacen = serializers.IntegerField(read_only=True)
     en_sucursales = serializers.IntegerField(read_only=True)
     version = serializers.SerializerMethodField()
@@ -16,7 +17,7 @@ class SerializadorCajilla(serializers.ModelSerializer):
 
     class Meta:
         model = Cajilla
-        fields = ('id', 'color', 'total', 'en_almacen', 'en_sucursales', 'creado_en', 'responsable_nombre', 'version')
+        fields = ('id', 'color', 'total', 'en_almacen', 'en_sucursales', 'en_transito', 'creado_en', 'responsable_nombre', 'version')
         read_only_fields = fields
 
 
@@ -62,7 +63,7 @@ class SerializadorMovimientoCajilla(serializers.ModelSerializer):
 
     class Meta:
         model = MovimientoCajilla
-        fields = ('id', 'codigo', 'cajilla', 'color', 'tipo', 'cantidad', 'almacen', 'almacen_nombre',
+        fields = ('id', 'codigo', 'despacho', 'cajilla', 'color', 'tipo', 'cantidad', 'almacen', 'almacen_nombre',
                   'sucursal', 'sucursal_nombre', 'cliente_nombre', 'observaciones', 'responsable_nombre', 'creado_en')
         read_only_fields = fields
 

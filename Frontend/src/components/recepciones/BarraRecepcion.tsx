@@ -5,8 +5,6 @@ import Button from "@/components/ui/button/Button";
 import { clasePanel } from "@/components/compras/tipos";
 
 export default function BarraRecepcion({
-  cantidad,
-  almacen,
   ocupado,
   conflicto,
   puedeGuardar,
@@ -14,8 +12,6 @@ export default function BarraRecepcion({
   alSalir,
   alRevisar,
 }: {
-  cantidad: number;
-  almacen?: string;
   ocupado: boolean;
   conflicto: boolean;
   puedeGuardar: boolean;
@@ -28,12 +24,13 @@ export default function BarraRecepcion({
     <div
       className={`${clasePanel} sticky bottom-2 z-10 flex flex-wrap items-center justify-between gap-3 p-4 shadow-theme-md sm:bottom-4 sm:px-5`}
     >
-      <div>
-        <p className="text-sm font-semibold text-gray-900 dark:text-white">
-          {t("lineasAnotadas", { cantidad })}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <p className="inline-flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+          <IconoGuardar className="size-4" aria-hidden="true" />
+          {t("estados.borrador")}
         </p>
-        <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-          {almacen || t("seleccionAlmacen")} · {t("sinEntradaHastaConfirmar")}
+        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+          {t("sinEntradaHastaConfirmar")}
         </p>
       </div>
       <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">

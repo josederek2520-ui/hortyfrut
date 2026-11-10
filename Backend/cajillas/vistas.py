@@ -44,7 +44,7 @@ class VistaCajillas(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.G
     @action(detail=False, methods=['get'])
     def resumen(self, request):
         consulta = self.get_queryset()
-        datos = consulta.aggregate(**{f'suma_{campo}': Coalesce(Sum(campo), Value(0), output_field=BigIntegerField()) for campo in ('total', 'en_almacen', 'en_sucursales')})
+        datos = consulta.aggregate(**{f'suma_{campo}': Coalesce(Sum(campo), Value(0), output_field=BigIntegerField()) for campo in ('total', 'en_almacen', 'en_sucursales', 'en_transito')})
         return Response({**{campo.removeprefix('suma_'): valor for campo, valor in datos.items()}, 'colores': consulta.count()})
 
     @action(detail=True, methods=['post'], url_path='movimientos')
@@ -107,7 +107,7 @@ class VistaCajillas(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.G
                 raise ValidationError({'cajilla': 'Selecciona el color de las cajillas.'})
             get_object_or_404(cajillas_con_saldos(), pk=filtros['cajilla'])
             pendientes = MovimientoCajilla.objects.filter(cajilla_id=filtros['cajilla'], sucursal_id=OuterRef('pk')).values('sucursal_id').annotate(
-                saldo=sumar_cantidad(Q(tipo='salida')) - sumar_cantidad(Q(tipo='devolucion'))).values('saldo')
+                saldo=sumar_cantidad(Q(tipo__in=['salida', 'entrega'])) - sumar_cantidad(Q(tipo='devolucion'))).values('saldo')
             consulta = consulta.annotate(pendiente=Coalesce(Subquery(pendientes, output_field=BigIntegerField()), Value(0), output_field=BigIntegerField())).filter(pendiente__gt=0)
         else:
             consulta = consulta.filter(activo=True, cliente__activo=True)

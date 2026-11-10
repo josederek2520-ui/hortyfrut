@@ -10,6 +10,7 @@ class MigracionCorreoTests(TransactionTestCase):
 
     def setUp(self):
         self.ejecutor = MigrationExecutor(connection)
+        self.destinos_actuales = self.ejecutor.loader.graph.leaf_nodes()
         self.ejecutor.migrate(self.desde)
         aplicaciones = self.ejecutor.loader.project_state(self.desde).apps
         self.UsuarioAnterior = aplicaciones.get_model('usuarios', 'Usuario')
@@ -26,7 +27,8 @@ class MigracionCorreoTests(TransactionTestCase):
         # Solo los identificadores creados por esta prueba en la base de pruebas.
         self.UsuarioAnterior.objects.filter(pk__in=self.cuentas).delete()
         self.GrupoAnterior.objects.filter(pk__in=self.grupos).delete()
-        MigrationExecutor(connection).migrate(self.hasta)
+        # Restaurar el esquema completo, incluidas las nuevas sesiones móviles.
+        MigrationExecutor(connection).migrate(self.destinos_actuales)
         super().tearDown()
 
     def test_migracion_normaliza_y_conserva_identidad_contrasena_roles(self):

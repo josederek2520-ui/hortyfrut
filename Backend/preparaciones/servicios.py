@@ -47,7 +47,7 @@ def datos_documento(preparacion):
             'aportes': [{'lote': aporte.linea.lote_id, 'cantidad': aporte.cantidad, 'peso_kg': aporte.peso_kg}
                 for aporte in fila.aportes.all()]} for fila in preparacion.asignaciones.prefetch_related(
                     Prefetch('aportes', queryset=AportePreparacion.objects.select_related('linea').order_by('pk'))).order_by('pk')],
-        'cajillas': [{'sucursal': fila.sucursal_id, 'cajilla': fila.cajilla_id, 'cantidad': fila.cantidad} for fila in preparacion.cajillas.order_by('pk')]}
+        'cajillas': [{'sucursal': fila.sucursal_id, 'producto': fila.producto_id, 'cajilla': fila.cajilla_id, 'cantidad': fila.cantidad} for fila in preparacion.cajillas.order_by('pk')]}
 
 
 def _construir_documento(datos, cliente, sucursales, pedidos, confirmar=False):
@@ -136,13 +136,20 @@ def _construir_documento(datos, cliente, sucursales, pedidos, confirmar=False):
     claves = set()
     for indice, fila in enumerate(datos['cajillas']):
         sucursal, cajilla = sucursales.get(fila['sucursal']), colores.get(fila['cajilla'])
-        clave = (fila['sucursal'], fila['cajilla'])
+        producto_id = fila.get('producto')
+        clave = (fila['sucursal'], producto_id, fila['cajilla'])
         if not sucursal or not cajilla or clave in claves or not any(pedido.sucursal_id == sucursal.pk and pedido.estado != 'cancelado' for pedido in pedidos.values()):
-            raise ValidationError({f'cajillas_{indice}_cajilla': 'Revisa la sucursal del cliente y el color. Agrupa las cajillas del mismo color y destino.'})
+            raise ValidationError({f'cajillas_{indice}_cajilla': 'Revisa la sucursal y el color. Agrupa las cajillas del mismo producto, color y destino.'})
+        del_producto = [asignacion for asignacion in asignaciones if asignacion.sucursal_id == sucursal.pk and asignacion.producto_id == producto_id]
+        if producto_id and not del_producto:
+            raise ValidationError({f'cajillas_{indice}_producto': 'Este producto no está incluido en la preparación de esta sucursal.'})
+        if confirmar and producto_id and not any(asignacion.cantidad > 0 for asignacion in del_producto):
+            raise ValidationError({f'cajillas_{indice}_producto': 'Anota una cantidad a preparar de este producto en la sucursal o quita sus cajillas.'})
         if confirmar and sucursal.pk not in sucursales_asignadas:
             raise ValidationError({f'cajillas_{indice}_sucursal': 'Esta sucursal no tiene cantidades preparadas en esta preparación.'})
         claves.add(clave)
-        planes.append(CajillaPrevista(sucursal=sucursal, sucursal_nombre=sucursal.nombre, cajilla=cajilla, color=cajilla.color, cantidad=fila['cantidad']))
+        planes.append(CajillaPrevista(sucursal=sucursal, sucursal_nombre=sucursal.nombre, producto_id=producto_id,
+            producto_nombre=del_producto[0].producto_nombre if del_producto else '', cajilla=cajilla, color=cajilla.color, cantidad=fila['cantidad']))
     return almacen, list(lineas.values()), asignaciones, aportes, planes
 
 

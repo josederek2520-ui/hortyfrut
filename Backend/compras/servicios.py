@@ -66,6 +66,8 @@ def estado_compra(compra):
 
 def huella_creacion(datos):
     contenido = {campo: valor for campo, valor in datos.items() if campo not in ('version', 'clave_operacion')}
+    # Mantiene la huella anterior al retirar el campo de la interfaz.
+    contenido.setdefault('observaciones', '')
     return hashlib.sha256(json.dumps(contenido, sort_keys=True, default=str).encode()).hexdigest()
 
 
@@ -99,6 +101,7 @@ def preparar_detalles(datos, anteriores, registro=False):
         proveedor = proveedores.get(datos_linea['proveedor'])
         unidad = unidades[anterior.unidad_medida_id if anterior and anterior.producto_id == producto.pk else producto.unidad_medida_id]
         igual = anterior and all(datos_linea[campo] == getattr(anterior, campo if campo in ('cantidad', 'precio_unitario') else f'{campo}_id') for campo in ('producto', 'presentacion', 'proveedor', 'cantidad', 'precio_unitario'))
+        igual = igual and ('importe_total' not in datos_linea or datos_linea['importe_total'] == anterior.subtotal)
         if registro or not igual:
             if not producto.activo or not categorias[producto.categoria_id].activo or not unidad.activo:
                 error('producto', 'Selecciona un producto activo con sus catálogos disponibles.')
@@ -109,16 +112,23 @@ def preparar_detalles(datos, anteriores, registro=False):
         if registro:
             if not proveedor:
                 error('proveedor', 'Selecciona el proveedor antes de registrar la compra.')
-            for campo in ('cantidad', 'precio_unitario'):
+            for campo in ('cantidad', 'importe_total' if 'importe_total' in datos_linea else 'precio_unitario'):
                 if datos_linea[campo] <= 0:
                     error(campo, 'Ingresa un valor mayor que cero antes de registrar la compra.')
         clave = (producto.pk, datos_linea['presentacion'], datos_linea['proveedor'])
         if proveedor and clave in vistos:
             error('proveedor', 'Esta combinación de producto, presentación y proveedor ya existe en la compra.')
         vistos.add(clave)
-        subtotal = (datos_linea['cantidad'] * datos_linea['precio_unitario']).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        # El importe capturado es el dato real. Nunca dividir y volver a multiplicar.
+        if 'importe_total' in datos_linea:
+            subtotal = datos_linea['importe_total']
+        elif anterior and datos_linea['cantidad'] == anterior.cantidad and datos_linea['precio_unitario'] == anterior.precio_unitario:
+            # Un cliente anterior puede actualizar otros datos sin conocer importe_total.
+            subtotal = anterior.subtotal
+        else:
+            subtotal = (datos_linea['cantidad'] * datos_linea['precio_unitario']).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         if subtotal > MAXIMO_IMPORTE:
-            error('precio_unitario', 'El importe de esta línea supera el máximo permitido.')
+            error('importe_total' if 'importe_total' in datos_linea else 'precio_unitario', 'El importe de esta línea supera el máximo permitido.')
         linea = anterior or DetalleCompra()
         conserva_producto = anterior and anterior.producto_id == producto.pk
         conserva_presentacion = anterior and anterior.presentacion_id == datos_linea['presentacion']
@@ -185,7 +195,8 @@ def guardar_compra(actor, datos, instancia=None):
             anteriores = {linea.pk: linea for linea in compra.detalles.select_for_update()} if instancia else {}
             lineas, total = preparar_detalles(datos['detalles'], anteriores)
             compra.fecha_pedidos, compra.fecha_compra = datos['fecha_pedidos'], datos['fecha_compra']
-            compra.observaciones, compra.total = datos['observaciones'], total
+            compra.observaciones = datos.get('observaciones', compra.observaciones)
+            compra.total = total
             if not instancia:
                 compra.responsable, compra.responsable_nombre = usuario, nombre_responsable(usuario)
                 compra.clave_operacion, compra.huella_creacion = datos['clave_operacion'], huella
@@ -214,7 +225,7 @@ def guardar_compra(actor, datos, instancia=None):
 
 def datos_lineas(compra):
     return [{'id': linea.pk, 'producto': linea.producto_id, 'presentacion': linea.presentacion_id, 'proveedor': linea.proveedor_id,
-             'cantidad': linea.cantidad, 'precio_unitario': linea.precio_unitario} for linea in compra.detalles.order_by('pk')]
+             'cantidad': linea.cantidad, 'precio_unitario': linea.precio_unitario, 'importe_total': linea.subtotal} for linea in compra.detalles.order_by('pk')]
 
 
 def guardar_accion(compra):

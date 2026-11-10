@@ -49,6 +49,8 @@ pnpm-debug.log*
 *.pfx
 /.vscode/
 /dist/
+# Recursos del motor generados por next.config.ts desde la version instalada.
+/public/mapas/maplibre/
 Thumbs.db
 Desktop.ini
 desktop.ini

@@ -1,8 +1,16 @@
+import hashlib
 from decimal import Decimal
 from django.db.models import Sum, OuterRef, Subquery, DecimalField, Value, F, Exists
 from django.db.models.functions import Coalesce
 from compras.models import Compra, DetalleCompra
 from .models import DetalleRecepcion
+
+
+def ruta_imagen_recepcion(producto_id, nombre_imagen):
+    if not nombre_imagen:
+        return None
+    version = hashlib.sha256(str(nombre_imagen).encode()).hexdigest()[:16]
+    return f'/api/v1/recepciones/imagenes/{producto_id}/?v={version}'
 
 
 def avance_compra(compra_id):

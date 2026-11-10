@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { useModal } from "@/hooks/useModal";
 import Button from "@/components/ui/button/Button";
@@ -32,6 +32,7 @@ export default function FichaPreparacion({
   confirmarInicial?: boolean;
 }) {
   const t = useTranslations("preparaciones");
+  const navegador = useRouter();
   const { avisos, cerrarAviso, notificar, tratarError } =
     useAvisosPreparaciones();
   const permisos = sesion.permisos_preparaciones;
@@ -102,7 +103,7 @@ export default function FichaPreparacion({
   }, [modo, notificar, t]);
   return (
     <div
-      className={`min-w-0 space-y-6 ${modo === "detalle" ? "mx-auto max-w-6xl" : ""}`}
+      className={`min-w-0 ${modo === "detalle" ? "mx-auto max-w-6xl space-y-6" : "space-y-4"}`}
     >
       {modo === "detalle" && (
         <Link
@@ -112,16 +113,7 @@ export default function FichaPreparacion({
           {t("volverPreparaciones")}
         </Link>
       )}
-      <MigasPagina
-        ocultarTitulo={modo !== "detalle"}
-        pageTitle={t(
-          modo === "nuevo"
-            ? "nuevaPreparacion"
-            : modo === "editar"
-              ? "editarPreparacion"
-              : "detalle",
-        )}
-      />
+      {modo === "detalle" && <MigasPagina pageTitle={t("detalle")} />}
       {!permitido ? (
         <p role="alert" className={`${clasePanel} p-8`}>
           {t("restringido")}
@@ -200,7 +192,17 @@ export default function FichaPreparacion({
           alGuardar={(datos) => {
             establecerPreparacion(datos);
             modal.closeModal();
-            notificar(t(accion === "confirmar" ? "confirmada" : "cancelada"));
+            if (accion === "confirmar") {
+              try {
+                sessionStorage.setItem("preparaciones:aviso", "confirmada");
+              } catch {
+                /* La navegación continúa. */
+              }
+              navegador.push("/preparaciones");
+              navegador.refresh();
+              return;
+            }
+            notificar(t("cancelada"));
           }}
         />
       )}

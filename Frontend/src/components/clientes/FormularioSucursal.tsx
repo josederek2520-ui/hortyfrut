@@ -43,6 +43,8 @@ export default function FormularioSucursal({
     sucursal?.encargado_pedidos || null,
   );
   const [guardando, establecerGuardando] = useState(false);
+  const [encargadoRecepcion, establecerEncargadoRecepcion] =
+    useState<OpcionPedido | null>(sucursal?.encargado_recepcion || null);
   const [fallo, establecerFallo] = useState("");
   const [conflicto, establecerConflicto] = useState(false);
   const [ubicacionAbierta, establecerUbicacionAbierta] = useState(
@@ -56,6 +58,7 @@ export default function FormularioSucursal({
     blurField: salirCampo,
   } = useValidacion();
   const modificado =
+    encargadoRecepcion?.id !== sucursal?.encargado_recepcion?.id ||
     encargado?.id !== sucursal?.encargado_pedidos?.id ||
     Object.keys(datos).some(
       (clave) =>
@@ -106,7 +109,10 @@ export default function FormularioSucursal({
           body: JSON.stringify({
             ...datos,
             ...(puedeAsignarEncargado
-              ? { encargado_pedidos_id: encargado?.id || null }
+              ? {
+                  encargado_pedidos_id: encargado?.id || null,
+                  encargado_recepcion_id: encargadoRecepcion?.id || null,
+                }
               : {}),
             latitud: datos.latitud || null,
             longitud: datos.longitud || null,
@@ -265,6 +271,18 @@ export default function FormularioSucursal({
               <p className="text-xs leading-5 text-gray-500 dark:text-gray-400">
                 {t("encargadoAyuda")}
               </p>
+              <SelectorPedido
+                ruta="clientes/encargados/?tipo=recepcion"
+                valor={encargadoRecepcion}
+                alCambiar={establecerEncargadoRecepcion}
+                etiqueta={t("encargadoRecepcion")}
+                deshabilitado={guardando}
+                error={errores.encargado_recepcion_id?.join(" ")}
+                alError={alError}
+              />
+              <p className="text-xs leading-5 text-gray-500 dark:text-gray-400">
+                {t("recepcionAyuda")}
+              </p>
             </div>
           )}
           <details
@@ -278,6 +296,11 @@ export default function FormularioSucursal({
               <span className="ms-1 inline-flex items-center gap-2">
                 <IconoUbicacion className="size-4" />
                 {t("ubicacionOpcional")}
+                {(!datos.latitud || !datos.longitud) && (
+                  <span className="rounded-md bg-warning-50 px-2 py-0.5 text-theme-xs text-warning-800 dark:bg-warning-500/10 dark:text-warning-300">
+                    {t("ubicacionPendiente")}
+                  </span>
+                )}
               </span>
             </summary>
             <div className="space-y-4 border-t border-gray-100 p-4 dark:border-gray-800">

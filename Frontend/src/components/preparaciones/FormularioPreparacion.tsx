@@ -1,10 +1,17 @@
 "use client";
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
+import { useTranslations } from "next-intl";
 import {
   ArrowLeft as IconoVolver,
-  ShoppingBasket as IconoProductos,
-  ClipboardList as IconoPreparar,
+  Container as IconoCajillas,
+  ChevronDown as IconoDesplegar,
 } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { api, ApiError as ErrorApi } from "@/lib/api";
@@ -15,7 +22,6 @@ import {
 import { useFormValidation as useValidacionFormulario } from "@/hooks/useFormValidation";
 import { useModal } from "@/hooks/useModal";
 import Button from "@/components/ui/button/Button";
-import ImagenProducto from "@/components/productos/ImagenProducto";
 import {
   clasePanel,
   type OpcionCompra,
@@ -23,12 +29,18 @@ import {
 } from "@/components/compras/tipos";
 import CabeceraTrabajoPreparacion from "./CabeceraTrabajoPreparacion";
 import ListaProductosPreparacion from "./ListaProductosPreparacion";
+import CabeceraProductoPreparacion from "./CabeceraProductoPreparacion";
+import useProductosTrabajoPreparacion from "./useProductosTrabajoPreparacion";
 import LotesProductoPreparacion from "./LotesProductoPreparacion";
 import RepartoProductoPreparacion from "./RepartoProductoPreparacion";
-import CajillasPreparacion from "./CajillasPreparacion";
+import ResumenCajillasPreparacion from "./ResumenCajillasPreparacion";
 import BarraTrabajoPreparacion from "./BarraTrabajoPreparacion";
 import DialogoTrabajoPreparacion from "./DialogoTrabajoPreparacion";
 import ConfirmarPreparacion from "./ConfirmarPreparacion";
+import VistaAnimadaPreparacion from "./VistaAnimadaPreparacion";
+import VistaProductoPreparacion from "./VistaProductoPreparacion";
+import estilos from "./estilosTrabajo.module.css";
+import { destinoSalidaPreparacion } from "./salidaTrabajoPreparacion";
 import {
   desdePreparacion,
   serializarDocumento,
@@ -48,6 +60,7 @@ import type {
   OpcionPreparacion,
   Preparacion,
   ProductoPreparacion,
+  EstadoTrabajoPreparacion,
 } from "./tipos";
 
 export default function FormularioPreparacion({
@@ -58,6 +71,13 @@ export default function FormularioPreparacion({
   puedeEditar,
   alError,
   alRecargar,
+  integrado = false,
+  controlesJornada,
+  resumenJornada,
+  productoInicial,
+  alEstadoTrabajo,
+  alConfirmada,
+  alVolverListado,
 }: {
   preparacion?: Preparacion;
   cliente: OpcionPreparacion;
@@ -66,12 +86,20 @@ export default function FormularioPreparacion({
   puedeEditar: boolean;
   alError: (error: unknown) => void;
   alRecargar: () => void;
+  integrado?: boolean;
+  controlesJornada?: ReactNode;
+  resumenJornada?: ReactNode;
+  productoInicial?: ProductoPreparacion | null;
+  alEstadoTrabajo?: (estado: EstadoTrabajoPreparacion) => void;
+  alConfirmada?: () => void;
+  alVolverListado?: () => void;
 }) {
   const t = useTranslations("preparaciones");
-  const idioma = useLocale();
   const navegador = useRouter();
   const formulario = useRef<HTMLFormElement>(null);
+  const formularioProducto = useRef<HTMLFormElement>(null);
   const enviando = useRef(false);
+  const posicionLista = useRef<number | null>(null);
   const [actual, establecerActual] = useState(preparacion);
   const [documento, establecerDocumento] = useState<DocumentoEditable>(() =>
     desdePreparacion(preparacion),
@@ -84,15 +112,16 @@ export default function FormularioPreparacion({
   const [almacenInicial, establecerAlmacenInicial] = useState<number | null>(
     preparacion?.almacen || null,
   );
-  const [observaciones, establecerObservaciones] = useState(
-    preparacion?.observaciones || "",
-  );
+  const observaciones = actual?.observaciones || "";
   const [producto, establecerProducto] = useState<ProductoPreparacion | null>(
-    () => productosDelDocumento(desdePreparacion(preparacion))[0] || null,
+    () =>
+      productosDelDocumento(desdePreparacion(preparacion))[0] ||
+      productoInicial ||
+      null,
   );
-  const [vistaMovil, establecerVistaMovil] = useState<"productos" | "preparar">(
-    preparacion ? "preparar" : "productos",
-  );
+  const [vistaTrabajo, establecerVistaTrabajo] = useState<
+    "productos" | "producto"
+  >("productos");
   const [cajillasAbiertas, establecerCajillasAbiertas] = useState(false);
   const [claveOperacion] = useState(() => crypto.randomUUID());
   const [guardando, establecerGuardando] = useState(false);
@@ -113,6 +142,8 @@ export default function FormularioPreparacion({
   );
   const modalCambios = useModal();
   const modalRevision = useModal();
+  const abrirModalCambios = modalCambios.openModal;
+  const [rutaSalida, establecerRutaSalida] = useState<string | null>(null);
   const {
     errors: errores,
     setErrors: establecerErrores,
@@ -128,13 +159,14 @@ export default function FormularioPreparacion({
     JSON.stringify({
       documento: serializarDocumento(documento),
       almacen: almacen?.id || null,
-      observaciones,
     }) !==
     JSON.stringify({
       documento: serializarDocumento(desdePreparacion(actual)),
       almacen: actual?.almacen || almacenInicial,
-      observaciones: actual?.observaciones || "",
     });
+  useEffect(() => {
+    alEstadoTrabajo?.({ modificado, guardando });
+  }, [alEstadoTrabajo, modificado, guardando]);
   useEffect(() => {
     if (preparacion) return;
     const controlador = new AbortController();
@@ -153,11 +185,29 @@ export default function FormularioPreparacion({
     return () => controlador.abort();
   }, [preparacion, alError]);
   useEffect(() => {
-    if (!modificado) return;
+    if (!modificado && !guardando) return;
     const avisar = (evento: BeforeUnloadEvent) => evento.preventDefault();
+    const protegerEnlace = (evento: MouseEvent) => {
+      const enlace =
+        evento.target instanceof Element
+          ? evento.target.closest<HTMLAnchorElement>("a[href]")
+          : null;
+      const destino = destinoSalidaPreparacion(evento, enlace, window.location);
+      if (!destino) return;
+      evento.preventDefault();
+      evento.stopPropagation();
+      if (guardando) return;
+      establecerRutaSalida(destino);
+      establecerDialogo("volver");
+      abrirModalCambios();
+    };
     window.addEventListener("beforeunload", avisar);
-    return () => window.removeEventListener("beforeunload", avisar);
-  }, [modificado]);
+    document.addEventListener("click", protegerEnlace, true);
+    return () => {
+      window.removeEventListener("beforeunload", avisar);
+      document.removeEventListener("click", protegerEnlace, true);
+    };
+  }, [modificado, guardando, abrirModalCambios]);
   const cambiar = (nuevo: DocumentoEditable) => {
     if (ocupado) return;
     if (
@@ -171,14 +221,63 @@ export default function FormularioPreparacion({
     establecerDocumento(nuevo);
     establecerErrores({});
   };
-  const elegirProducto = (elegido: ProductoPreparacion) => {
+  const elegirProducto = useCallback((elegido: ProductoPreparacion) => {
     establecerProducto(elegido);
-    establecerVistaMovil("preparar");
+    establecerVistaTrabajo("producto");
     establecerFoco((anterior) => ({
       seccion: "",
       pagina: 1,
       revision: anterior.revision + 1,
     }));
+    requestAnimationFrame(() => {
+      const titulo = document.getElementById("nombre-producto-preparacion");
+      document
+        .getElementById("vista-producto-preparacion")
+        ?.scrollIntoView({ block: "start", behavior: "instant" });
+      titulo?.focus({ preventScroll: true });
+      const contenido = document.getElementById("ficha-producto-preparacion");
+      if (contenido) contenido.scrollTop = 0;
+    });
+  }, []);
+  const productosTrabajo = useProductosTrabajoPreparacion(
+    contexto,
+    documento,
+    producto,
+    elegirProducto,
+    alError,
+  );
+  const abrirDesdeLista = (elegido: ProductoPreparacion) => {
+    posicionLista.current = window.scrollY;
+    elegirProducto(elegido);
+  };
+  const volverProductos = () => {
+    productosTrabajo.cancelarNavegacion();
+    establecerVistaTrabajo("productos");
+    requestAnimationFrame(() => {
+      const control =
+        formulario.current?.querySelector<HTMLElement>(
+          `[data-producto-preparacion="${producto?.id}"]`,
+        ) || document.getElementById("productos-por-preparar");
+      control?.focus({ preventScroll: true });
+      if (posicionLista.current !== null)
+        window.scrollTo({ top: posicionLista.current, behavior: "instant" });
+      else control?.scrollIntoView({ block: "center", behavior: "instant" });
+    });
+  };
+  const volverAlContexto = () => {
+    productosTrabajo.cancelarNavegacion();
+    establecerVistaTrabajo("productos");
+    requestAnimationFrame(() => {
+      const contexto = formulario.current?.querySelector<HTMLDetailsElement>(
+        "[data-contexto-preparacion]",
+      );
+      if (contexto) contexto.open = true;
+      const control = formulario.current?.querySelector<HTMLElement>(
+        'button[name="almacen"]',
+      );
+      control?.focus({ preventScroll: true });
+      control?.scrollIntoView({ block: "center", behavior: "instant" });
+    });
   };
   const agregarLote = (lote: LotePreparacion) => {
     const existente = documento.lineas.find(
@@ -200,10 +299,24 @@ export default function FormularioPreparacion({
   };
   const cambiarAsignacion = (asignacion: AsignacionEditable) => {
     const asignaciones = { ...documento.asignaciones };
+    const retirados = Object.keys(asignaciones[asignacion.clave]?.aportes || {})
+      .map(Number)
+      .filter((lote) => !(lote in asignacion.aportes));
     if (!asignacion.cantidad.trim() && !Object.keys(asignacion.aportes).length)
       delete asignaciones[asignacion.clave];
     else asignaciones[asignacion.clave] = asignacion;
-    cambiar({ ...documento, asignaciones });
+    const lineas = documento.lineas.filter(
+      (linea) =>
+        !retirados.includes(linea.lote.id) ||
+        Object.values(asignaciones).some(
+          (fila) => linea.lote.id in fila.aportes,
+        ) ||
+        [linea.merma, linea.aprovechable].some(
+          (valor) => valor.trim() && !/^0+(?:\.0{1,3})?$/.test(valor),
+        ) ||
+        !!linea.motivo.trim(),
+    );
+    cambiar({ ...documento, lineas, asignaciones });
   };
   const elegirLoteSucursal = (
     asignacion: AsignacionEditable,
@@ -247,6 +360,7 @@ export default function FormularioPreparacion({
     });
   };
   const abrirDialogo = (tipo: "volver" | "recargar" | "almacen" | "lote") => {
+    establecerRutaSalida(null);
     establecerDialogo(tipo);
     modalCambios.openModal();
   };
@@ -301,26 +415,49 @@ export default function FormularioPreparacion({
             .indexOf(asignacion) / 10,
         ) + 1;
     } else if (seccion === "cajillas") {
-      establecerCajillasAbiertas(true);
-      pagina = Math.floor(indice / 10) + 1;
+      const cajilla = documento.cajillas[indice];
+      productoError = cajilla?.producto?.id;
+      const delProducto = Object.values(documento.asignaciones).filter(
+        (fila) => fila.producto === productoError,
+      );
+      const posicion = delProducto.findIndex(
+        (fila) => fila.sucursal === cajilla?.sucursal.id,
+      );
+      if (productoError && posicion >= 0)
+        pagina = Math.floor(posicion / 10) + 1;
+      else {
+        productoError = undefined;
+        establecerVistaTrabajo("productos");
+        establecerCajillasAbiertas(true);
+        pagina = Math.floor(indice / 10) + 1;
+      }
     }
     if (productoError) {
+      if (vistaTrabajo === "productos") posicionLista.current = window.scrollY;
       establecerProducto(
         productosDelDocumento(documento).find(
           (fila) => fila.id === productoError,
         ) || null,
       );
-      establecerVistaMovil("preparar");
+      establecerVistaTrabajo("producto");
     }
+    if (
+      ["almacen", "observaciones", "cliente", "fecha_pedidos"].includes(nombre)
+    )
+      establecerVistaTrabajo("productos");
     establecerFoco((anterior) => ({
-      seccion,
+      seccion:
+        seccion === "cajillas" && productoError ? "asignaciones" : seccion,
       pagina: Math.max(1, pagina),
       revision: anterior.revision + 1,
     }));
-    if (formulario.current) enfocarCampoInvalido(formulario.current);
+    requestAnimationFrame(() => {
+      const destino = formularioProducto.current || formulario.current;
+      if (destino) enfocarCampoInvalido(destino);
+    });
     if (!referencia && nombre !== "almacen")
       window.requestAnimationFrame(() =>
-        formulario.current
+        (formularioProducto.current || formulario.current)
           ?.querySelector<HTMLElement>("[data-alerta-preparacion]")
           ?.focus(),
       );
@@ -333,12 +470,15 @@ export default function FormularioPreparacion({
       id: guardada.almacen,
       nombre: guardada.almacen_nombre,
     });
-    establecerObservaciones(guardada.observaciones);
-    establecerProducto(
-      (elegido) =>
-        productosDelDocumento(nuevo).find((fila) => fila.id === elegido?.id) ||
-        productosDelDocumento(nuevo)[0] ||
-        null,
+    establecerProducto((elegido) =>
+      elegido
+        ? {
+            ...elegido,
+            ...productosDelDocumento(nuevo).find(
+              (fila) => fila.id === elegido.id,
+            ),
+          }
+        : productosDelDocumento(nuevo)[0] || null,
     );
     establecerErrores({});
   };
@@ -347,19 +487,28 @@ export default function FormularioPreparacion({
     aviso?: "guardada" | "confirmada",
   ) => {
     aplicarGuardada(guardada);
+    if (aviso === "confirmada" && alConfirmada) {
+      alConfirmada();
+      return;
+    }
     try {
       if (aviso) sessionStorage.setItem("preparaciones:aviso", aviso);
     } catch {
       /* El guardado no depende del almacenamiento local. */
     }
-    navegador.replace(`/preparaciones/${guardada.id}`);
+    navegador.replace(
+      aviso === "confirmada"
+        ? "/preparaciones"
+        : `/preparaciones/${guardada.id}`,
+    );
     navegador.refresh();
   };
   const guardar = async (
     evento?: FormEvent<HTMLFormElement>,
-    revisar = false,
+    accion: "borrador" | "productos" | "revision" = "borrador",
   ) => {
     evento?.preventDefault();
+    const revisar = accion === "revision";
     if (
       enviando.current ||
       guardando ||
@@ -387,18 +536,20 @@ export default function FormularioPreparacion({
           saldo: t("superaSaldoTrabajo"),
           lote: t("loteNoValidoTrabajo"),
           sinUso: t("loteSinUsoTrabajo"),
+          cajillasSinPreparar: t("cajillasProductoSinCantidad"),
         }),
       );
     if (!almacen) problemas.almacen = [t("seleccionarAlmacen")];
-    if (!validar(formulario.current, problemas)) {
+    if (!validar(formularioProducto.current || formulario.current, problemas)) {
       establecerFallo(t("revisaDatosTrabajo"));
       enfocar(problemas);
       return;
     }
     establecerFallo("");
     if (actual && !modificado) {
-      if (revisar) modalRevision.openModal();
-      else terminar(actual, "guardada");
+      if (accion === "productos") volverTrasGuardar();
+      else if (revisar) modalRevision.openModal();
+      else if (!integrado) terminar(actual, "guardada");
       return;
     }
     enviando.current = true;
@@ -412,7 +563,7 @@ export default function FormularioPreparacion({
             cliente: cliente.id,
             fecha_pedidos: fecha,
             almacen: almacen!.id,
-            observaciones: observaciones.trim(),
+            observaciones,
             ...(actual
               ? { version: actual.version }
               : { clave_operacion: claveOperacion }),
@@ -421,8 +572,9 @@ export default function FormularioPreparacion({
         },
       );
       aplicarGuardada(respuesta);
-      if (revisar) modalRevision.openModal();
-      else terminar(respuesta, "guardada");
+      if (accion === "productos") volverTrasGuardar();
+      else if (revisar) modalRevision.openModal();
+      else if (!integrado) terminar(respuesta, "guardada");
     } catch (error) {
       if (error instanceof ErrorApi) {
         establecerErrores(error.errors);
@@ -441,6 +593,9 @@ export default function FormularioPreparacion({
       enviando.current = false;
       establecerGuardando(false);
     }
+  };
+  const volverTrasGuardar = () => {
+    volverProductos();
   };
   const recargarActual = async () => {
     if (!actual) {
@@ -468,279 +623,309 @@ export default function FormularioPreparacion({
       establecerGuardando(false);
     }
   };
-  const volver = () =>
+  const volver = () => {
+    if (integrado && alVolverListado) {
+      alVolverListado();
+      return;
+    }
     navegador.push(
       actual
         ? `/preparaciones/${actual.id}`
         : `/preparaciones?cliente=${cliente.id}&fecha=${fecha}`,
     );
+  };
   const salir = (tipo: "volver" | "recargar") => {
     if (guardando) return;
     if (modificado) abrirDialogo(tipo);
     else if (tipo === "recargar") void recargarActual();
     else volver();
   };
-  const numero = (valor: number) => new Intl.NumberFormat(idioma).format(valor);
-  return (
-    <form
-      ref={formulario}
-      noValidate
-      onSubmit={(evento) => void guardar(evento)}
-      aria-busy={guardando}
-      className="space-y-5"
+  const avisoProblemas = fallo && (
+    <div
+      role="alert"
+      tabIndex={-1}
+      data-alerta-preparacion
+      className="rounded-xl border border-error-200 bg-error-50 p-4 text-sm text-error-600 focus-visible:ring-2 focus-visible:ring-error-400 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-400"
     >
-      <div>
-        <button
-          type="button"
-          disabled={guardando}
-          onClick={() => salir("volver")}
-          className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-lg text-sm font-medium text-gray-500 hover:text-brand-700 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-gray-400 dark:hover:text-brand-300"
+      <p>{fallo}</p>
+      {Object.entries(errores)
+        .filter(
+          ([campo, mensajes]) =>
+            mensajes.length &&
+            !/^(lineas|asignaciones|cajillas)_\d+_/.test(campo) &&
+            campo !== "almacen",
+        )
+        .map(([campo, mensajes]) => (
+          <p key={campo} className="mt-1">
+            {mensajes.join(" ")}
+          </p>
+        ))}
+      {conflicto && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-3"
+          onClick={() => salir("recargar")}
         >
-          <IconoVolver className="size-4 rtl:rotate-180" aria-hidden="true" />
-          {t("volverHoja")}
-        </button>
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
-          {t(actual ? "editarPreparacion" : "nuevaPreparacion")}
-        </h1>
-        <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
-          {t("prepararPorProductoAyuda")}
-        </p>
-      </div>
-      {fallo && (
-        <div
-          role="alert"
-          tabIndex={-1}
-          data-alerta-preparacion
-          className="rounded-xl border border-error-200 bg-error-50 p-4 text-sm text-error-600 focus-visible:ring-2 focus-visible:ring-error-400 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-400"
-        >
-          <p>{fallo}</p>
-          {Object.entries(errores)
-            .filter(
-              ([campo, mensajes]) =>
-                mensajes.length &&
-                !/^(lineas|asignaciones|cajillas)_\d+_/.test(campo) &&
-                !["almacen", "observaciones"].includes(campo),
-            )
-            .map(([campo, mensajes]) => (
-              <p key={campo} className="mt-1">
-                {mensajes.join(" ")}
-              </p>
-            ))}
-          {conflicto && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="mt-3"
-              onClick={() => salir("recargar")}
-            >
-              {t("recargar")}
-            </Button>
-          )}
-        </div>
+          {t("recargar")}
+        </Button>
       )}
-      <CabeceraTrabajoPreparacion
-        cliente={cliente.nombre}
-        fecha={fecha}
-        almacen={almacen}
-        observaciones={observaciones}
-        ocupado={ocupado}
-        errores={errores}
-        alAlmacen={proponerAlmacen}
-        alObservaciones={(valor) => {
-          establecerObservaciones(valor);
-          establecerErrores((anteriores) => ({
-            ...anteriores,
-            observaciones: [],
-          }));
-        }}
-        alError={alError}
-      />
-      {actual && (
-        <p
-          role="status"
-          className="px-1 text-theme-xs text-gray-500 dark:text-gray-400"
-        >
-          {actual.codigo} ·{" "}
-          {t(
-            modificado
-              ? "cambiosSinGuardar"
-              : puedeModificar
-                ? "borradorGuardadoTrabajo"
-                : "borradorSinEdicionTrabajo",
-          )}
-        </p>
-      )}
-      <div
-        role="group"
-        aria-label={t("vistaTrabajoPreparacion")}
-        className="flex w-fit gap-1 rounded-xl bg-gray-100 p-1 2xl:hidden dark:bg-gray-800"
+    </div>
+  );
+  const situacionTrabajo = conflicto
+    ? "conflicto"
+    : guardando
+      ? "guardando"
+      : modificado
+        ? "modificado"
+        : actual
+          ? "guardado"
+          : "vacio";
+  const textoEstadoTrabajo = conflicto
+    ? t("datosDesactualizadosTrabajo")
+    : guardando
+      ? t("guardando")
+      : modificado
+        ? t("cambiosSinGuardar")
+        : actual
+          ? t("borradorGuardadoBreveTrabajo")
+          : t("sinDatosTrabajo");
+  const totalCajillas = documento.cajillas.reduce(
+    (total, fila) => total + (Number(fila.cantidad) || 0),
+    0,
+  );
+  const barraTrabajo = (
+    <BarraTrabajoPreparacion
+      compacta={vistaTrabajo === "producto"}
+      documento={documento}
+      guardando={guardando}
+      navegando={productosTrabajo.navegando}
+      conflicto={conflicto}
+      puedeGuardar={puedeModificar}
+      puedeConfirmar={puedeConfirmar}
+      producto={vistaTrabajo === "producto" ? producto : null}
+      alVolverProductos={volverProductos}
+      situacion={situacionTrabajo}
+      estado={textoEstadoTrabajo}
+      ayudaEstado={
+        actual && !puedeModificar ? t("borradorSinEdicionTrabajo") : undefined
+      }
+      alSalir={() => salir("volver")}
+      alRevisar={() => void guardar(undefined, "revision")}
+    />
+  );
+  return (
+    <div className={estilos.trabajo}>
+      <form
+        ref={formulario}
+        noValidate
+        onSubmit={(evento) => void guardar(evento, "borrador")}
+        aria-busy={guardando}
+        hidden={vistaTrabajo === "producto"}
+        className="space-y-4"
       >
-        <Button
-          size="sm"
-          variant="outline"
-          aria-pressed={vistaMovil === "productos"}
-          className="pestana-hortyfru"
-          onClick={() => establecerVistaMovil("productos")}
-          startIcon={<IconoProductos className="size-4" />}
-        >
-          {t("productosPorPreparar")}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          aria-pressed={vistaMovil === "preparar"}
-          className="pestana-hortyfru"
-          onClick={() => establecerVistaMovil("preparar")}
-          startIcon={<IconoPreparar className="size-4" />}
-        >
-          {t("prepararTrabajo")}
-        </Button>
-      </div>
-      <div className="grid items-start gap-5 2xl:grid-cols-[18rem_minmax(0,1fr)]">
-        <div
-          className={`min-w-0 2xl:sticky 2xl:top-28 2xl:block ${vistaMovil === "productos" ? "" : "hidden"}`}
+        <header className="space-y-1">
+          {!integrado && (
+            <div className="flex min-w-0 items-center gap-2">
+              <button
+                type="button"
+                disabled={guardando}
+                onClick={() => salir("volver")}
+                aria-label={t("volverHoja")}
+                className="flex size-11 shrink-0 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-brand-400 disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                <IconoVolver
+                  className="size-4 rtl:rotate-180"
+                  aria-hidden="true"
+                />
+              </button>
+              <h1 className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
+                <span>
+                  {t(actual ? "editarPreparacionCompacto" : "nuevaPreparacion")}
+                </span>
+                {actual && (
+                  <span className="text-sm font-medium tracking-normal text-gray-500 dark:text-gray-400">
+                    <span aria-hidden="true" className="me-3">
+                      ·
+                    </span>
+                    {actual.codigo}
+                  </span>
+                )}
+              </h1>
+            </div>
+          )}
+          <div>
+            <CabeceraTrabajoPreparacion
+              compacta
+              codigo={integrado ? actual?.codigo : undefined}
+              cliente={cliente.nombre}
+              fecha={fecha}
+              almacen={almacen}
+              ocupado={ocupado}
+              errores={errores}
+              alAlmacen={proponerAlmacen}
+              alError={alError}
+              controlesJornada={controlesJornada}
+              resumenJornada={resumenJornada}
+            />
+          </div>
+        </header>
+        {vistaTrabajo !== "producto" && avisoProblemas}
+        <VistaAnimadaPreparacion
+          visible={vistaTrabajo === "productos"}
+          clave="productos"
         >
           <ListaProductosPreparacion
-            contexto={contexto}
+            modelo={productosTrabajo}
             documento={documento}
-            seleccionado={producto}
-            alElegir={elegirProducto}
+            alElegir={abrirDesdeLista}
             ocupado={guardando}
             alError={alError}
           />
-        </div>
-        <div
-          id="ficha-producto-preparacion"
-          className={`min-w-0 2xl:block ${vistaMovil === "preparar" ? "" : "hidden"}`}
+        </VistaAnimadaPreparacion>
+
+        <details
+          open={cajillasAbiertas}
+          onToggle={(evento) =>
+            establecerCajillasAbiertas(evento.currentTarget.open)
+          }
+          className={`${clasePanel} ${estilos.desplegable} group/cajillas px-5 py-2 sm:px-6`}
         >
-          {producto ? (
-            <section
-              className={`${clasePanel} min-w-0 overflow-hidden`}
-              aria-labelledby="nombre-producto-preparacion"
-            >
-              <div className="flex flex-wrap items-center gap-4 p-5">
-                <div className="w-20 shrink-0 sm:w-24">
-                  <ImagenProducto
-                    grande
-                    origen={producto.imagen || null}
-                    nombre={producto.nombre}
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                    {producto.categoria?.nombre || producto.subtitulo}
-                  </p>
-                  <h2
-                    id="nombre-producto-preparacion"
-                    className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white"
-                  >
-                    {producto.nombre}
-                  </h2>
-                  {producto.pendientes_cajas !== undefined && (
-                    <p className="mt-2 text-sm text-gray-600 tabular-nums dark:text-gray-300">
-                      {t("cantUniPendientes", {
-                        cajas: numero(producto.pendientes_cajas),
-                        unidades: numero(producto.pendientes_unidades || 0),
-                      })}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <LotesProductoPreparacion
-                key={`lotes-${producto.id}-${foco.seccion === "lineas" ? foco.revision : 0}`}
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 rounded text-sm leading-6 font-semibold text-gray-900 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-white">
+            <IconoCajillas
+              className="size-5 shrink-0 text-gray-500 dark:text-gray-400"
+              aria-hidden="true"
+            />
+            <span>{t("resumenCajillasTitulo")}</span>
+            <span className="rounded-lg bg-gray-100 px-2 py-0.5 text-theme-xs font-medium text-gray-600 tabular-nums dark:bg-gray-800 dark:text-gray-300">
+              {totalCajillas}
+              <span className="sr-only"> {t("cantidadCajillas")}</span>
+            </span>
+            <IconoDesplegar
+              className="ms-auto size-4 shrink-0 text-gray-500 transition-transform group-open/cajillas:rotate-180 motion-reduce:transition-none dark:text-gray-400"
+              aria-hidden="true"
+            />
+          </summary>
+          <div
+            className={`${estilos.contenidoOpcional} border-t border-gray-100 pt-4 pb-3 dark:border-gray-800`}
+          >
+            <ResumenCajillasPreparacion
+              key={`cajillas-${foco.seccion === "cajillas" ? foco.revision : 0}`}
+              documento={documento}
+              ocupado={ocupado}
+              errores={errores}
+              alCambiar={cambiar}
+              paginaInicial={foco.seccion === "cajillas" ? foco.pagina : 1}
+              alAbrirProducto={(elegido) =>
+                abrirDesdeLista(
+                  productosDelDocumento(documento).find(
+                    (fila) => fila.id === elegido.id,
+                  ) || elegido,
+                )
+              }
+            />
+          </div>
+        </details>
+        {vistaTrabajo === "productos" && barraTrabajo}
+      </form>
+      {vistaTrabajo === "producto" && (
+        <VistaProductoPreparacion>
+          <form
+            ref={formularioProducto}
+            noValidate
+            aria-busy={guardando}
+            className={estilos.trabajo + " flex h-full min-h-0 flex-col"}
+            onSubmit={(evento) => {
+              evento.stopPropagation();
+              void guardar(evento, "productos");
+            }}
+          >
+            {producto && (
+              <CabeceraProductoPreparacion
                 producto={producto}
-                documento={documento}
-                contexto={contexto}
-                almacen={almacen?.id}
-                ocupado={ocupado}
-                errores={errores}
-                paginaInicial={foco.seccion === "lineas" ? foco.pagina : 1}
-                alError={alError}
-                alAgregar={agregarLote}
-                alCambiar={(indice, cambio) =>
-                  cambiar({
-                    ...documento,
-                    lineas: documento.lineas.map((linea, posicion) =>
-                      posicion === indice ? { ...linea, ...cambio } : linea,
-                    ),
-                  })
-                }
-                alQuitar={quitarLote}
+                modelo={productosTrabajo}
+                ocupado={guardando}
+                alVolver={volverProductos}
+                cliente={cliente.nombre}
+                fecha={fecha}
+                almacen={almacen}
+                alElegirAlmacen={volverAlContexto}
               />
-              <RepartoProductoPreparacion
-                key={`reparto-${producto.id}-${foco.seccion === "asignaciones" ? foco.revision : 0}`}
-                producto={producto}
-                documento={documento}
-                contexto={contexto}
-                almacen={almacen?.id}
-                ocupado={ocupado}
-                errores={errores}
-                paginaInicial={
-                  foco.seccion === "asignaciones" ? foco.pagina : 1
-                }
-                mostrarAnotadas={foco.seccion === "asignaciones"}
-                alError={alError}
-                alCambiar={cambiarAsignacion}
-                alElegirLote={elegirLoteSucursal}
-                alQuitar={(clave) => {
-                  const asignaciones = { ...documento.asignaciones };
-                  delete asignaciones[clave];
-                  cambiar({ ...documento, asignaciones });
-                }}
-              />
-            </section>
-          ) : (
+            )}
             <div
-              className={`${clasePanel} flex min-h-72 flex-col items-center justify-center p-8 text-center`}
+              id="ficha-producto-preparacion"
+              className={`${estilos.fondoTrabajoProducto} custom-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain`}
             >
-              <IconoProductos
-                className="mb-4 size-10 text-brand-500"
-                aria-hidden="true"
-              />
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                {t("eligeUnProductoTrabajo")}
-              </p>
-              <p className="mt-2 max-w-sm text-sm leading-6 text-gray-500 dark:text-gray-400">
-                {t("eligeProductoAyuda")}
-              </p>
+              {avisoProblemas}
+              {producto && (
+                <section
+                  className="min-w-0"
+                  aria-labelledby="nombre-producto-preparacion"
+                >
+                  <RepartoProductoPreparacion
+                    key={`reparto-${producto.id}-${foco.seccion === "asignaciones" ? foco.revision : 0}`}
+                    producto={producto}
+                    documento={documento}
+                    contexto={contexto}
+                    almacen={almacen?.id}
+                    ocupado={ocupado || productosTrabajo.navegando}
+                    errores={errores}
+                    paginaInicial={
+                      foco.seccion === "asignaciones" ? foco.pagina : 1
+                    }
+                    mostrarAnotadas={foco.seccion === "asignaciones"}
+                    alError={alError}
+                    alCambiar={cambiarAsignacion}
+                    alCambiarDocumento={cambiar}
+                    alElegirLote={elegirLoteSucursal}
+                    alQuitar={(clave) => {
+                      const asignaciones = { ...documento.asignaciones };
+                      delete asignaciones[clave];
+                      cambiar({ ...documento, asignaciones });
+                    }}
+                  />
+                  <details
+                    open={foco.seccion === "lineas" ? true : undefined}
+                    className={`${estilos.desplegable} border-t border-gray-100 dark:border-gray-800`}
+                  >
+                    <summary className="min-h-11 cursor-pointer rounded px-5 py-4 text-sm font-medium text-gray-700 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-gray-200">
+                      {t("calidadLotesProductoTrabajo")}
+                    </summary>
+                    <div className={estilos.contenidoOpcional}>
+                      <LotesProductoPreparacion
+                        key={`lotes-${producto.id}-${foco.seccion === "lineas" ? foco.revision : 0}`}
+                        producto={producto}
+                        documento={documento}
+                        contexto={contexto}
+                        almacen={almacen?.id}
+                        ocupado={ocupado || productosTrabajo.navegando}
+                        errores={errores}
+                        paginaInicial={
+                          foco.seccion === "lineas" ? foco.pagina : 1
+                        }
+                        alError={alError}
+                        alAgregar={agregarLote}
+                        alCambiar={(indice, cambio) =>
+                          cambiar({
+                            ...documento,
+                            lineas: documento.lineas.map((linea, posicion) =>
+                              posicion === indice
+                                ? { ...linea, ...cambio }
+                                : linea,
+                            ),
+                          })
+                        }
+                        alQuitar={quitarLote}
+                      />
+                    </div>
+                  </details>
+                </section>
+              )}
             </div>
-          )}
-        </div>
-      </div>
-      <details
-        open={cajillasAbiertas}
-        onToggle={(evento) =>
-          establecerCajillasAbiertas(evento.currentTarget.open)
-        }
-        className={`${clasePanel} p-5 sm:p-6`}
-      >
-        <summary className="cursor-pointer rounded text-sm font-semibold text-gray-900 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-white">
-          {t("cajillasOpcionalesTrabajo")}
-          {documento.cajillas.length ? ` · ${documento.cajillas.length}` : ""}
-        </summary>
-        <div className="mt-5">
-          <CajillasPreparacion
-            key={`cajillas-${foco.seccion === "cajillas" ? foco.revision : 0}`}
-            documento={documento}
-            contexto={contexto}
-            almacen={almacen?.id}
-            ocupado={ocupado}
-            errores={errores}
-            alCambiar={cambiar}
-            alError={alError}
-            paginaInicial={foco.seccion === "cajillas" ? foco.pagina : 1}
-          />
-        </div>
-      </details>
-      <BarraTrabajoPreparacion
-        documento={documento}
-        guardando={guardando}
-        conflicto={conflicto}
-        puedeGuardar={puedeModificar}
-        puedeConfirmar={puedeConfirmar}
-        alSalir={() => salir("volver")}
-        alRevisar={() => void guardar(undefined, true)}
-      />
+            {barraTrabajo}
+          </form>
+        </VistaProductoPreparacion>
+      )}
       {modalRevision.isOpen && actual && (
         <ConfirmarPreparacion
           key={actual.version}
@@ -760,10 +945,15 @@ export default function FormularioPreparacion({
         <DialogoTrabajoPreparacion
           tipo={dialogo}
           ocupado={guardando}
-          alCerrar={modalCambios.closeModal}
+          alCerrar={() => {
+            establecerRutaSalida(null);
+            modalCambios.closeModal();
+          }}
           alConfirmar={() => {
-            if (dialogo === "volver") volver();
-            else if (dialogo === "recargar") void recargarActual();
+            if (dialogo === "volver") {
+              if (rutaSalida) navegador.push(rutaSalida);
+              else volver();
+            } else if (dialogo === "recargar") void recargarActual();
             else if (dialogo === "almacen") {
               establecerAlmacen(almacenPropuesto);
               cambiar({ lineas: [], asignaciones: {}, cajillas: [] });
@@ -775,6 +965,6 @@ export default function FormularioPreparacion({
           }}
         />
       )}
-    </form>
+    </div>
   );
 }

@@ -1,3 +1,4 @@
+import hashlib
 from django.db.models import Count, Q, Sum
 from pedidos.models import DetallePedido, Pedido
 
@@ -9,7 +10,8 @@ def necesidades_fecha(fecha):
 
 def resumen_productos(consulta):
     return consulta.values('producto_id', 'producto__nombre', 'producto__activo', 'producto__categoria__activo',
-                           'producto__unidad_medida__activo', 'producto__unidad_medida__nombre').annotate(
+                           'producto__unidad_medida__activo', 'producto__unidad_medida__nombre', 'producto__imagen',
+                           'producto__categoria_id', 'producto__categoria__nombre').annotate(
         cajas=Sum('cantidad', filter=Q(columna='cajas'), default=0),
         unidades=Sum('cantidad', filter=Q(columna='unidades'), default=0),
         pedidos=Count('pedido_id', distinct=True),
@@ -20,4 +22,12 @@ def datos_necesidad(linea):
     return {'id': linea.pk, 'pedido': linea.pedido_id, 'codigo': linea.pedido.codigo,
             'cliente': linea.pedido.cliente_nombre, 'sucursal': linea.pedido.sucursal_nombre,
             'producto': linea.producto_id, 'producto_nombre': linea.producto_nombre,
-            'presentacion_nombre': linea.presentacion_nombre, 'columna': linea.columna, 'cantidad': linea.cantidad}
+            'presentacion_nombre': linea.presentacion_nombre, 'columna': linea.columna, 'cantidad': linea.cantidad,
+            'producto_imagen': ruta_imagen_compra(linea.producto_id, linea.producto.imagen.name)}
+
+
+def ruta_imagen_compra(producto_id, nombre_imagen):
+    if not nombre_imagen:
+        return None
+    version = hashlib.sha256(str(nombre_imagen).encode()).hexdigest()[:16]
+    return f'/api/v1/compras/imagenes/{producto_id}/?v={version}'

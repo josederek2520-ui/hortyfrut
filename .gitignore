@@ -25,6 +25,8 @@ dist/
 *.tsbuildinfo
 next-env.d.ts
 .vercel/
+.next-chofer/
+/.local/
 
 # Cache de Python y resultados de comprobaciones.
 __pycache__/
@@ -71,3 +73,5 @@ pnpm-debug.log*
 Thumbs.db
 Desktop.ini
 desktop.ini
+.local/
+Backend/privado/

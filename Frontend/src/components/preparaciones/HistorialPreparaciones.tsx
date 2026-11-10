@@ -16,11 +16,18 @@ import { claseSelectorInventario } from "@/components/inventario/tipos";
 import { mostrarFecha } from "@/components/compras/calculos";
 import useConsultaPreparacion from "./useConsultaPreparacion";
 import type { ResumenPreparacion } from "./tipos";
+import type { PermisosPreparaciones } from "./tipos";
 
 export default function HistorialPreparaciones({
   alError,
+  clienteFijo,
+  fechaFija,
+  permisos,
 }: {
   alError: (error: unknown) => void;
+  clienteFijo?: number;
+  fechaFija?: string;
+  permisos?: PermisosPreparaciones;
 }) {
   const t = useTranslations("preparaciones");
   const idioma = useLocale();
@@ -29,14 +36,17 @@ export default function HistorialPreparaciones({
   const [estado, establecerEstado] = useState("");
   const [pagina, establecerPagina] = useState(1);
   const parametros = new URLSearchParams({ buscar, pagina: String(pagina) });
-  if (fecha) parametros.set("fecha_pedidos", fecha);
+  if (fechaFija || fecha) parametros.set("fecha_pedidos", fechaFija || fecha);
+  if (clienteFijo) parametros.set("cliente", String(clienteFijo));
   if (estado) parametros.set("estado", estado);
   const { datos, cargando, fallo, recargar } = useConsultaPreparacion<
     Pagina<ResumenPreparacion>
   >(`preparaciones/?${parametros}`, alError);
   return (
     <section className={`${clasePanel} space-y-5 p-5 sm:p-6`}>
-      <div className="grid items-start gap-4 sm:grid-cols-3">
+      <div
+        className={`grid items-start gap-4 ${fechaFija ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}
+      >
         <CampoDirectorio
           id="buscar-preparacion"
           etiqueta={t("buscarPreparacion")}
@@ -48,19 +58,21 @@ export default function HistorialPreparaciones({
             establecerPagina(1);
           }}
         />
-        <div>
-          <Label htmlFor="fecha-historial-preparacion">
-            {t("fechaPedidos")}
-          </Label>
-          <CampoFecha
-            id="fecha-historial-preparacion"
-            value={fecha}
-            alCambiar={(valor) => {
-              establecerFecha(valor);
-              establecerPagina(1);
-            }}
-          />
-        </div>
+        {!fechaFija && (
+          <div>
+            <Label htmlFor="fecha-historial-preparacion">
+              {t("fechaPedidos")}
+            </Label>
+            <CampoFecha
+              id="fecha-historial-preparacion"
+              value={fecha}
+              alCambiar={(valor) => {
+                establecerFecha(valor);
+                establecerPagina(1);
+              }}
+            />
+          </div>
+        )}
         <div>
           <Label htmlFor="estado-preparacion">{t("estado")}</Label>
           <select
@@ -134,25 +146,37 @@ export default function HistorialPreparaciones({
                   · {preparacion.responsable_nombre}
                 </p>
               </div>
-              <span
-                className={claseEstado(
-                  preparacion.estado === "confirmada"
-                    ? "registrada"
-                    : preparacion.estado,
+              <div className="flex flex-wrap items-center gap-3">
+                <span
+                  className={claseEstado(
+                    preparacion.estado === "confirmada"
+                      ? "registrada"
+                      : preparacion.estado,
+                  )}
+                >
+                  {t(`estados.${preparacion.estado}`)}
+                </span>
+                {preparacion.estado === "borrador" && permisos?.editar && (
+                  <Link
+                    href={`/preparaciones/${preparacion.id}/editar`}
+                    className="inline-flex min-h-11 items-center rounded-xl px-3 text-sm font-medium text-brand-700 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-brand-300"
+                  >
+                    {t("continuarGrupo")}
+                  </Link>
                 )}
-              >
-                {t(`estados.${preparacion.estado}`)}
-              </span>
+              </div>
             </li>
           ))}
         </ul>
       )}
-      <PaginadorCompras
-        pagina={pagina}
-        total={datos?.count || 0}
-        ocupado={cargando || fallo}
-        alCambiar={establecerPagina}
-      />
+      {!!datos?.count && !fallo && !cargando && (
+        <PaginadorCompras
+          pagina={pagina}
+          total={datos?.count || 0}
+          ocupado={cargando || fallo}
+          alCambiar={establecerPagina}
+        />
+      )}
     </section>
   );
 }

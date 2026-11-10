@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useSidebar } from "@/context/SidebarContext";
 import { api } from "@/lib/api";
 import { rutaInicial } from "@/lib/navegacion-sesion";
+import { bloquearDesplazamiento } from "@/lib/bloqueoDesplazamiento";
 import MarcaHortyfru from "@/components/common/MarcaHortyfru";
 import {
   Store as IconoProveedor,
@@ -17,8 +18,16 @@ import {
   ArrowLeftRight as IconoMovimiento,
   Container as IconoCajilla,
   ClipboardCheck as IconoPreparacion,
+  Truck as IconoVehiculo,
+  Route as IconoDespacho,
+  Radar as IconoSeguimiento,
+  MessageCircle as IconoChat,
+  DatabaseBackup as IconoRespaldo,
+  Undo2 as IconoDevolucion,
+  Tags as IconoPrecio,
 } from "lucide-react";
 import type { Session as Sesion } from "@/components/users/types";
+import { useChat } from "@/components/chat/ProveedorChat";
 import {
   UserCircleIcon as IconoUsuario,
   ShieldIcon as IconoRol,
@@ -71,6 +80,43 @@ const gruposNavegacion: GrupoNavegacion[] = [
         icono: <IconoPreparacion className="size-5" />,
         puedeVer: (sesion) => !!sesion.permisos_preparaciones?.ver,
       },
+      {
+        clave: "despachos",
+        ruta: "/despachos",
+        icono: <IconoDespacho className="size-5" />,
+        puedeVer: (sesion) => !!sesion.permisos_despachos?.ver,
+      },
+      {
+        clave: "entregas",
+        ruta: "/entregas",
+        icono: <IconoRecepcion className="size-5" />,
+        puedeVer: (sesion) => !!sesion.permisos_entregas?.ver,
+      },
+      {
+        clave: "devoluciones",
+        ruta: "/devoluciones",
+        icono: <IconoDevolucion className="size-5" />,
+        puedeVer: (sesion) =>
+          !sesion.acceso_publico && !!sesion.permisos_devoluciones?.ver,
+      },
+      {
+        clave: "seguimiento_camiones",
+        ruta: "/seguimiento-camiones",
+        icono: <IconoSeguimiento className="size-5" />,
+        puedeVer: (sesion) => !!sesion.permisos_despachos?.ver,
+      },
+      {
+        clave: "mis_viajes",
+        ruta: "/mis-viajes",
+        icono: <IconoVehiculo className="size-5" />,
+        puedeVer: (sesion) => !!sesion.permisos_chofer?.ver,
+      },
+      {
+        clave: "chat",
+        ruta: "/chat",
+        icono: <IconoChat className="size-5" />,
+        puedeVer: (sesion) => !!sesion.user.is_active,
+      },
     ],
   },
   {
@@ -103,6 +149,18 @@ const gruposNavegacion: GrupoNavegacion[] = [
     ],
   },
   {
+    clave: "comercial",
+    elementos: [
+      {
+        clave: "precios",
+        ruta: "/precios-acordados",
+        icono: <IconoPrecio className="size-5" />,
+        puedeVer: (sesion) =>
+          !sesion.acceso_publico && !!sesion.permisos_precios?.ver,
+      },
+    ],
+  },
+  {
     clave: "catalogos",
     elementos: [
       {
@@ -116,6 +174,12 @@ const gruposNavegacion: GrupoNavegacion[] = [
         ruta: "/proveedores",
         icono: <IconoProveedor className="size-5" />,
         puedeVer: (sesion) => !!sesion.permisos_proveedores?.ver,
+      },
+      {
+        clave: "vehiculos",
+        ruta: "/vehiculos",
+        icono: <IconoVehiculo className="size-5" />,
+        puedeVer: (sesion) => !!sesion.permisos_vehiculos?.ver,
       },
       {
         clave: "productos",
@@ -159,11 +223,19 @@ const gruposNavegacion: GrupoNavegacion[] = [
         icono: <IconoActividad />,
         puedeVer: (sesion) => !!sesion.permisos_actividad?.ver,
       },
+      {
+        clave: "respaldos",
+        ruta: "/respaldos",
+        icono: <IconoRespaldo className="size-5" />,
+        puedeVer: (sesion) =>
+          !sesion.acceso_publico && !!sesion.permisos_respaldos?.ver,
+      },
     ],
   },
 ];
 
 export default function AppSidebar() {
+  const { resumen: resumenChat } = useChat();
   const {
     isExpanded: expandido,
     isMobileOpen: movilAbierto,
@@ -194,11 +266,10 @@ export default function AppSidebar() {
   useEffect(() => {
     if (!movilAbierto) return;
     const focoAnterior = document.activeElement as HTMLElement | null;
-    const desbordamientoAnterior = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const liberarDesplazamiento = bloquearDesplazamiento(document);
     cierreMovil.current?.focus({ preventScroll: true });
     return () => {
-      document.body.style.overflow = desbordamientoAnterior;
+      liberarDesplazamiento();
       focoAnterior?.focus({ preventScroll: true });
     };
   }, [movilAbierto]);
@@ -260,6 +331,11 @@ export default function AppSidebar() {
           {elemento.icono}
         </span>
         {mostrarTexto && <span className="menu-item-text">{etiqueta}</span>}
+        {elemento.clave === "chat" && !!resumenChat?.no_leidos && (
+          <span className="ms-auto inline-flex min-w-5 justify-center rounded-full bg-brand-600 px-1 text-xs leading-5 font-semibold text-white">
+            {resumenChat.no_leidos > 99 ? "99+" : resumenChat.no_leidos}
+          </span>
+        )}
       </Link>
     );
   };
@@ -290,7 +366,7 @@ export default function AppSidebar() {
           }
         }
       }}
-      className={`superficie-cristal panel-lateral-hortyfru fixed inset-s-0 top-0 z-50 flex h-full flex-col border-e border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out motion-reduce:transition-none xl:mt-0 dark:border-gray-800 dark:bg-gray-900 ${
+      className={`superficie-cristal panel-lateral-hortyfru fixed inset-s-0 top-0 z-50 flex h-full flex-col border-e border-gray-200 bg-white px-5 text-gray-900 transition-[width,transform,translate] duration-300 ease-in-out motion-reduce:transition-none xl:mt-0 dark:border-gray-800 dark:bg-gray-900 ${
         expandido || movilAbierto ? "w-72.5" : conCursor ? "w-72.5" : "w-22.5"
       } ${
         movilAbierto

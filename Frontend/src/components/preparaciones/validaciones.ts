@@ -77,6 +77,7 @@ export function validarConfirmacionPreparacion(
     saldo: string;
     lote: string;
     sinUso?: string;
+    cajillasSinPreparar?: string;
   },
 ): Errores {
   const errores: Errores = {};
@@ -117,9 +118,25 @@ export function validarConfirmacionPreparacion(
     const utilizada = aMiles(linea.cantidad_utilizada);
     const saldo = documento.lineas[indice].lote.saldo;
     if (utilizada <= BigInt(0))
-      errores[`lineas_${indice}_cantidad_utilizada`] = [mensajes.sinUso || mensajes.positiva];
+      errores[`lineas_${indice}_cantidad_utilizada`] = [
+        mensajes.sinUso || mensajes.positiva,
+      ];
     if (saldo !== undefined && utilizada > aMiles(saldo))
       errores[`lineas_${indice}_cantidad_utilizada`] = [mensajes.saldo];
+  });
+  documento.cajillas.forEach((fila, indice) => {
+    if (
+      fila.producto &&
+      !Object.values(documento.asignaciones).some(
+        (asignacion) =>
+          asignacion.producto === fila.producto!.id &&
+          asignacion.sucursal === fila.sucursal.id &&
+          Number(asignacion.cantidad) > 0,
+      )
+    )
+      errores[`cajillas_${indice}_producto`] = [
+        mensajes.cajillasSinPreparar || mensajes.positiva,
+      ];
   });
   return errores;
 }

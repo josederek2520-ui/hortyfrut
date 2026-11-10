@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import PaginadorCompras from "@/components/compras/PaginadorCompras";
 import { mostrarFecha } from "@/components/compras/calculos";
+import ImagenProducto from "@/components/productos/ImagenProducto";
 import type { Recepcion } from "./tipos";
 
 export default function ResumenIngresoRecepcion({
@@ -52,12 +53,20 @@ export default function ResumenIngresoRecepcion({
                     scope="row"
                     className="min-w-36 px-4 py-3 text-start font-medium text-gray-900 dark:text-white"
                   >
-                    {linea.producto_nombre}
-                    {linea.proveedor_nombre && (
-                      <span className="mt-1 block text-theme-xs font-normal text-gray-500 dark:text-gray-400">
-                        {linea.proveedor_nombre}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-3">
+                      <ImagenProducto
+                        origen={linea.producto_imagen || null}
+                        nombre={linea.producto_nombre}
+                      />
+                      <div className="min-w-0">
+                        {linea.producto_nombre}
+                        {linea.proveedor_nombre && (
+                          <span className="mt-1 block text-theme-xs font-normal text-gray-500 dark:text-gray-400">
+                            {linea.proveedor_nombre}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </th>
                   <td className="px-4 py-3 text-gray-700 tabular-nums dark:text-gray-200">
                     {recepcion.compra

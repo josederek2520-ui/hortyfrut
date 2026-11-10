@@ -32,7 +32,7 @@ class Lote(models.Model):
         BLOQUEADO = 'bloqueado', 'Bloqueado'
 
     producto = models.ForeignKey('productos.Producto', on_delete=models.PROTECT, related_name='lotes_inventario')
-    calidad = models.CharField(max_length=15, choices=[('apto', 'Apto para pedidos'), ('aprovechable', 'Aprovechable para producción')], default='apto')
+    calidad = models.CharField(max_length=15, choices=[('apto', 'Apto para pedidos'), ('aprovechable', 'Aprovechable para producción'), ('devuelto', 'Devolución pendiente de revisión')], default='apto')
     lote_origen = models.ForeignKey('self', on_delete=models.PROTECT, null=True, blank=True, related_name='lotes_derivados')
     unidad = models.ForeignKey('catalogos.UnidadMedida', on_delete=models.PROTECT, related_name='lotes_inventario')
     almacen_origen = models.ForeignKey('almacenes.Almacen', on_delete=models.PROTECT, related_name='lotes_recibidos')
@@ -56,8 +56,9 @@ class Lote(models.Model):
         constraints = [
             models.CheckConstraint(condition=Q(codigo_lote__isnull=True) | Q(codigo_lote__regex=r'^L[0-9]{6}-[0-9]{2,}$'), name='lote_codigo_formato_valido'),
             models.CheckConstraint(condition=Q(estado__in=['disponible', 'bloqueado']), name='lote_estado_valido'),
-            models.CheckConstraint(condition=Q(calidad__in=['apto', 'aprovechable']), name='lote_calidad_valida'),
-            models.CheckConstraint(condition=Q(fecha_vencimiento__isnull=True) | Q(fecha_vencimiento__gte=models.F('fecha_ingreso')), name='lote_vencimiento_valido'),
+            models.CheckConstraint(condition=Q(calidad__in=['apto', 'aprovechable', 'devuelto']), name='lote_calidad_valida'),
+            models.CheckConstraint(condition=~Q(calidad='devuelto') | Q(estado='bloqueado'), name='lote_devolucion_bloqueado'),
+            models.CheckConstraint(condition=Q(fecha_vencimiento__isnull=True) | Q(fecha_vencimiento__gte=models.F('fecha_ingreso')) | Q(calidad='devuelto'), name='lote_vencimiento_valido'),
             models.CheckConstraint(condition=Q(peso_kg_ingreso__isnull=True) | Q(peso_kg_ingreso__gt=0), name='lote_peso_positivo'),
         ]
         indexes = [models.Index(fields=['producto', 'unidad']), models.Index(fields=['fecha_vencimiento'])]
@@ -70,7 +71,9 @@ class Lote(models.Model):
 class MovimientoInventario(models.Model):
     almacen = models.ForeignKey('almacenes.Almacen', on_delete=models.PROTECT, related_name='movimientos_inventario')
     almacen_nombre = models.CharField(max_length=150)
-    tipo = models.CharField(max_length=30, choices=[('entrada_recepcion', 'Entrada por recepción'), ('salida_preparacion', 'Salida por preparación'), ('entrada_aprovechable', 'Entrada aprovechable')])
+    tipo = models.CharField(max_length=40, choices=[('entrada_recepcion', 'Entrada por recepción'), ('salida_preparacion', 'Salida por preparación'), ('entrada_aprovechable', 'Entrada aprovechable'),
+        ('entrada_devolucion', 'Entrada por devolución'), ('salida_aprovechable_devolucion', 'Separación de devolución aprovechable'),
+        ('entrada_aprovechable_devolucion', 'Entrada aprovechable por devolución'), ('salida_merma_devolucion', 'Merma de devolución')])
     naturaleza = models.CharField(max_length=10, choices=[('entrada', 'Entrada'), ('salida', 'Salida')], default='entrada')
     estado = models.CharField(max_length=12, default='registrado', choices=[('registrado', 'Registrado')])
     fecha = models.DateField()
@@ -91,7 +94,11 @@ class MovimientoInventario(models.Model):
             models.CheckConstraint(condition=Q(estado='registrado') & (
                 Q(tipo='entrada_recepcion', naturaleza='entrada', referencia_tipo='recepcion') |
                 Q(tipo='salida_preparacion', naturaleza='salida', referencia_tipo='preparacion') |
-                Q(tipo='entrada_aprovechable', naturaleza='entrada', referencia_tipo='preparacion')), name='inventario_movimiento_tipo_valido'),
+                Q(tipo='entrada_aprovechable', naturaleza='entrada', referencia_tipo='preparacion') |
+                Q(tipo='entrada_devolucion', naturaleza='entrada', referencia_tipo='devolucion') |
+                Q(tipo='salida_aprovechable_devolucion', naturaleza='salida', referencia_tipo='devolucion') |
+                Q(tipo='entrada_aprovechable_devolucion', naturaleza='entrada', referencia_tipo='devolucion') |
+                Q(tipo='salida_merma_devolucion', naturaleza='salida', referencia_tipo='devolucion')), name='inventario_movimiento_tipo_valido'),
         ]
 
     @property

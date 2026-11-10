@@ -57,6 +57,13 @@ INSTALLED_APPS = [
     'recepciones.apps.RecepcionesConfig',
     'cajillas.apps.CajillasConfig',
     'preparaciones.apps.PreparacionesConfig',
+    'vehiculos.apps.VehiculosConfig',
+    'despachos.apps.DespachosConfig',
+    'chat.apps.ChatConfig',
+    'entregas.apps.EntregasConfig',
+    'devoluciones.apps.DevolucionesConfig',
+    'precios.apps.PreciosConfig',
+    'respaldos.apps.RespaldosConfig',
 ]
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
@@ -71,6 +78,11 @@ REST_FRAMEWORK = {
 }
 
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Copias completas privadas; nunca se sirven desde MEDIA_ROOT ni por el túnel público.
+RESPALDOS_DIRECTORIO = Path(env('RESPALDOS_DIRECTORIO', default=str(BASE_DIR.parent / '.local' / 'respaldos')))
+RESPALDOS_PG_BIN = env('RESPALDOS_PG_BIN', default='')
+RESPALDOS_TIEMPO_MAXIMO_S = env.int('RESPALDOS_TIEMPO_MAXIMO_S', default=900)
 
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=['http://localhost:3000', 'http://127.0.0.1:3000'])
 CSRF_FAILURE_VIEW = 'usuarios.auth.csrf_failure'
@@ -109,6 +121,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+ASGI_APPLICATION = 'config.asgi.application'
 
 
 # Database
@@ -167,3 +180,37 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# OSRM propio: no incluye tráfico en vivo ni utiliza credenciales de la app.
+OSRM_URL = env('OSRM_URL', default='http://127.0.0.1:5000')
+OSRM_TIEMPO_LIMITE_S = min(20, max(1, env.int('OSRM_TIEMPO_LIMITE_S', default=8)))
+OSRM_RADIO_ACCESO_M = min(500, max(10, env.int('OSRM_RADIO_ACCESO_M', default=150)))
+OSRM_MAX_PUNTOS = min(500, max(3, env.int('OSRM_MAX_PUNTOS', default=100)))
+OSRM_SERVIDORES_INTERNOS = env.list('OSRM_SERVIDORES_INTERNOS', default=[])
+
+# Migración 0006 y trabajador requeridos; puede desactivarse sin alterar los planes.
+OPTIMIZACION_HABILITADA = env.bool('OPTIMIZACION_HABILITADA', default=True)
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://127.0.0.1:6379/0')
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_TASK_DEFAULT_QUEUE = env('COLA_OPTIMIZACION', default='hortyfru_optimizacion')
+CELERY_BROKER_CONNECTION_TIMEOUT = 2
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_ALWAYS_EAGER = False
+
+# Supervisión local: canales y accesos efímeros usan espacios distintos de Celery.
+SUPERVISION_HABILITADA = env.bool('SUPERVISION_HABILITADA', default=True)
+SUPERVISION_REDIS_URL = env('SUPERVISION_REDIS_URL', default='redis://127.0.0.1:6379/1')
+SUPERVISION_ACCESOS_REDIS_URL = env('SUPERVISION_ACCESOS_REDIS_URL', default='redis://127.0.0.1:6379/2')
+SUPERVISION_ORIGENES = env.list('SUPERVISION_ORIGENES', default=['http://localhost:3000', 'http://127.0.0.1:3000'])
+SUPERVISION_INTERVALO_CONTROL_S = 10
+CHANNEL_LAYERS = {'default': {'BACKEND': 'channels_redis.core.RedisChannelLayer',
+    'CONFIG': {'hosts': [SUPERVISION_REDIS_URL], 'prefix': 'hortyfru_supervision', 'capacity': 100, 'expiry': 30}}}
+CACHES = {
+    'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'},
+    'supervision': {'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': SUPERVISION_ACCESOS_REDIS_URL, 'KEY_PREFIX': 'hortyfru_acceso_supervision',
+        'OPTIONS': {'socket_connect_timeout': 2, 'socket_timeout': 2}},
+}

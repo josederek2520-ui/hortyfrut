@@ -1,0 +1,15 @@
+node_modules/
+.expo/
+dist/
+.herramientas/
+android/
+ios/
+coverage/
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+credentials.json
+expo-env.d.ts
+*.tsbuildinfo

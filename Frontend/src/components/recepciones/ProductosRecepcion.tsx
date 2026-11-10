@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { PackagePlus as IconoProductos } from "lucide-react";
+import {
+  PackagePlus as IconoProductos,
+  RefreshCw as IconoActualizar,
+} from "lucide-react";
 import Input from "@/components/form/input/InputField";
 import Button from "@/components/ui/button/Button";
 import DesplegableCompra from "@/components/compras/DesplegableCompra";
@@ -12,7 +15,7 @@ import LineaFormularioRecepcion, {
   columnasRecepcion,
   columnasRecepcionDirecta,
 } from "./LineaFormularioRecepcion";
-import { lineaDesdeOpcion } from "./calculos";
+import { lineaDesdeOpcion, seleccionarLineasRecepcion } from "./calculos";
 import type { LineaRecepcion, OpcionProductoRecepcion } from "./tipos";
 
 export default function ProductosRecepcion({
@@ -100,6 +103,7 @@ export default function ProductosRecepcion({
     };
   }, [compra, vinculada, paginaPendientes, buscar, consulta, alError]);
   const mostrarPendientes = vinculada && vista === "pendientes";
+  const cantidadAnotadas = seleccionarLineasRecepcion(lineas).lineas.length;
   const filas = mostrarPendientes
     ? (datos?.results || []).map((opcion) => {
         const base = lineaDesdeOpcion(opcion);
@@ -109,6 +113,7 @@ export default function ProductosRecepcion({
         return guardada
           ? {
               ...guardada,
+              producto: { ...guardada.producto, imagen: base.producto.imagen },
               pendiente: base.pendiente,
               proveedorNombre: base.proveedorNombre,
               unidadCompra: base.unidadCompra,
@@ -132,15 +137,23 @@ export default function ProductosRecepcion({
                 className="size-5 text-brand-600 dark:text-brand-400"
                 aria-hidden="true"
               />
-              {t("queLlego")}
+              {t("productosHoja")}
             </h2>
             <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">
-              {t(vinculada ? "anotarLlegadaAyuda" : "directoProductosAyuda")}
+              {t(
+                vinculada ? "ayudaProductosCompacta" : "directoProductosAyuda",
+              )}
             </p>
+            {!vinculada && (
+              <p className="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                {t("anotados", { cantidad: cantidadAnotadas })}
+              </p>
+            )}
           </div>
           {!vinculada && (
             <DesplegableCompra<OpcionProductoRecepcion>
               tipo="general"
+              mostrarImagen
               ruta="recepciones/productos/"
               etiqueta={t("agregarProducto")}
               valor={null}
@@ -160,22 +173,22 @@ export default function ProductosRecepcion({
               aria-label={t("vistaProductos")}
               className="flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800"
             >
-              <Button
-                size="sm"
-                variant="outline"
+              <button
+                type="button"
                 aria-pressed={vista === "pendientes"}
+                className={`pestana-hortyfru min-h-11 rounded-lg px-4 text-sm font-medium focus-visible:ring-2 focus-visible:ring-brand-400 ${vista === "pendientes" ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white" : "text-gray-500 dark:text-gray-400"}`}
                 onClick={() => alVista("pendientes")}
               >
                 {t("productosCompra")}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
+              </button>
+              <button
+                type="button"
                 aria-pressed={vista === "anotados"}
+                className={`pestana-hortyfru min-h-11 rounded-lg px-4 text-sm font-medium focus-visible:ring-2 focus-visible:ring-brand-400 ${vista === "anotados" ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white" : "text-gray-500 dark:text-gray-400"}`}
                 onClick={() => alVista("anotados")}
               >
-                {t("anotados", { cantidad: lineas.length })}
-              </Button>
+                {t("anotados", { cantidad: cantidadAnotadas })}
+              </button>
             </div>
             {mostrarPendientes && (
               <div className="flex flex-wrap items-center gap-2">
@@ -193,10 +206,13 @@ export default function ProductosRecepcion({
                 <Button
                   size="sm"
                   variant="outline"
+                  aria-label={t("actualizar")}
+                  title={t("actualizar")}
+                  className="min-h-11 min-w-11 px-3!"
                   disabled={cargando || ocupado}
                   onClick={() => establecerRevision((actual) => actual + 1)}
                 >
-                  {t("actualizar")}
+                  <IconoActualizar className="size-4" aria-hidden="true" />
                 </Button>
               </div>
             )}
@@ -250,7 +266,7 @@ export default function ProductosRecepcion({
           <div
             role="table"
             aria-label={t("productosRecibidos")}
-            className={vinculada ? "xl:min-w-232" : ""}
+            className={vinculada ? "xl:min-w-240" : ""}
           >
             <div
               role="rowgroup"
@@ -263,20 +279,28 @@ export default function ProductosRecepcion({
                 {(vinculada
                   ? [
                       "producto",
-                      "faltaRecibir",
                       "llegoHoy",
                       "paraAlmacen",
-                      "quedaPendiente",
+                      "vencimientoOpcional",
                       "opciones",
                     ]
-                  : ["producto", "paraAlmacen", "opciones"]
+                  : [
+                      "producto",
+                      "paraAlmacen",
+                      "vencimientoOpcional",
+                      "opciones",
+                    ]
                 ).map((clave) => (
                   <div
                     key={clave}
                     role="columnheader"
                     className="text-theme-xs font-medium text-gray-500 dark:text-gray-400"
                   >
-                    {t(clave)}
+                    <span
+                      className={clave === "opciones" ? "sr-only" : undefined}
+                    >
+                      {t(clave)}
+                    </span>
                   </div>
                 ))}
               </div>

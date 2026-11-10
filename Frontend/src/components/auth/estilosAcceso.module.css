@@ -1,0 +1,46 @@
+.disposicion {
+  min-height: 100svh;
+}
+
+.presentacion {
+  border-color: var(--color-brand-800);
+  background: linear-gradient(
+    150deg,
+    var(--color-brand-800),
+    var(--color-brand-950)
+  );
+  box-shadow: var(--sombra-contenido);
+}
+
+.titulo {
+  font-size: clamp(2rem, 2.6vw, 3rem);
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.recorrido {
+  border: 1px solid var(--color-brand-600);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  background: var(--color-brand-900);
+}
+
+:global(.dark) .presentacion {
+  border-color: var(--color-brand-800);
+  background: linear-gradient(
+    150deg,
+    var(--color-brand-900),
+    var(--color-brand-950)
+  );
+}
+
+@media (forced-colors: active) {
+  .presentacion,
+  :global(.dark) .presentacion,
+  .recorrido {
+    border-color: CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+}

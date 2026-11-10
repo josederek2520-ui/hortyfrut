@@ -5,6 +5,10 @@ from rest_framework.exceptions import ValidationError
 from compras.serializadores import SerializadorEstricto
 from .models import Preparacion, LineaPreparacion, AsignacionPreparacion, AportePreparacion, CajillaPrevista
 from .consultas import version_preparacion, avance_detalles, ruta_imagen_preparacion
+from django.db.models import Q
+from inventario.consultas import lotes_con_saldo
+from cajillas.models import MovimientoCajilla
+from cajillas.consultas import sumar_cantidad
 
 
 class SerializadorLineaEscritura(SerializadorEstricto):
@@ -29,6 +33,7 @@ class SerializadorAsignacionEscritura(SerializadorEstricto):
 
 class SerializadorCajillaEscritura(SerializadorEstricto):
     sucursal = serializers.IntegerField(min_value=1)
+    producto = serializers.IntegerField(min_value=1, allow_null=True, required=False, default=None)
     cajilla = serializers.IntegerField(min_value=1)
     cantidad = serializers.IntegerField(min_value=1, max_value=2147483647)
 
@@ -116,6 +121,7 @@ class SerializadorAsignacion(DatosImagenPreparacion, serializers.ModelSerializer
 
 
 class SerializadorLinea(DatosImagenPreparacion, serializers.ModelSerializer):
+    saldo_lote = serializers.SerializerMethodField()
     producto_imagen = serializers.SerializerMethodField()
     producto_categoria = serializers.SerializerMethodField()
     lote_codigo = serializers.CharField(source='lote.codigo', read_only=True)
@@ -125,18 +131,27 @@ class SerializadorLinea(DatosImagenPreparacion, serializers.ModelSerializer):
     def get_es_kg(self, obj):
         return obj.unidad_abreviatura.strip().casefold() == 'kg'
 
+    def get_saldo_lote(self, obj):
+        saldo = self.context.get('saldos_lotes', {}).get(obj.lote_id)
+        return format(saldo, '.3f') if saldo is not None else None
+
     class Meta:
         model = LineaPreparacion
         fields = ('id', 'lote', 'lote_codigo', 'producto', 'producto_nombre', 'unidad', 'unidad_nombre', 'unidad_abreviatura',
                   'cantidad_utilizada', 'merma', 'aprovechable', 'motivo_separacion', 'lote_aprovechable', 'lote_aprovechable_codigo', 'es_kg',
-                  'producto_imagen', 'producto_categoria')
+                  'producto_imagen', 'producto_categoria', 'saldo_lote')
         read_only_fields = fields
 
 
 class SerializadorCajilla(serializers.ModelSerializer):
+    saldo_almacen = serializers.SerializerMethodField()
+
+    def get_saldo_almacen(self, obj):
+        return self.context.get('saldos_cajillas', {}).get(obj.cajilla_id, 0)
+
     class Meta:
         model = CajillaPrevista
-        fields = ('id', 'sucursal', 'sucursal_nombre', 'cajilla', 'color', 'cantidad')
+        fields = ('id', 'sucursal', 'sucursal_nombre', 'producto', 'producto_nombre', 'cajilla', 'color', 'cantidad', 'saldo_almacen')
         read_only_fields = fields
 
 
@@ -169,6 +184,10 @@ class SerializadorPreparacionCompleta(SerializadorPreparacion):
         self.context['cliente_imagen'] = instance.cliente_id
         self.context['fecha_imagen'] = instance.fecha_pedidos
         self.context['avances'] = avance_detalles([fila.detalle_pedido_id for fila in instance.asignaciones.all() if fila.detalle_pedido_id])
+        self.context['saldos_lotes'] = dict(lotes_con_saldo(instance.almacen_id).filter(pk__in=[fila.lote_id for fila in instance.lineas.all()]).values_list('pk', 'saldo'))
+        cantidades = MovimientoCajilla.objects.filter(almacen_id=instance.almacen_id, cajilla_id__in=[fila.cajilla_id for fila in instance.cajillas.all()]).values('cajilla_id').annotate(
+            saldo=sumar_cantidad(Q(tipo__in=['inicial', 'ingreso', 'devolucion'])) - sumar_cantidad(Q(tipo__in=['salida', 'carga'])))
+        self.context['saldos_cajillas'] = {fila['cajilla_id']: fila['saldo'] for fila in cantidades}
         return super().to_representation(instance)
 
     class Meta(SerializadorPreparacion.Meta):
@@ -183,8 +202,33 @@ class SerializadorFiltrosPreparaciones(serializers.Serializer):
     almacen = serializers.IntegerField(min_value=1, required=False)
     categoria = serializers.IntegerField(min_value=1, required=False)
     producto = serializers.IntegerField(min_value=1, required=False)
+    unidad = serializers.IntegerField(min_value=1, required=False)
     sucursal = serializers.IntegerField(min_value=1, required=False)
     buscar = serializers.CharField(max_length=150, allow_blank=True, required=False)
+    solo_pendientes = serializers.BooleanField(default=True)
     estado = serializers.ChoiceField(choices=['borrador', 'confirmada', 'cancelada'], required=False)
     vista = serializers.ChoiceField(choices=['solicitado', 'pendiente'], default='solicitado')
     version_hoja = serializers.RegexField(r'\A[0-9a-f]{64}\Z', required=False)
+
+
+class SerializadorConsumoLoteConsulta(SerializadorEstricto):
+    lote = serializers.IntegerField(min_value=1)
+    cantidad = serializers.DecimalField(max_digits=20, decimal_places=3, min_value=Decimal('0'))
+
+
+class SerializadorSeleccionLotes(SerializadorEstricto):
+    consumos = SerializadorConsumoLoteConsulta(many=True, max_length=500, default=list)
+    excluir = serializers.ListField(child=serializers.IntegerField(min_value=1), max_length=20, default=list)
+
+    def validate_consumos(self, filas):
+        identificadores = [fila['lote'] for fila in filas]
+        if len(set(identificadores)) != len(identificadores):
+            raise serializers.ValidationError('Agrupa el uso de cada lote en una sola cantidad.')
+        return filas
+
+
+class SerializadorFiltrosJornadas(serializers.Serializer):
+    buscar = serializers.CharField(max_length=150, allow_blank=True, required=False)
+    fecha_pedidos = serializers.DateField(required=False)
+    cliente = serializers.IntegerField(min_value=1, required=False)
+    estado = serializers.ChoiceField(choices=['pendiente', 'parcial', 'preparado', 'sin_pedidos'], required=False)

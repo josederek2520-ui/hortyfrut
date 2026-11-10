@@ -5,11 +5,12 @@ import {
   ArrowLeft as IconoVolver,
   ClipboardList as IconoNecesidades,
   ShoppingBasket as IconoCompra,
+  PanelLeftClose as IconoOcultar,
+  PanelLeftOpen as IconoMostrar,
 } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import MigasPagina from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
-import Label from "@/components/form/Label";
 import { useFormValidation as useValidacionFormulario } from "@/hooks/useFormValidation";
 import { useModal } from "@/hooks/useModal";
 import {
@@ -21,15 +22,22 @@ import { fechaLocal } from "@/components/pedidos/fechas";
 import FechasCompra from "./FechasCompra";
 import NecesidadesCompra from "./NecesidadesCompra";
 import LineasCompra from "./LineasCompra";
+import ModalAgregarProductoCompra from "./ModalAgregarProductoCompra";
+import {
+  incorporarProductoCompra,
+  agregarOtroProveedorCompra,
+  productosSeleccionadosCompra,
+} from "./seleccionProductosCompra";
 import BarraCompra from "./BarraCompra";
 import ConfirmarDescartarCompra from "./ConfirmarDescartarCompra";
 import ConfirmarAccionCompra from "./ConfirmarAccionCompra";
 import { validarLineasCompra } from "./validaciones";
 import {
-  clasePanel,
   type Compra,
   type LineaFormularioCompra,
   type OpcionCompra,
+  type DatosProductoCompra,
+  type ProductoAgregarCompra,
 } from "./tipos";
 
 function lineasCompra(compra: Compra | null): LineaFormularioCompra[] {
@@ -40,6 +48,7 @@ function lineasCompra(compra: Compra | null): LineaFormularioCompra[] {
       id: linea.producto,
       nombre: linea.producto_nombre,
       unidad_nombre: linea.unidad_nombre,
+      imagen: linea.producto_imagen,
     },
     presentacion: linea.presentacion
       ? { id: linea.presentacion, nombre: linea.presentacion_nombre }
@@ -49,6 +58,7 @@ function lineasCompra(compra: Compra | null): LineaFormularioCompra[] {
       : null,
     cantidad: linea.cantidad,
     precioUnitario: linea.precio_unitario,
+    importeTotal: linea.importe_total ?? linea.subtotal,
   }));
 }
 
@@ -75,16 +85,14 @@ export default function FormularioCompra({
   const [fechaCompra, establecerFechaCompra] = useState(
     compra?.fecha_compra || fechaInicial,
   );
-  const [observaciones, establecerObservaciones] = useState(
-    compra?.observaciones || "",
-  );
   const [lineas, establecerLineas] = useState<LineaFormularioCompra[]>(() =>
     lineasCompra(compra),
   );
   const [paginaLineas, establecerPaginaLineas] = useState(1);
-  const [vista, establecerVista] = useState<"necesidades" | "compra">(
-    compra ? "compra" : "necesidades",
-  );
+  const [vista, establecerVista] = useState<"necesidades" | "compra">("compra");
+  const [necesidadesVisibles, establecerNecesidadesVisibles] = useState(false);
+  const [productoInicial, establecerProductoInicial] =
+    useState<ProductoAgregarCompra | null>(null);
   const [claveOperacion] = useState(() => crypto.randomUUID());
   const [guardando, establecerGuardando] = useState(false);
   const [fallo, establecerFallo] = useState("");
@@ -96,6 +104,7 @@ export default function FormularioCompra({
   const enviando = useRef(false);
   const modalSalida = useModal();
   const modalRevision = useModal();
+  const modalProducto = useModal();
   const {
     errors: errores,
     setErrors: establecerErrores,
@@ -106,7 +115,6 @@ export default function FormularioCompra({
   const modificado =
     fechaPedidos !== (compraActual?.fecha_pedidos || "") ||
     fechaCompra !== (compraActual?.fecha_compra || fechaInicial) ||
-    observaciones !== (compraActual?.observaciones || "") ||
     JSON.stringify(lineas) !== JSON.stringify(lineasCompra(compraActual));
   const puedeModificar = !compraActual || puedeEditar;
   const deshabilitado = guardando || conflicto || !puedeModificar;
@@ -150,20 +158,10 @@ export default function FormularioCompra({
       });
     });
   };
-  const agregarLinea = (
-    producto: OpcionCompra,
-    presentacion: OpcionCompra | null = null,
-    duplicar = false,
-  ) => {
-    if (deshabilitado) return;
-    const existente = !duplicar
-      ? lineas.findIndex(
-          (linea) =>
-            linea.producto.id === producto.id &&
-            !linea.proveedor &&
-            !Number(linea.cantidad.replace(",", ".")) &&
-            !Number(linea.precioUnitario.replace(",", ".")),
-        )
+  const abrirAgregarProducto = (producto: OpcionCompra | null = null) => {
+    if (deshabilitado || !fechaPedidos) return;
+    const existente = producto
+      ? lineas.findIndex((linea) => linea.producto.id === producto.id)
       : -1;
     if (existente >= 0) {
       mostrarLinea(existente);
@@ -174,21 +172,34 @@ export default function FormularioCompra({
       alError(new ErrorApi(400));
       return;
     }
-    establecerLineas((anteriores) => [
-      ...anteriores,
-      {
-        clave: crypto.randomUUID(),
-        producto,
-        presentacion,
-        proveedor: null,
-        cantidad: "",
-        precioUnitario: "",
-      },
-    ]);
+    establecerProductoInicial(producto);
+    modalProducto.openModal();
+  };
+  const agregarProducto = (datos: DatosProductoCompra) => {
+    if (
+      deshabilitado ||
+      lineas.length >= 500 ||
+      lineas.some((linea) => linea.producto.id === datos.producto.id)
+    )
+      return false;
+    const clave = crypto.randomUUID();
+    establecerLineas((anteriores) =>
+      incorporarProductoCompra(anteriores, datos, clave),
+    );
+    establecerErrores((anteriores) => ({ ...anteriores, detalles: [] }));
+    establecerVista("compra");
+    establecerPaginaLineas(Math.floor(lineas.length / 10) + 1);
+    return true;
+  };
+  const agregarProveedor = (linea: LineaFormularioCompra) => {
+    if (deshabilitado || !fechaPedidos || lineas.length >= 500) return;
+    const clave = crypto.randomUUID();
+    establecerLineas((anteriores) =>
+      agregarOtroProveedorCompra(anteriores, linea.clave, clave),
+    );
     establecerErrores((anteriores) => ({ ...anteriores, detalles: [] }));
     mostrarLinea(lineas.length);
   };
-  const agregar = (producto: OpcionCompra) => agregarLinea(producto);
   const cambiarLinea = (
     clave: string,
     cambio: Partial<LineaFormularioCompra>,
@@ -204,7 +215,7 @@ export default function FormularioCompra({
       const nuevos: ErroresCampos = { ...anteriores, detalles: [] };
       for (const campo of Object.keys(cambio))
         nuevos[
-          `detalle_${indice}_${campo === "precioUnitario" ? "precio_unitario" : campo}`
+          `detalle_${indice}_${campo === "importeTotal" ? "importe_total" : campo === "precioUnitario" ? "precio_unitario" : campo}`
         ] = [];
       // Una presentación distinta también resuelve una combinación repetida.
       if ("presentacion" in cambio) nuevos[`detalle_${indice}_proveedor`] = [];
@@ -239,7 +250,6 @@ export default function FormularioCompra({
     establecerCompraActual(guardada);
     establecerFechaPedidos(guardada.fecha_pedidos);
     establecerFechaCompra(guardada.fecha_compra);
-    establecerObservaciones(guardada.observaciones);
     establecerLineas(lineasCompra(guardada));
   };
   const terminar = (
@@ -271,10 +281,10 @@ export default function FormularioCompra({
     if (!puedeModificar && modificado) return;
     const problemas = validarLineasCompra(lineas, revisar, {
       cantidad: t("cantidadInvalida"),
-      precio: t("precioInvalido"),
+      precio: t("importeProductoInvalido"),
       proveedor: t("proveedorObligatorio"),
       cantidadPositiva: t("cantidadPositiva"),
-      precioPositivo: t("precioPositivo"),
+      precioPositivo: t("importeProductoPositivo"),
       sinLineas: t("sinLineasRegistro"),
       duplicada: t("lineaDuplicada"),
       importe: t("importeMaximo"),
@@ -302,7 +312,6 @@ export default function FormularioCompra({
           body: JSON.stringify({
             fecha_pedidos: fechaPedidos,
             fecha_compra: fechaCompra,
-            observaciones,
             ...(compraActual
               ? { version: compraActual.version }
               : { clave_operacion: claveOperacion }),
@@ -313,7 +322,8 @@ export default function FormularioCompra({
               proveedor: linea.proveedor?.id || null,
               cantidad: linea.cantidad.trim().replace(",", ".") || "0",
               precio_unitario:
-                linea.precioUnitario.trim().replace(",", ".") || "0",
+                (linea.precioUnitario || "").trim().replace(",", ".") || "0",
+              importe_total: linea.importeTotal.trim().replace(",", ".") || "0",
             })),
           }),
         },
@@ -377,7 +387,7 @@ export default function FormularioCompra({
           type="button"
           disabled={guardando}
           onClick={cancelar}
-          className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-lg text-sm font-medium text-gray-500 hover:text-brand-600 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-gray-400 dark:hover:text-brand-300"
+          className="mb-2 inline-flex min-h-10 items-center gap-2 rounded-lg text-sm font-medium text-gray-500 hover:text-brand-600 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-gray-400 dark:hover:text-brand-300"
         >
           <IconoVolver className="size-4 rtl:rotate-180" aria-hidden="true" />
           {t("volver")}
@@ -473,15 +483,38 @@ export default function FormularioCompra({
             </span>
           </Button>
         </div>
-        <div className="grid items-start gap-5 2xl:grid-cols-[18rem_minmax(0,1fr)]">
+        <div className="hidden items-center justify-between gap-4 2xl:flex">
+          <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+            {t("hojaTrabajoBreve")}
+          </p>
+          <button
+            type="button"
+            aria-expanded={necesidadesVisibles}
+            aria-controls="panel-necesidades-compra"
+            onClick={() => establecerNecesidadesVisibles((valor) => !valor)}
+            className="inline-flex min-h-9 items-center gap-2 rounded-lg px-2 text-theme-xs font-medium text-brand-700 hover:bg-brand-50 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-brand-300 dark:hover:bg-brand-500/10"
+          >
+            {necesidadesVisibles ? (
+              <IconoOcultar className="size-4" aria-hidden="true" />
+            ) : (
+              <IconoMostrar className="size-4" aria-hidden="true" />
+            )}
+            {t(
+              necesidadesVisibles ? "ocultarNecesidades" : "mostrarNecesidades",
+            )}
+          </button>
+        </div>
+        <div
+          className={`grid items-start gap-5 ${necesidadesVisibles ? "2xl:grid-cols-[20rem_minmax(0,1fr)]" : ""}`}
+        >
           <div
             id="panel-necesidades-compra"
-            className={`min-w-0 2xl:sticky 2xl:top-28 2xl:block ${vista === "necesidades" ? "" : "hidden"}`}
+            className={`min-w-0 ${necesidadesVisibles ? "2xl:sticky 2xl:top-28 2xl:block" : "2xl:hidden"} ${vista === "necesidades" ? "" : "hidden"}`}
           >
             <NecesidadesCompra
               key={fechaPedidos || "sin-fecha"}
               fecha={fechaPedidos}
-              alAgregar={agregar}
+              alAgregar={abrirAgregarProducto}
               alError={alError}
               deshabilitado={deshabilitado}
               compacta
@@ -494,11 +527,10 @@ export default function FormularioCompra({
           >
             <LineasCompra
               lineas={lineas}
+              fechaPedidos={fechaPedidos}
               alCambiar={cambiarLinea}
-              alAgregar={agregar}
-              alDuplicar={(linea) =>
-                agregarLinea(linea.producto, linea.presentacion, true)
-              }
+              alAbrirAgregar={() => abrirAgregarProducto()}
+              alAgregarProveedor={agregarProveedor}
               alQuitar={quitar}
               pagina={paginaLineas}
               alPagina={establecerPaginaLineas}
@@ -507,39 +539,6 @@ export default function FormularioCompra({
               puedeAgregar={!!fechaPedidos}
               alError={alError}
             />
-            <details
-              className={`${clasePanel} p-5`}
-              open={errores.observaciones?.length ? true : undefined}
-            >
-              <summary className="cursor-pointer rounded text-sm font-medium text-gray-700 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-gray-200">
-                {t("observacionesOpcionales")}
-              </summary>
-              <div className="mt-4">
-                <Label htmlFor="compra-observaciones" className="sr-only">
-                  {t("observaciones")}
-                </Label>
-                <textarea
-                  id="compra-observaciones"
-                  name="observaciones"
-                  value={observaciones}
-                  maxLength={1000}
-                  rows={2}
-                  disabled={deshabilitado}
-                  onChange={(evento) =>
-                    establecerObservaciones(evento.target.value)
-                  }
-                  aria-invalid={!!errores.observaciones?.length}
-                  aria-describedby="compra-observaciones-ayuda"
-                  className={`w-full resize-y rounded-lg border bg-white px-3 py-2.5 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:ring-3 focus:ring-brand-500/20 focus:outline-none disabled:opacity-60 dark:bg-gray-900 dark:text-gray-100 ${errores.observaciones?.length ? "border-error-500 dark:border-error-400" : "border-gray-300 dark:border-gray-700"}`}
-                />
-                <p
-                  id="compra-observaciones-ayuda"
-                  className={`mt-1.5 text-theme-xs ${errores.observaciones?.length ? "text-error-500 dark:text-error-400" : "text-gray-500 dark:text-gray-400"}`}
-                >
-                  {errores.observaciones?.join(" ") || t("observacionesAyuda")}
-                </p>
-              </div>
-            </details>
           </div>
         </div>
         <BarraCompra
@@ -552,6 +551,18 @@ export default function FormularioCompra({
           alRevisar={() => void guardar(undefined, true)}
         />
       </form>
+      {modalProducto.isOpen && fechaPedidos && (
+        <ModalAgregarProductoCompra
+          key={fechaPedidos}
+          fecha={fechaPedidos}
+          excluidos={productosSeleccionadosCompra(lineas)}
+          productoInicial={productoInicial}
+          deshabilitado={deshabilitado || lineas.length >= 500}
+          alCerrar={modalProducto.closeModal}
+          alAgregar={agregarProducto}
+          alError={alError}
+        />
+      )}
       {modalRevision.isOpen && compraActual && (
         <ConfirmarAccionCompra
           key={compraActual.version}

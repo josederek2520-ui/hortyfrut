@@ -29,6 +29,16 @@ motivo. Los motivos anteriores se conservan como datos históricos.
 
 ## Listado y cancelación
 
+El rol **Encargado de pedidos** consulta únicamente los pedidos de las sucursales
+que tiene asignadas. Este alcance se aplica en el backend antes de filtrar,
+contar o paginar; también limita consulta directa, edición, cancelación y catálogo
+de edición. Sin sucursales asignadas no ve pedidos. Los permisos globales
+`ver_todos_pedidos` y `gestionar_todos_pedidos` pertenecen al rol **Administrador
+de pedidos**, que conserva su alcance global. Para una cuenta encargada se debe
+asignar **Encargado de pedidos** y retirar roles o permisos globales; añadir el
+rol limitado a una cuenta administradora no revoca los permisos de los otros
+roles. La asignación se administra en Usuarios y queda auditada.
+
 La vista principal `/pedidos` reúne el listado, los filtros, los contadores y las
 acciones Editar y Cancelar, según permisos y estado. No hay una pantalla de
 detalle independiente: las URLs anteriores `/pedidos/{id}` redirigen al listado.

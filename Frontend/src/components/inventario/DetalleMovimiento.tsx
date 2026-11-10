@@ -29,9 +29,11 @@ export default function DetalleMovimiento({
         </h1>
         <p className="mt-3 text-sm leading-6 text-gray-500 dark:text-gray-400">
           {t(
-            movimiento.referencia_tipo === "preparacion"
-              ? "movimientoPreparacionAyuda"
-              : "movimientoAyuda",
+            movimiento.referencia_tipo === "devolucion"
+              ? "movimientoDevolucionAyuda"
+              : movimiento.referencia_tipo === "preparacion"
+                ? "movimientoPreparacionAyuda"
+                : "movimientoAyuda",
           )}
         </p>
         <dl className="my-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -59,12 +61,14 @@ export default function DetalleMovimiento({
           ))}
         </dl>
         {(
-          movimiento.referencia_tipo === "preparacion"
-            ? sesion.permisos_preparaciones?.ver
-            : sesion.permisos_recepciones?.ver
+          movimiento.referencia_tipo === "devolucion"
+            ? sesion.permisos_devoluciones?.ver
+            : movimiento.referencia_tipo === "preparacion"
+              ? sesion.permisos_preparaciones?.ver
+              : sesion.permisos_recepciones?.ver
         ) ? (
           <Link
-            href={`/${movimiento.referencia_tipo === "preparacion" ? "preparaciones" : "recepciones"}/${movimiento.referencia_id}`}
+            href={`/${movimiento.referencia_tipo === "devolucion" ? "devoluciones" : movimiento.referencia_tipo === "preparacion" ? "preparaciones" : "recepciones"}/${movimiento.referencia_id}`}
             className={claseEnlaceInventario}
           >
             {movimiento.referencia_codigo}

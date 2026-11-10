@@ -26,16 +26,16 @@ export function validarLineasCompra(
   if (registrar && !lineas.length) errores.detalles = [mensajes.sinLineas];
   lineas.forEach((linea, indice) => {
     const cantidad = linea.cantidad.trim();
-    const precio = linea.precioUnitario.trim();
+    const precio = linea.importeTotal.trim();
     const campo = (nombre: string) => `detalle_${indice}_${nombre}`;
     if (cantidad && !/^[0-9]{1,9}([.,][0-9]{1,3})?$/.test(cantidad))
       errores[campo("cantidad")] = [mensajes.cantidad];
     else if (registrar && !(Number(cantidad.replace(",", ".")) > 0))
       errores[campo("cantidad")] = [mensajes.cantidadPositiva];
-    if (precio && !/^[0-9]{1,10}([.,][0-9]{1,2})?$/.test(precio))
-      errores[campo("precio_unitario")] = [mensajes.precio];
+    if (precio && !/^[0-9]{1,12}([.,][0-9]{1,2})?$/.test(precio))
+      errores[campo("importe_total")] = [mensajes.precio];
     else if (registrar && !(Number(precio.replace(",", ".")) > 0))
-      errores[campo("precio_unitario")] = [mensajes.precioPositivo];
+      errores[campo("importe_total")] = [mensajes.precioPositivo];
     if (registrar && !linea.proveedor)
       errores[campo("proveedor")] = [mensajes.proveedor];
     if (linea.proveedor) {

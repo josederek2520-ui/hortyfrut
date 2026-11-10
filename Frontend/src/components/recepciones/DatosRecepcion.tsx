@@ -1,6 +1,5 @@
 "use client";
 import { useLocale, useTranslations } from "next-intl";
-import Button from "@/components/ui/button/Button";
 import Label from "@/components/form/Label";
 import CampoFecha from "@/components/form/CampoFecha";
 import DesplegableCompra from "@/components/compras/DesplegableCompra";
@@ -71,31 +70,25 @@ export default function DatosRecepcion({
   );
   return (
     <section
-      className={`${clasePanel} space-y-4 p-5 sm:p-6`}
+      className={`${clasePanel} p-5 sm:p-6`}
       aria-labelledby="datos-recepcion"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2
-            id="datos-recepcion"
-            className="text-lg font-semibold text-gray-900 dark:text-white"
-          >
-            {t("datosIngreso")}
-          </h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {t("datosIngresoAyuda")}
-          </p>
-        </div>
+      <h2 id="datos-recepcion" className="sr-only">
+        {t("datosIngreso")}
+      </h2>
+      <div
+        className={`grid items-start gap-4 sm:grid-cols-2 ${vinculada ? "xl:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_minmax(11rem,1fr)_auto]" : "xl:grid-cols-[auto_minmax(0,1fr)_minmax(11rem,1fr)]"}`}
+      >
         <div
           role="group"
           aria-label={t("origen")}
-          className="flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800"
+          className="flex gap-1 rounded-xl bg-gray-100 p-1 sm:col-span-2 xl:col-span-1 xl:mt-6.5 dark:bg-gray-800"
         >
           {[true, false].map((valor) => (
-            <Button
+            <button
               key={String(valor)}
-              size="sm"
-              variant="outline"
+              type="button"
+              className={`pestana-hortyfru min-h-11 flex-1 rounded-lg px-3 text-sm font-medium whitespace-nowrap focus-visible:ring-2 focus-visible:ring-brand-400 disabled:opacity-50 xl:min-h-9 ${vinculada === valor ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white" : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"}`}
               aria-pressed={vinculada === valor}
               disabled={ocupado || guardada}
               onClick={() => {
@@ -104,13 +97,9 @@ export default function DatosRecepcion({
               }}
             >
               {t(valor ? "desdeCompra" : "sinCompra")}
-            </Button>
+            </button>
           ))}
         </div>
-      </div>
-      <div
-        className={`grid items-start gap-4 sm:grid-cols-2 ${vinculada ? "lg:grid-cols-3" : ""}`}
-      >
         {vinculada && (
           <DesplegableCompra<OrigenRecepcion>
             tipo="general"
@@ -152,31 +141,39 @@ export default function DatosRecepcion({
             max={fechaLocal()}
             disabled={ocupado}
             error={!!errores.fecha_recepcion?.length}
-            aria-describedby="fecha-recepcion-error"
+            aria-describedby={
+              errores.fecha_recepcion?.length
+                ? "fecha-recepcion-error"
+                : undefined
+            }
             alCambiar={alFecha}
           />
-          <p
-            id="fecha-recepcion-error"
-            className="mt-1 text-theme-xs text-error-600 dark:text-error-400"
-          >
-            {errores.fecha_recepcion?.join(" ")}
-          </p>
+          {!!errores.fecha_recepcion?.length && (
+            <p
+              id="fecha-recepcion-error"
+              className="mt-1 text-theme-xs text-error-600 dark:text-error-400"
+            >
+              {errores.fecha_recepcion?.join(" ")}
+            </p>
+          )}
         </div>
+        {vinculada && (
+          <details
+            open={errores.observaciones?.length ? true : undefined}
+            className="text-theme-xs open:col-span-full sm:col-span-2 xl:col-span-1 xl:mt-6.5 xl:open:col-span-full xl:open:mt-0"
+          >
+            <summary
+              title={t("notasOpcionales")}
+              className="min-h-11 w-fit cursor-pointer content-center rounded px-1 text-theme-xs font-medium whitespace-nowrap text-gray-600 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-gray-300"
+            >
+              {t("observaciones")}
+              {observaciones.trim() ? " •" : ""}
+            </summary>
+            {notas}
+          </details>
+        )}
       </div>
-      {vinculada ? (
-        <details
-          open={errores.observaciones?.length ? true : undefined}
-          className="border-t border-gray-100 pt-3 dark:border-gray-800"
-        >
-          <summary className="w-fit cursor-pointer rounded text-theme-xs font-medium text-gray-600 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-gray-300">
-            {t("notasOpcionales")}
-            {observaciones.trim() ? " •" : ""}
-          </summary>
-          {notas}
-        </details>
-      ) : (
-        notas
-      )}
+      {!vinculada && notas}
     </section>
   );
 }

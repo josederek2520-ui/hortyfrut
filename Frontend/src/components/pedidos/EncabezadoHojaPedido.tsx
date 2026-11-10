@@ -53,7 +53,9 @@ export default function EncabezadoHojaPedido({
             id="sucursal"
             tabIndex={-1}
             aria-labelledby="etiqueta-sucursal-pedido"
-            aria-describedby="ayuda-sucursal-pedido error-sucursal-pedido"
+            aria-describedby={
+              errores.sucursal?.length ? "error-sucursal-pedido" : undefined
+            }
             aria-invalid={!!errores.sucursal?.length}
             className={`${claseEntrada} flex items-center gap-2 bg-gray-50 dark:bg-gray-800`}
           >
@@ -67,15 +69,14 @@ export default function EncabezadoHojaPedido({
                 : "—"}
             </span>
           </p>
-          <p
-            id="ayuda-sucursal-pedido"
-            className="mt-1.5 text-xs text-gray-500 dark:text-gray-400"
-          >
-            {t("sucursalFijaAyuda")}
-          </p>
-          <p id="error-sucursal-pedido" className="mt-1 text-xs text-error-500">
-            {errores.sucursal?.join(" ")}
-          </p>
+          {!!errores.sucursal?.length && (
+            <p
+              id="error-sucursal-pedido"
+              className="mt-1 text-xs text-error-500"
+            >
+              {errores.sucursal.join(" ")}
+            </p>
+          )}
         </div>
         <div>
           <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">

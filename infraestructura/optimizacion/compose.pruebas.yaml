@@ -1,0 +1,25 @@
+# Capa de prueba: usar junto con compose.yaml; conserva el trabajador habitual.
+services:
+  trabajador_pruebas:
+    image: hortyfru-optimizacion-trabajador
+    env_file: ../../Backend/.env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.pruebas_aisladas
+      HORTYFRU_BD_PRUEBAS: pruebas_hortyfru_optimizacion_integral
+      DB_HOST: host.docker.internal
+      OSRM_URL: http://rutas:5000
+      OSRM_SERVIDORES_INTERNOS: rutas
+      CELERY_BROKER_URL: redis://redis:6379/0
+      COLA_OPTIMIZACION: hortyfru_optimizacion_pruebas
+      OPTIMIZACION_HABILITADA: "True"
+      DEBUG: "False"
+    volumes:
+      - ../../Backend:/aplicacion:ro
+    command: python -m celery -A config.trabajos:aplicacion worker --loglevel=INFO --concurrency=1 --hostname=pruebas-optimizacion@%h
+    networks:
+      - default
+      - carreteras
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    mem_limit: 512m
+    cpus: 1

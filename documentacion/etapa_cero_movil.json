@@ -1,0 +1,1574 @@
+{
+  "fecha": "2026-10-30",
+  "zona_horaria": "America/La_Paz",
+  "etapa": 0,
+  "estado": "revision_completada",
+  "modelos": [
+    {
+      "modelo": "despachos.Despacho",
+      "tabla": "despachos",
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "BigAutoField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "almacen",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "almacenes.Almacen"
+        },
+        {
+          "nombre": "almacen_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "vehiculo",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "vehiculos.Vehiculo"
+        },
+        {
+          "nombre": "vehiculo_placa",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "chofer",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "usuarios.Usuario"
+        },
+        {
+          "nombre": "chofer_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "fecha_reparto",
+          "tipo": "DateField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "estado",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "observaciones",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "responsable",
+          "tipo": "ForeignKey",
+          "opcional": true,
+          "relacion": "usuarios.Usuario"
+        },
+        {
+          "nombre": "responsable_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "creado_en",
+          "tipo": "DateTimeField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "actualizado_en",
+          "tipo": "DateTimeField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "salida_en",
+          "tipo": "DateTimeField",
+          "opcional": true,
+          "relacion": null
+        },
+        {
+          "nombre": "retorno_en",
+          "tipo": "DateTimeField",
+          "opcional": true,
+          "relacion": null
+        },
+        {
+          "nombre": "clave_operacion",
+          "tipo": "UUIDField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "huella_creacion",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        }
+      ],
+      "restricciones": [
+        "despacho_estado_valido",
+        "despacho_fechas_estado",
+        "despacho_vehiculo_en_ruta_unico",
+        "despacho_chofer_en_ruta_unico"
+      ],
+      "permisos_propios": [
+        "iniciar_despacho",
+        "registrar_recorrido",
+        "finalizar_despacho",
+        "cancelar_despacho",
+        "conducir_despacho"
+      ]
+    },
+    {
+      "modelo": "despachos.ParadaDespacho",
+      "tabla": "paradas_despacho",
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "BigAutoField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "despacho",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "despachos.Despacho"
+        },
+        {
+          "nombre": "sucursal",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "clientes.Sucursal"
+        },
+        {
+          "nombre": "cliente_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "sucursal_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "direccion",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "orden",
+          "tipo": "PositiveIntegerField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "llegada_en",
+          "tipo": "DateTimeField",
+          "opcional": true,
+          "relacion": null
+        },
+        {
+          "nombre": "descargada_en",
+          "tipo": "DateTimeField",
+          "opcional": true,
+          "relacion": null
+        }
+      ],
+      "restricciones": [
+        "despacho_sucursal_unica",
+        "despacho_orden_unico",
+        "despacho_orden_positivo",
+        "descarga_requiere_llegada"
+      ],
+      "permisos_propios": []
+    },
+    {
+      "modelo": "despachos.CargaDespacho",
+      "tabla": "cargas_despacho",
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "BigAutoField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "despacho",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "despachos.Despacho"
+        },
+        {
+          "nombre": "parada",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "despachos.ParadaDespacho"
+        },
+        {
+          "nombre": "asignacion",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "preparaciones.AsignacionPreparacion"
+        },
+        {
+          "nombre": "activa",
+          "tipo": "BooleanField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "contenido",
+          "tipo": "JSONField",
+          "opcional": false,
+          "relacion": null
+        }
+      ],
+      "restricciones": [
+        "despacho_asignacion_activa_unica"
+      ],
+      "permisos_propios": []
+    },
+    {
+      "modelo": "despachos.CajillaDespacho",
+      "tabla": "cajillas_despacho",
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "BigAutoField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "despacho",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "despachos.Despacho"
+        },
+        {
+          "nombre": "parada",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "despachos.ParadaDespacho"
+        },
+        {
+          "nombre": "cajilla",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "cajillas.Cajilla"
+        },
+        {
+          "nombre": "color",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "cantidad",
+          "tipo": "PositiveIntegerField",
+          "opcional": false,
+          "relacion": null
+        }
+      ],
+      "restricciones": [
+        "despacho_cajilla_destino_unico",
+        "despacho_cajilla_cantidad_valida"
+      ],
+      "permisos_propios": []
+    },
+    {
+      "modelo": "despachos.OperacionDespacho",
+      "tabla": "operaciones_despacho",
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "BigAutoField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "despacho",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "despachos.Despacho"
+        },
+        {
+          "nombre": "clave_operacion",
+          "tipo": "UUIDField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "accion",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "huella",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "responsable",
+          "tipo": "ForeignKey",
+          "opcional": true,
+          "relacion": "usuarios.Usuario"
+        },
+        {
+          "nombre": "responsable_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "creado_en",
+          "tipo": "DateTimeField",
+          "opcional": false,
+          "relacion": null
+        }
+      ],
+      "restricciones": [],
+      "permisos_propios": []
+    },
+    {
+      "modelo": "preparaciones.Preparacion",
+      "tabla": "preparaciones",
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "BigAutoField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "cliente",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "clientes.Cliente"
+        },
+        {
+          "nombre": "cliente_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "fecha_pedidos",
+          "tipo": "DateField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "almacen",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "almacenes.Almacen"
+        },
+        {
+          "nombre": "almacen_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "estado",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "observaciones",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "responsable",
+          "tipo": "ForeignKey",
+          "opcional": true,
+          "relacion": "usuarios.Usuario"
+        },
+        {
+          "nombre": "responsable_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "creado_en",
+          "tipo": "DateTimeField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "actualizado_en",
+          "tipo": "DateTimeField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "clave_operacion",
+          "tipo": "UUIDField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "huella_creacion",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "confirmado_por",
+          "tipo": "ForeignKey",
+          "opcional": true,
+          "relacion": "usuarios.Usuario"
+        },
+        {
+          "nombre": "confirmado_en",
+          "tipo": "DateTimeField",
+          "opcional": true,
+          "relacion": null
+        },
+        {
+          "nombre": "clave_confirmacion",
+          "tipo": "UUIDField",
+          "opcional": true,
+          "relacion": null
+        },
+        {
+          "nombre": "cancelado_por",
+          "tipo": "ForeignKey",
+          "opcional": true,
+          "relacion": "usuarios.Usuario"
+        },
+        {
+          "nombre": "cancelado_en",
+          "tipo": "DateTimeField",
+          "opcional": true,
+          "relacion": null
+        },
+        {
+          "nombre": "motivo_cancelacion",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "clave_cancelacion",
+          "tipo": "UUIDField",
+          "opcional": true,
+          "relacion": null
+        },
+        {
+          "nombre": "movimiento_salida",
+          "tipo": "OneToOneField",
+          "opcional": true,
+          "relacion": "inventario.MovimientoInventario"
+        },
+        {
+          "nombre": "movimiento_aprovechable",
+          "tipo": "OneToOneField",
+          "opcional": true,
+          "relacion": "inventario.MovimientoInventario"
+        }
+      ],
+      "restricciones": [
+        "preparacion_estado_valido",
+        "preparacion_salida_confirmada"
+      ],
+      "permisos_propios": [
+        "confirmar_preparacion",
+        "cancelar_preparacion"
+      ]
+    },
+    {
+      "modelo": "preparaciones.AsignacionPreparacion",
+      "tabla": "asignaciones_preparacion",
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "BigAutoField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "preparacion",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "preparaciones.Preparacion"
+        },
+        {
+          "nombre": "pedido",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "pedidos.Pedido"
+        },
+        {
+          "nombre": "detalle_pedido",
+          "tipo": "ForeignKey",
+          "opcional": true,
+          "relacion": "pedidos.DetallePedido"
+        },
+        {
+          "nombre": "sucursal",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "clientes.Sucursal"
+        },
+        {
+          "nombre": "sucursal_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "producto",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "productos.Producto"
+        },
+        {
+          "nombre": "producto_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "presentacion_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "columna",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "cantidad_solicitada",
+          "tipo": "PositiveIntegerField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "cantidad",
+          "tipo": "PositiveIntegerField",
+          "opcional": false,
+          "relacion": null
+        }
+      ],
+      "restricciones": [
+        "preparacion_detalle_pedido_unico",
+        "preparacion_asignacion_valida"
+      ],
+      "permisos_propios": []
+    },
+    {
+      "modelo": "preparaciones.AportePreparacion",
+      "tabla": "aportes_preparacion",
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "BigAutoField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "linea",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "preparaciones.LineaPreparacion"
+        },
+        {
+          "nombre": "asignacion",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "preparaciones.AsignacionPreparacion"
+        },
+        {
+          "nombre": "cantidad",
+          "tipo": "DecimalField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "peso_kg",
+          "tipo": "DecimalField",
+          "opcional": true,
+          "relacion": null
+        }
+      ],
+      "restricciones": [
+        "preparacion_aporte_unico",
+        "preparacion_aporte_valido"
+      ],
+      "permisos_propios": []
+    },
+    {
+      "modelo": "preparaciones.CajillaPrevista",
+      "tabla": "cajillas_previstas_preparacion",
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "BigAutoField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "preparacion",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "preparaciones.Preparacion"
+        },
+        {
+          "nombre": "sucursal",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "clientes.Sucursal"
+        },
+        {
+          "nombre": "sucursal_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "producto",
+          "tipo": "ForeignKey",
+          "opcional": true,
+          "relacion": "productos.Producto"
+        },
+        {
+          "nombre": "producto_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "cajilla",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "cajillas.Cajilla"
+        },
+        {
+          "nombre": "color",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "cantidad",
+          "tipo": "PositiveIntegerField",
+          "opcional": false,
+          "relacion": null
+        }
+      ],
+      "restricciones": [
+        "preparacion_cajilla_general_unico",
+        "preparacion_cajilla_producto_unico",
+        "preparacion_cajilla_cantidad_valida"
+      ],
+      "permisos_propios": []
+    },
+    {
+      "modelo": "cajillas.Cajilla",
+      "tabla": "cajillas",
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "BigAutoField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "color",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "responsable",
+          "tipo": "ForeignKey",
+          "opcional": true,
+          "relacion": "usuarios.Usuario"
+        },
+        {
+          "nombre": "responsable_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "creado_en",
+          "tipo": "DateTimeField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "clave_operacion",
+          "tipo": "UUIDField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "huella_creacion",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        }
+      ],
+      "restricciones": [
+        "cajilla_color_unico_ci",
+        "cajilla_color_valido"
+      ],
+      "permisos_propios": [
+        "registrar_ingreso",
+        "registrar_salida",
+        "registrar_devolucion"
+      ]
+    },
+    {
+      "modelo": "cajillas.MovimientoCajilla",
+      "tabla": "movimientos_cajilla",
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "BigAutoField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "cajilla",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "cajillas.Cajilla"
+        },
+        {
+          "nombre": "despacho",
+          "tipo": "ForeignKey",
+          "opcional": true,
+          "relacion": "despachos.Despacho"
+        },
+        {
+          "nombre": "color",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "tipo",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "cantidad",
+          "tipo": "PositiveIntegerField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "almacen",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "almacenes.Almacen"
+        },
+        {
+          "nombre": "almacen_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "sucursal",
+          "tipo": "ForeignKey",
+          "opcional": true,
+          "relacion": "clientes.Sucursal"
+        },
+        {
+          "nombre": "sucursal_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "cliente_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "observaciones",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "responsable",
+          "tipo": "ForeignKey",
+          "opcional": true,
+          "relacion": "usuarios.Usuario"
+        },
+        {
+          "nombre": "responsable_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "creado_en",
+          "tipo": "DateTimeField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "clave_operacion",
+          "tipo": "UUIDField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "huella_operacion",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        }
+      ],
+      "restricciones": [
+        "cajilla_cantidad_positiva",
+        "cajilla_movimiento_destino_valido",
+        "cajilla_despacho_origen_valido",
+        "cajilla_un_saldo_inicial"
+      ],
+      "permisos_propios": []
+    },
+    {
+      "modelo": "vehiculos.Vehiculo",
+      "tabla": "vehiculos",
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "BigAutoField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "placa",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "tipo",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "marca",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "capacidad_kg",
+          "tipo": "DecimalField",
+          "opcional": true,
+          "relacion": null
+        },
+        {
+          "nombre": "imagen",
+          "tipo": "FileField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "activo",
+          "tipo": "BooleanField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "responsable",
+          "tipo": "ForeignKey",
+          "opcional": true,
+          "relacion": "usuarios.Usuario"
+        },
+        {
+          "nombre": "responsable_nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "creado_en",
+          "tipo": "DateTimeField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "actualizado_en",
+          "tipo": "DateTimeField",
+          "opcional": false,
+          "relacion": null
+        }
+      ],
+      "restricciones": [
+        "vehiculo_placa_unica",
+        "vehiculo_placa_valida",
+        "vehiculo_tipo_valido",
+        "vehiculo_capacidad_positiva"
+      ],
+      "permisos_propios": [
+        "cambiar_estado_vehiculo"
+      ]
+    },
+    {
+      "modelo": "clientes.Sucursal",
+      "tabla": "sucursales",
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "BigAutoField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "telefono",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "activo",
+          "tipo": "BooleanField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "creado_en",
+          "tipo": "DateTimeField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "actualizado_en",
+          "tipo": "DateTimeField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "cliente",
+          "tipo": "ForeignKey",
+          "opcional": false,
+          "relacion": "clientes.Cliente"
+        },
+        {
+          "nombre": "encargado_pedidos",
+          "tipo": "ForeignKey",
+          "opcional": true,
+          "relacion": "usuarios.Usuario"
+        },
+        {
+          "nombre": "nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "direccion",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "referencia",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "latitud",
+          "tipo": "DecimalField",
+          "opcional": true,
+          "relacion": null
+        },
+        {
+          "nombre": "longitud",
+          "tipo": "DecimalField",
+          "opcional": true,
+          "relacion": null
+        }
+      ],
+      "restricciones": [
+        "sucursal_nombre_unico_cliente",
+        "sucursal_nombre_valido",
+        "sucursal_direccion_valida",
+        "sucursal_telefono_digitos",
+        "sucursal_coordenadas_validas"
+      ],
+      "permisos_propios": [
+        "cambiar_estado_sucursal",
+        "asignar_encargado"
+      ]
+    },
+    {
+      "modelo": "almacenes.Almacen",
+      "tabla": "almacenes",
+      "campos": [
+        {
+          "nombre": "id",
+          "tipo": "BigAutoField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "nombre",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "direccion",
+          "tipo": "CharField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "latitud",
+          "tipo": "DecimalField",
+          "opcional": true,
+          "relacion": null
+        },
+        {
+          "nombre": "longitud",
+          "tipo": "DecimalField",
+          "opcional": true,
+          "relacion": null
+        },
+        {
+          "nombre": "activo",
+          "tipo": "BooleanField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "creado_en",
+          "tipo": "DateTimeField",
+          "opcional": false,
+          "relacion": null
+        },
+        {
+          "nombre": "actualizado_en",
+          "tipo": "DateTimeField",
+          "opcional": false,
+          "relacion": null
+        }
+      ],
+      "restricciones": [
+        "almacen_nombre_unico_ci",
+        "almacen_nombre_valido",
+        "almacen_direccion_valida",
+        "almacen_coordenadas_validas"
+      ],
+      "permisos_propios": [
+        "cambiar_estado_almacen"
+      ]
+    }
+  ],
+  "rutas_actuales": [
+    {
+      "ruta": "api/v1/^vehiculos/$",
+      "acciones": {
+        "get": "list",
+        "post": "create"
+      },
+      "vista": "vehiculos.vistas.VistaVehiculos"
+    },
+    {
+      "ruta": "api/v1/^vehiculos/resumen/$",
+      "acciones": {
+        "get": "resumen"
+      },
+      "vista": "vehiculos.vistas.VistaVehiculos"
+    },
+    {
+      "ruta": "api/v1/^vehiculos/(?P<pk>[^/.]+)/$",
+      "acciones": {
+        "get": "retrieve",
+        "patch": "partial_update"
+      },
+      "vista": "vehiculos.vistas.VistaVehiculos"
+    },
+    {
+      "ruta": "api/v1/^vehiculos/(?P<pk>[^/.]+)/estado/$",
+      "acciones": {
+        "post": "estado"
+      },
+      "vista": "vehiculos.vistas.VistaVehiculos"
+    },
+    {
+      "ruta": "api/v1/^vehiculos/(?P<pk>[^/.]+)/imagen/$",
+      "acciones": {
+        "get": "imagen"
+      },
+      "vista": "vehiculos.vistas.VistaVehiculos"
+    },
+    {
+      "ruta": "api/v1/^despachos/$",
+      "acciones": {
+        "get": "list",
+        "post": "create"
+      },
+      "vista": "despachos.vistas.VistaDespachos"
+    },
+    {
+      "ruta": "api/v1/^despachos/almacenes/$",
+      "acciones": {
+        "get": "almacenes"
+      },
+      "vista": "despachos.vistas.VistaDespachos"
+    },
+    {
+      "ruta": "api/v1/^despachos/cajillas/$",
+      "acciones": {
+        "get": "cajillas"
+      },
+      "vista": "despachos.vistas.VistaDespachos"
+    },
+    {
+      "ruta": "api/v1/^despachos/choferes/$",
+      "acciones": {
+        "get": "choferes"
+      },
+      "vista": "despachos.vistas.VistaDespachos"
+    },
+    {
+      "ruta": "api/v1/^despachos/destinos-disponibles/$",
+      "acciones": {
+        "get": "destinos_disponibles"
+      },
+      "vista": "despachos.vistas.VistaDespachos"
+    },
+    {
+      "ruta": "api/v1/^despachos/disponibles/$",
+      "acciones": {
+        "get": "disponibles"
+      },
+      "vista": "despachos.vistas.VistaDespachos"
+    },
+    {
+      "ruta": "api/v1/^despachos/pedidos-disponibles/$",
+      "acciones": {
+        "get": "pedidos_disponibles"
+      },
+      "vista": "despachos.vistas.VistaDespachos"
+    },
+    {
+      "ruta": "api/v1/^despachos/resumen/$",
+      "acciones": {
+        "get": "resumen"
+      },
+      "vista": "despachos.vistas.VistaDespachos"
+    },
+    {
+      "ruta": "api/v1/^despachos/vehiculos/$",
+      "acciones": {
+        "get": "vehiculos"
+      },
+      "vista": "despachos.vistas.VistaDespachos"
+    },
+    {
+      "ruta": "api/v1/^despachos/(?P<pk>[^/.]+)/$",
+      "acciones": {
+        "get": "retrieve",
+        "patch": "partial_update"
+      },
+      "vista": "despachos.vistas.VistaDespachos"
+    },
+    {
+      "ruta": "api/v1/^despachos/(?P<pk>[^/.]+)/cancelar/$",
+      "acciones": {
+        "post": "cancelar"
+      },
+      "vista": "despachos.vistas.VistaDespachos"
+    },
+    {
+      "ruta": "api/v1/^despachos/(?P<pk>[^/.]+)/descargar/$",
+      "acciones": {
+        "post": "descargar"
+      },
+      "vista": "despachos.vistas.VistaDespachos"
+    },
+    {
+      "ruta": "api/v1/^despachos/(?P<pk>[^/.]+)/finalizar/$",
+      "acciones": {
+        "post": "finalizar"
+      },
+      "vista": "despachos.vistas.VistaDespachos"
+    },
+    {
+      "ruta": "api/v1/^despachos/(?P<pk>[^/.]+)/iniciar/$",
+      "acciones": {
+        "post": "iniciar"
+      },
+      "vista": "despachos.vistas.VistaDespachos"
+    },
+    {
+      "ruta": "api/v1/^despachos/(?P<pk>[^/.]+)/llegar/$",
+      "acciones": {
+        "post": "llegar"
+      },
+      "vista": "despachos.vistas.VistaDespachos"
+    },
+    {
+      "ruta": "api/v1/^cajillas/$",
+      "acciones": {
+        "get": "list",
+        "post": "create"
+      },
+      "vista": "cajillas.vistas.VistaCajillas"
+    },
+    {
+      "ruta": "api/v1/^cajillas/almacenes/$",
+      "acciones": {
+        "get": "almacenes"
+      },
+      "vista": "cajillas.vistas.VistaCajillas"
+    },
+    {
+      "ruta": "api/v1/^cajillas/movimientos/$",
+      "acciones": {
+        "get": "movimientos"
+      },
+      "vista": "cajillas.vistas.VistaCajillas"
+    },
+    {
+      "ruta": "api/v1/^cajillas/resumen/$",
+      "acciones": {
+        "get": "resumen"
+      },
+      "vista": "cajillas.vistas.VistaCajillas"
+    },
+    {
+      "ruta": "api/v1/^cajillas/sucursales/$",
+      "acciones": {
+        "get": "sucursales"
+      },
+      "vista": "cajillas.vistas.VistaCajillas"
+    },
+    {
+      "ruta": "api/v1/^cajillas/(?P<pk>[^/.]+)/$",
+      "acciones": {
+        "get": "retrieve"
+      },
+      "vista": "cajillas.vistas.VistaCajillas"
+    },
+    {
+      "ruta": "api/v1/^cajillas/(?P<pk>[^/.]+)/movimientos/$",
+      "acciones": {
+        "post": "registrar"
+      },
+      "vista": "cajillas.vistas.VistaCajillas"
+    },
+    {
+      "ruta": "api/v1/^cajillas/(?P<pk>[^/.]+)/saldos-almacenes/$",
+      "acciones": {
+        "get": "saldos_almacenes"
+      },
+      "vista": "cajillas.vistas.VistaCajillas"
+    },
+    {
+      "ruta": "api/v1/^cajillas/(?P<pk>[^/.]+)/saldos-sucursales/$",
+      "acciones": {
+        "get": "saldos_sucursales"
+      },
+      "vista": "cajillas.vistas.VistaCajillas"
+    },
+    {
+      "ruta": "api/v1/^preparaciones/$",
+      "acciones": {
+        "get": "list",
+        "post": "create"
+      },
+      "vista": "preparaciones.vistas.VistaPreparaciones"
+    },
+    {
+      "ruta": "api/v1/^preparaciones/almacenes/$",
+      "acciones": {
+        "get": "almacenes"
+      },
+      "vista": "preparaciones.vistas.VistaPreparaciones"
+    },
+    {
+      "ruta": "api/v1/^preparaciones/categorias/$",
+      "acciones": {
+        "get": "categorias"
+      },
+      "vista": "preparaciones.vistas.VistaPreparaciones"
+    },
+    {
+      "ruta": "api/v1/^preparaciones/clientes/$",
+      "acciones": {
+        "get": "clientes"
+      },
+      "vista": "preparaciones.vistas.VistaPreparaciones"
+    },
+    {
+      "ruta": "api/v1/^preparaciones/colores/$",
+      "acciones": {
+        "get": "colores"
+      },
+      "vista": "preparaciones.vistas.VistaPreparaciones"
+    },
+    {
+      "ruta": "api/v1/^preparaciones/consolidado/$",
+      "acciones": {
+        "get": "consolidado"
+      },
+      "vista": "preparaciones.vistas.VistaPreparaciones"
+    },
+    {
+      "ruta": "api/v1/^preparaciones/imagenes/(?P<producto_pk>[0-9]+)/$",
+      "acciones": {
+        "get": "imagen"
+      },
+      "vista": "preparaciones.vistas.VistaPreparaciones"
+    },
+    {
+      "ruta": "api/v1/^preparaciones/jornadas/$",
+      "acciones": {
+        "get": "jornadas"
+      },
+      "vista": "preparaciones.vistas.VistaPreparaciones"
+    },
+    {
+      "ruta": "api/v1/^preparaciones/lotes/$",
+      "acciones": {
+        "get": "lotes",
+        "post": "lotes"
+      },
+      "vista": "preparaciones.vistas.VistaPreparaciones"
+    },
+    {
+      "ruta": "api/v1/^preparaciones/necesidades/$",
+      "acciones": {
+        "get": "necesidades"
+      },
+      "vista": "preparaciones.vistas.VistaPreparaciones"
+    },
+    {
+      "ruta": "api/v1/^preparaciones/productos/$",
+      "acciones": {
+        "get": "productos"
+      },
+      "vista": "preparaciones.vistas.VistaPreparaciones"
+    },
+    {
+      "ruta": "api/v1/^preparaciones/sucursales/$",
+      "acciones": {
+        "get": "sucursales"
+      },
+      "vista": "preparaciones.vistas.VistaPreparaciones"
+    },
+    {
+      "ruta": "api/v1/^preparaciones/(?P<pk>[^/.]+)/$",
+      "acciones": {
+        "get": "retrieve",
+        "patch": "partial_update"
+      },
+      "vista": "preparaciones.vistas.VistaPreparaciones"
+    },
+    {
+      "ruta": "api/v1/^preparaciones/(?P<pk>[^/.]+)/cancelar/$",
+      "acciones": {
+        "post": "cancelar"
+      },
+      "vista": "preparaciones.vistas.VistaPreparaciones"
+    },
+    {
+      "ruta": "api/v1/^preparaciones/(?P<pk>[^/.]+)/confirmar/$",
+      "acciones": {
+        "post": "confirmar"
+      },
+      "vista": "preparaciones.vistas.VistaPreparaciones"
+    },
+    {
+      "ruta": "api/v1/auth/login/",
+      "acciones": {
+        "post": "post"
+      },
+      "vista": "usuarios.auth.LoginView"
+    },
+    {
+      "ruta": "api/v1/auth/logout/",
+      "acciones": {
+        "post": "post"
+      },
+      "vista": "usuarios.auth.LogoutView"
+    },
+    {
+      "ruta": "api/v1/auth/me/",
+      "acciones": {
+        "get": "get"
+      },
+      "vista": "usuarios.auth.SessionView"
+    },
+    {
+      "ruta": "api/v1/auth/profile/",
+      "acciones": {
+        "get": "get",
+        "patch": "patch"
+      },
+      "vista": "usuarios.auth.PerfilView"
+    },
+    {
+      "ruta": "api/v1/auth/profile/password/",
+      "acciones": {
+        "post": "post"
+      },
+      "vista": "usuarios.auth.PerfilPasswordView"
+    },
+    {
+      "ruta": "api/v1/^usuarios/$",
+      "acciones": {
+        "get": "list",
+        "post": "create"
+      },
+      "vista": "usuarios.views.UsuarioViewSet"
+    },
+    {
+      "ruta": "api/v1/^usuarios/resumen/$",
+      "acciones": {
+        "get": "resumen"
+      },
+      "vista": "usuarios.views.UsuarioViewSet"
+    },
+    {
+      "ruta": "api/v1/^usuarios/(?P<pk>[^/.]+)/$",
+      "acciones": {
+        "get": "retrieve",
+        "put": "update",
+        "patch": "partial_update"
+      },
+      "vista": "usuarios.views.UsuarioViewSet"
+    },
+    {
+      "ruta": "api/v1/^usuarios/(?P<pk>[^/.]+)/estado/$",
+      "acciones": {
+        "post": "estado"
+      },
+      "vista": "usuarios.views.UsuarioViewSet"
+    },
+    {
+      "ruta": "api/v1/^usuarios/(?P<pk>[^/.]+)/password/$",
+      "acciones": {
+        "post": "password"
+      },
+      "vista": "usuarios.views.UsuarioViewSet"
+    }
+  ],
+  "huellas_fuentes": {
+    "Backend/despachos/models.py": "18bd1c08f58f0c79c0ed1f0cf9459710d6108912e164f808ad9d7237976a07e4",
+    "Backend/despachos/servicios.py": "bea1285000240df69a605db4f5a64244eda32870fbdf079b660f7fb265c3a3a7",
+    "Backend/despachos/serializadores.py": "7f4b9bbc909774155026203faa18dd337d6c957e60c42e76a415373291f6a55d",
+    "Backend/despachos/permisos.py": "fcdba08d6a6a713e8ccf2d32be6f228111b6523ef0f932893a273ec3400ef9e5",
+    "Backend/despachos/vistas.py": "521ddcf9eb1392d64feaebcde8bfcbafd8b79cb300ac3491185b6e5665a5a5ef",
+    "Backend/despachos/consultas.py": "9020fa317156c33ffc2f4de40a79fb47958a7334634b735f8b6688e70a88f42a",
+    "Backend/despachos/carga_destinos.py": "0e4a1624faa155b7bba9713bd274ba353fafb08ceca5d3877408488c7259130f",
+    "Backend/preparaciones/models.py": "6aa0d263f320de5e637079d269b596d046a9c2914d3bbeed2b47635d78fd4a53",
+    "Backend/preparaciones/servicios.py": "41ab3cde5b60f95d33ba0d0003c5812c3d958dd627694b5dcd4c9e3898dd7f96",
+    "Backend/preparaciones/serializadores.py": "3a6546eb4ced519556e52438867dcdfddb7c6f98d9f4c2608ca7b017fe072c56",
+    "Backend/cajillas/models.py": "11729b11e5caa8d4104ce5e00ded617a931ee4637bb92af830c703236b12e239",
+    "Backend/cajillas/servicios.py": "3a9c1889a03335d201171dcba65320efcee8f9f03551666cdda34c03016192a1",
+    "Backend/cajillas/consultas.py": "33846f48b8024ff643597dfdcd0af827473589d008a32745a5981c16e338830f",
+    "Backend/vehiculos/models.py": "f20210d642c8678633ee2cd45876bc0691172a8073b4561f42ef3cfe5f9cc2cc",
+    "Backend/vehiculos/servicios.py": "69613158cb61d6ece380895a9463737bc8778da42b16bb6a79af92d121d7fb5e",
+    "Backend/usuarios/auth.py": "e910b7581c81671fa4547e8471e7e2a23e4347425fb3df8952f6304a4ca9585e",
+    "Backend/usuarios/permissions.py": "c1e4ba71baaec660899399084c8ac173f040d09d88b602d55298c0d2bd39d3a5",
+    "Backend/usuarios/management/commands/preparar_roles.py": "3b27bad339745975774f6b86ad9e72b858e3ed103ffec00ded05535ab5d1ba05",
+    "Backend/clientes/models.py": "041a51903a69c1eac18f0772d4a8822a738e9a9e53713128af903eafa689e204",
+    "Backend/almacenes/models.py": "f4d69a24f8e052e0637fa0080e30e462a0970839fa7a7813c83db2572b7db3c7",
+    "Backend/config/settings.py": "9855e73aacb0003eb5cbeb646310ed6e00d6ed90e61590328bfbe235d9ed0ba8",
+    "Backend/config/urls.py": "f1a76d722dc330363ccfa5d95af52d33294ca3267054217002489c0d038da089",
+    "Frontend/src/components/despachos/FormularioDespacho.tsx": "6da6b025743fdd6cd7c3d711a8aae0f92d49270abca747f3e72b782b54338260",
+    "Frontend/src/components/despachos/ResumenFormularioDespacho.tsx": "7008ea8c78b7a4d798f469f2aa6ee0b16480a30578dda2f65ed8a8d44bde7adc",
+    "Frontend/src/components/despachos/AccionesDespacho.tsx": "a656cec3bb689eb9603b7aa3d0b3df1eddc7ba13c2d116b8b2103acd17695ceb"
+  },
+  "datos_observados_solo_lectura": {
+    "almacenes_activos": 1,
+    "almacenes_sin_coordenadas": 1,
+    "sucursales_activas": 2,
+    "sucursales_sin_coordenadas": 2,
+    "vehiculos_activos": 1,
+    "vehiculos_sin_capacidad": 0,
+    "despachos_por_estado": {
+      "borrador": 0,
+      "en_ruta": 1,
+      "finalizado": 1,
+      "cancelado": 0
+    },
+    "permisos_rol_chofer": [
+      "conducir_despacho"
+    ],
+    "migraciones_pendientes": []
+  },
+  "decisiones_confirmadas": {
+    "regreso_mismo_almacen": true,
+    "bloquear_publicacion_sin_capacidad": true,
+    "bloquear_publicacion_por_exceso": true
+  },
+  "verificacion": {
+    "django_check": "correcto",
+    "backend": {
+      "pruebas": 438,
+      "fallos": 0,
+      "base": "pruebas_hortyfru_movil"
+    },
+    "frontend": {
+      "pruebas": 143,
+      "fallos": 0
+    },
+    "compilacion_frontend": "correcta",
+    "eslint_modulos_revisados": "correcto",
+    "modelos_sin_migraciones_faltantes": true,
+    "configuracion_aislada_validaciones": [
+      {
+        "caso": "nombre_sin_prefijo",
+        "rechazado": true
+      },
+      {
+        "caso": "nombre_sin_sufijo",
+        "rechazado": true
+      },
+      {
+        "caso": "nombre_mayor_63",
+        "rechazado": true
+      },
+      {
+        "caso": "nombre_valido",
+        "aceptado": true
+      }
+    ],
+    "tablas_negocio_vacias_tras_pruebas": true
+  }
+}

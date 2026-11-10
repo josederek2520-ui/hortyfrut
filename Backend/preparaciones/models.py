@@ -104,6 +104,8 @@ class CajillaPrevista(models.Model):
     preparacion = models.ForeignKey(Preparacion, on_delete=models.CASCADE, related_name='cajillas')
     sucursal = models.ForeignKey('clientes.Sucursal', on_delete=models.PROTECT)
     sucursal_nombre = models.CharField(max_length=150)
+    producto = models.ForeignKey('productos.Producto', on_delete=models.PROTECT, null=True, blank=True)
+    producto_nombre = models.CharField(max_length=100, blank=True, default='')
     cajilla = models.ForeignKey('cajillas.Cajilla', on_delete=models.PROTECT)
     color = models.CharField(max_length=60)
     cantidad = models.PositiveIntegerField()
@@ -111,5 +113,6 @@ class CajillaPrevista(models.Model):
     class Meta:
         db_table = 'cajillas_previstas_preparacion'
         default_permissions = ()
-        constraints = [models.UniqueConstraint(fields=['preparacion', 'sucursal', 'cajilla'], name='preparacion_cajilla_destino_unico'),
+        constraints = [models.UniqueConstraint(fields=['preparacion', 'sucursal', 'cajilla'], condition=Q(producto__isnull=True), name='preparacion_cajilla_general_unico'),
+                       models.UniqueConstraint(fields=['preparacion', 'sucursal', 'producto', 'cajilla'], condition=Q(producto__isnull=False), name='preparacion_cajilla_producto_unico'),
                        models.CheckConstraint(condition=Q(cantidad__gte=1, cantidad__lte=2147483647), name='preparacion_cajilla_cantidad_valida')]

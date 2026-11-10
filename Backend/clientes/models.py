@@ -57,6 +57,7 @@ class Cliente(RegistroComercial):
 class Sucursal(RegistroComercial):
     cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, related_name='sucursales')
     encargado_pedidos = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='sucursales_asignadas')
+    encargado_recepcion = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='sucursales_recepcion')
     nombre = models.CharField(max_length=150)
     direccion = models.CharField(max_length=255)
     referencia = models.CharField(max_length=255, blank=True)

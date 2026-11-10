@@ -13,6 +13,7 @@ export interface Cajilla {
   total: number;
   en_almacen: number;
   en_sucursales: number;
+  en_transito: number;
   creado_en: string;
   responsable_nombre: string;
   version: string;
@@ -21,6 +22,7 @@ export interface ResumenCajillas {
   total: number;
   en_almacen: number;
   en_sucursales: number;
+  en_transito: number;
   colores?: number;
 }
 export interface MovimientoCajilla {
@@ -28,7 +30,7 @@ export interface MovimientoCajilla {
   codigo: string;
   cajilla: number;
   color: string;
-  tipo: TipoMovimientoCajilla | "inicial";
+  tipo: TipoMovimientoCajilla | "inicial" | "carga" | "entrega";
   cantidad: number;
   almacen: number;
   almacen_nombre: string;

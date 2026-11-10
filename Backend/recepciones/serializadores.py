@@ -1,6 +1,8 @@
 from decimal import Decimal
 from rest_framework import serializers
 from compras.serializadores import SerializadorEstricto
+from productos.models import Producto
+from .consultas import ruta_imagen_recepcion
 from .models import Recepcion, DetalleRecepcion
 
 
@@ -39,11 +41,15 @@ class SerializadorEscrituraRecepcion(SerializadorEstricto):
 
 
 class SerializadorDetalleRecepcion(serializers.ModelSerializer):
+    producto_imagen = serializers.SerializerMethodField()
     lote_codigo = serializers.SerializerMethodField()
     es_kg = serializers.SerializerMethodField()
     proveedor_nombre = serializers.SerializerMethodField()
     unidad_compra = serializers.SerializerMethodField()
     cantidad_pendiente = serializers.SerializerMethodField()
+
+    def get_producto_imagen(self, obj):
+        return ruta_imagen_recepcion(obj.producto_id, self.context.get('imagenes_productos', {}).get(obj.producto_id))
 
     def get_proveedor_nombre(self, obj):
         return obj.detalle_compra.proveedor_nombre if obj.detalle_compra_id else ''
@@ -68,7 +74,7 @@ class SerializadorDetalleRecepcion(serializers.ModelSerializer):
         model = DetalleRecepcion
         fields = ('id', 'detalle_compra', 'producto', 'producto_nombre', 'unidad_inventario', 'unidad_nombre', 'unidad_abreviatura',
                   'medida_compra_nombre', 'cantidad_compra', 'cantidad_inventario', 'peso_kg', 'fecha_vencimiento', 'lote', 'lote_codigo', 'es_kg',
-                  'proveedor_nombre', 'unidad_compra', 'cantidad_pendiente')
+                  'proveedor_nombre', 'unidad_compra', 'cantidad_pendiente', 'producto_imagen')
         read_only_fields = fields
 
 
@@ -103,6 +109,8 @@ class SerializadorRecepcionCompleta(SerializadorRecepcion):
     def to_representation(self, instance):
         from .consultas import avance_compra
         self.context['avance_compra'] = avance_compra(instance.compra_id) if instance.compra_id else {}
+        self.context['imagenes_productos'] = dict(Producto.objects.filter(
+            pk__in=[detalle.producto_id for detalle in instance.detalles.all()]).values_list('pk', 'imagen'))
         return super().to_representation(instance)
 
     def get_movimiento_codigo(self, obj):

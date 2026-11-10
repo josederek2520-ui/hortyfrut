@@ -3,7 +3,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { ArrowRight as IconoRevisar, Save as IconoGuardar } from "lucide-react";
 import Button from "@/components/ui/button/Button";
 import { clasePanel, type LineaFormularioCompra } from "./tipos";
-import { mostrarCentavos, totalCentavos } from "./calculos";
+import { mostrarCentavos, totalCentavos, importeCentavos } from "./calculos";
 
 export default function BarraCompra({
   lineas,
@@ -28,6 +28,13 @@ export default function BarraCompra({
   const proveedores = new Set(
     lineas.flatMap((linea) => (linea.proveedor ? [linea.proveedor.id] : [])),
   ).size;
+  const incompletas = lineas.filter(
+    (linea) =>
+      !linea.proveedor ||
+      Number(linea.cantidad.replace(",", ".")) <= 0 ||
+      Number(linea.importeTotal.replace(",", ".")) <= 0 ||
+      importeCentavos(linea.importeTotal) === null,
+  ).length;
   return (
     <div
       className={`${clasePanel} sticky bottom-2 z-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 p-4 shadow-theme-md sm:bottom-4 sm:px-5`}
@@ -42,8 +49,15 @@ export default function BarraCompra({
           </p>
         </div>
         <p className="text-theme-xs leading-5 text-gray-500 dark:text-gray-400">
-          {t("resumenHoja", { productos, proveedores })}
+          {!productos && puedeRegistrar
+            ? t("agregaProductoParaRevisar")
+            : t("resumenHoja", { productos, proveedores })}
         </p>
+        {incompletas > 0 && (
+          <span className="rounded-lg bg-orange-50 px-2.5 py-1 text-theme-xs font-medium text-orange-700 dark:bg-orange-500/10 dark:text-orange-300">
+            {t("lineasPorCompletar", { cantidad: incompletas })}
+          </span>
+        )}
       </div>
       <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
         <button
@@ -68,11 +82,11 @@ export default function BarraCompra({
         {puedeRegistrar && (
           <Button
             size="sm"
-            disabled={guardando || conflicto}
+            disabled={guardando || conflicto || !lineas.length}
             onClick={alRevisar}
             endIcon={<IconoRevisar className="size-4 rtl:rotate-180" />}
           >
-            {t(guardando ? "guardando" : "revisarYRegistrar")}
+            {t(guardando ? "guardando" : "revisarCompra")}
           </Button>
         )}
       </div>

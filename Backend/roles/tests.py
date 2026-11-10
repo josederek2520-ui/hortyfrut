@@ -65,7 +65,30 @@ class RolesTests(TestCase):
     def test_catalogo_solo_acciones_funcionales_y_ver_usuarios(self):
         response = self.client.get('/api/v1/permisos/')
         permissions = [p for module in response.data for p in module['permissions']]
-        self.assertEqual(len(permissions), 74)
+        self.assertEqual(len(permissions), 112)
+        self.assertEqual({p['code'] for p in permissions if p['module'] == 'precios'}, {
+            'precios.view_acuerdoprecio', 'precios.add_acuerdoprecio', 'precios.change_acuerdoprecio',
+            'precios.presentar_acuerdoprecio', 'precios.aceptar_acuerdoprecio', 'precios.rechazar_acuerdoprecio', 'precios.cancelar_acuerdoprecio',
+        })
+        self.assertEqual({p['code'] for p in permissions if p['module'] == 'devoluciones'}, {
+            'devoluciones.view_devolucion', 'devoluciones.add_devolucion', 'devoluciones.change_devolucion',
+            'devoluciones.recibir_devolucion', 'devoluciones.revisar_devolucion', 'devoluciones.cancelar_devolucion',
+        })
+        self.assertEqual({p['code'] for p in permissions if p['module'] == 'respaldos'}, {
+            'respaldos.view_respaldo', 'respaldos.add_respaldo', 'respaldos.descargar_respaldo',
+        })
+        self.assertEqual({p['code'] for p in permissions if p['module'] == 'entregas'}, {
+            'entregas.view_entrega', 'entregas.add_entrega', 'entregas.change_entrega', 'entregas.enviar_entrega',
+            'entregas.confirmar_entrega', 'entregas.ver_todas_entregas', 'entregas.gestionar_todas_entregas',
+        })
+        self.assertEqual({p['code'] for p in permissions if p['module'] == 'vehiculos'}, {
+            'vehiculos.view_vehiculo', 'vehiculos.add_vehiculo', 'vehiculos.change_vehiculo', 'vehiculos.cambiar_estado_vehiculo',
+        })
+        self.assertEqual({p['code'] for p in permissions if p['module'] == 'despachos'}, {
+            'despachos.view_despacho', 'despachos.add_despacho', 'despachos.change_despacho', 'despachos.iniciar_despacho',
+            'despachos.enviar_despacho', 'despachos.ver_despachos_propios', 'despachos.operar_despachos_propios',
+            'despachos.registrar_recorrido', 'despachos.finalizar_despacho', 'despachos.cancelar_despacho', 'despachos.conducir_despacho',
+        })
         self.assertEqual({p['code'] for p in permissions if p['module'] == 'cajillas'}, {
             'cajillas.view_cajilla', 'cajillas.add_cajilla', 'cajillas.registrar_ingreso',
             'cajillas.registrar_salida', 'cajillas.registrar_devolucion',

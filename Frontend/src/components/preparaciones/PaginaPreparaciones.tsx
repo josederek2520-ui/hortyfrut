@@ -38,7 +38,15 @@ export default async function PaginaPreparaciones({
   }
   if (!sesion) redirect({ href: "/signin", locale: idioma });
   if (modo === "listado")
-    return <GestionPreparaciones sesion={sesion!} historial={historial} clienteInicial={cliente} fechaInicial={fecha} />;
+    return (
+      <GestionPreparaciones
+        key={`${cliente || "listado"}-${fecha || ""}`}
+        sesion={sesion!}
+        historial={historial}
+        clienteInicial={cliente}
+        fechaInicial={fecha}
+      />
+    );
   if (modo === "hoja") {
     const t = await getTranslations("preparaciones");
     return sesion!.permisos_preparaciones?.ver ? (

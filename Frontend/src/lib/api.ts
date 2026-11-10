@@ -73,5 +73,19 @@ export async function api<T>(
   }
   if (data.csrfToken) csrfToken = data.csrfToken;
   if (path === "auth/logout/") csrfToken = null;
+  if (
+    ["auth/login/", "auth/logout/"].includes(path) &&
+    typeof window !== "undefined"
+  ) {
+    window.dispatchEvent(new Event("hortyfru:session-changed"));
+    try {
+      localStorage.setItem(
+        "hortyfru-cambio-sesion",
+        `${Date.now()}:${Math.random()}`,
+      );
+    } catch {
+      /* El almacenamiento puede estar deshabilitado. */
+    }
+  }
   return data as T;
 }

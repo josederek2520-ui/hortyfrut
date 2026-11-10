@@ -11,7 +11,6 @@ import {
 import { useFormValidation as useValidacionFormulario } from "@/hooks/useFormValidation";
 import { useModal } from "@/hooks/useModal";
 import Button from "@/components/ui/button/Button";
-import MigasPagina from "@/components/common/PageBreadCrumb";
 import {
   type OpcionCompra,
   type PaginaCompra,
@@ -415,16 +414,21 @@ export default function FormularioRecepcion({
   };
   return (
     <div className="space-y-5">
-      <button
-        type="button"
-        disabled={guardando}
-        onClick={salir}
-        className="inline-flex min-h-10 items-center gap-2 rounded-lg text-sm font-medium text-gray-500 hover:text-brand-700 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-gray-400 dark:hover:text-brand-300"
-      >
-        <IconoVolver className="size-4 rtl:rotate-180" aria-hidden="true" />
-        {t("volverListado")}
-      </button>
-      <MigasPagina pageTitle={t(actual ? "editar" : "nueva")} />
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          disabled={guardando}
+          onClick={salir}
+          aria-label={t("volverListado")}
+          title={t("volverListado")}
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-gray-600 hover:bg-white/70 hover:text-brand-700 focus-visible:ring-2 focus-visible:ring-brand-400 disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-brand-300"
+        >
+          <IconoVolver className="size-4 rtl:rotate-180" aria-hidden="true" />
+        </button>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+          {t(actual ? "editar" : "nueva")}
+        </h1>
+      </div>
       <form
         ref={formulario}
         noValidate
@@ -510,8 +514,6 @@ export default function FormularioRecepcion({
           alError={alError}
         />
         <BarraRecepcion
-          cantidad={seleccionarLineasRecepcion(lineas).lineas.length}
-          almacen={almacen?.nombre}
           ocupado={guardando}
           conflicto={conflicto}
           puedeGuardar={puedeModificar}

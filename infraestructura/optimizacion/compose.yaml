@@ -1,0 +1,47 @@
+name: hortyfru-optimizacion
+services:
+  redis:
+    image: redis:7.4-alpine@sha256:8da19c7399dca900c6822a1cf30f9d2285585e2c4b457ff4095b0f4500054d3f
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy noeviction
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - cola_optimizacion:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    mem_limit: 192m
+  trabajador:
+    build:
+      context: ../..
+      dockerfile: infraestructura/optimizacion/Dockerfile
+    env_file: ../../Backend/.env
+    environment:
+      DEBUG: "False"
+      DB_HOST: host.docker.internal
+      OSRM_URL: http://rutas:5000
+      OSRM_SERVIDORES_INTERNOS: rutas
+      CELERY_BROKER_URL: redis://redis:6379/0
+      OPTIMIZACION_HABILITADA: "True"
+    volumes:
+      - ../../Backend:/aplicacion:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - default
+      - carreteras
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: 1
+networks:
+  carreteras:
+    external: true
+    name: rutas_default
+volumes:
+  cola_optimizacion:

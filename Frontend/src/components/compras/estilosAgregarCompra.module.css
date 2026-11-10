@@ -1,0 +1,70 @@
+.modalCompra {
+  overflow: hidden;
+  animation: aparecerModalCompra 240ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.modalCompra > div:last-child {
+  display: flex;
+  flex-direction: column;
+  max-block-size: calc(100dvh - 2rem);
+}
+
+.modalCompra > button {
+  min-inline-size: 2.75rem;
+  min-block-size: 2.75rem;
+}
+
+.contenidoModal {
+  min-block-size: 0;
+  block-size: min(35rem, calc(100dvh - 15rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 1rem;
+}
+
+:global(.modal):has(> .modalCompra) > :first-child {
+  animation: aparecerFondoCompra 180ms ease-out;
+}
+
+@keyframes aparecerModalCompra {
+  from {
+    opacity: 0.5;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes aparecerFondoCompra {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modalCompra {
+    animation: aparecerFondoCompra 80ms linear;
+  }
+  :global(.modal):has(> .modalCompra) > :first-child {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :global(.modal):has(> .modalCompra) > :first-child {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-color: var(--color-gray-950);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .modalCompra {
+    border-color: currentColor;
+  }
+}

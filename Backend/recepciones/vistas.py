@@ -1,5 +1,6 @@
 from decimal import Decimal
 from django.db.models import Count, Q
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
@@ -9,7 +10,7 @@ from config.paginacion import PaginacionDiez
 from almacenes.models import Almacen
 from productos.models import Producto
 from inventario.consultas import unidades_habilitadas, es_kilogramo
-from .consultas import avance_compra, compras_pendientes, detalles_con_pendiente
+from .consultas import avance_compra, compras_pendientes, detalles_con_pendiente, ruta_imagen_recepcion
 from .models import Recepcion
 from .permisos import PermisosRecepciones
 from .serializadores import (SerializadorRecepcion, SerializadorRecepcionCompleta,
@@ -124,12 +125,26 @@ class VistaRecepciones(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewset
             recibido = recibidos.get(linea.pk, Decimal('0'))
             pendiente = max(Decimal('0'), linea.cantidad - recibido)
             datos.append({'id': linea.pk, 'nombre': linea.producto_nombre, 'producto': linea.producto_id,
+                'imagen': ruta_imagen_recepcion(producto.pk, producto.imagen.name),
                 'proveedor_nombre': linea.proveedor_nombre,
                 'unidad_compra': linea.unidad_medida_id if linea.presentacion_id is None else None,
                 'medida_compra': linea.presentacion_nombre or linea.unidad_nombre, 'cantidad_comprada': str(linea.cantidad),
                 'cantidad_recibida': str(recibido), 'cantidad_pendiente': str(pendiente), 'unidad': datos_unidad(producto.unidad_medida),
                 'disponible': pendiente > 0 and producto.activo and producto.categoria.activo and producto.unidad_medida.activo})
         return self.get_paginated_response(datos)
+
+    @action(detail=False, methods=['get'], url_path=r'imagenes/(?P<producto_pk>[0-9]+)')
+    def imagen(self, request, producto_pk=None):
+        producto = get_object_or_404(Producto, pk=producto_pk)
+        if not producto.imagen:
+            raise Http404
+        try:
+            respuesta = FileResponse(producto.imagen.open('rb'), content_type='image/webp')
+        except OSError as error:
+            raise Http404 from error
+        respuesta['Cache-Control'] = 'private, max-age=300'
+        respuesta['X-Content-Type-Options'] = 'nosniff'
+        return respuesta
 
     @action(detail=False, methods=['get'])
     def almacenes(self, request):
@@ -147,6 +162,7 @@ class VistaRecepciones(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewset
         if filtros.get('buscar'):
             consulta = consulta.filter(nombre__icontains=filtros['buscar'])
         return self.get_paginated_response([{'id': obj.pk, 'producto': obj.pk, 'nombre': obj.nombre, 'subtitulo': obj.categoria.nombre,
+            'imagen': ruta_imagen_recepcion(obj.pk, obj.imagen.name),
             'unidad': datos_unidad(obj.unidad_medida), 'disponible': True}
             for obj in self.paginate_queryset(consulta.order_by('nombre', 'pk'))])
 

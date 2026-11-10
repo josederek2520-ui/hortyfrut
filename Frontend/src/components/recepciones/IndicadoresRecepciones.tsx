@@ -66,7 +66,7 @@ export default function IndicadoresRecepciones({
             aria-pressed={seleccionado}
             aria-controls="resultados-recepciones"
             onClick={() => alElegir(seleccionado ? "" : valor)}
-            className={`group relative flex min-w-0 items-center gap-3 overflow-hidden rounded-2xl border bg-white p-4 text-start shadow-theme-xs transition duration-200 hover:-translate-y-0.5 hover:shadow-theme-sm focus-visible:ring-3 focus-visible:ring-brand-500/25 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 dark:bg-gray-900 ${seleccionado ? "border-orange-300 ring-1 ring-orange-200 dark:border-orange-400/60 dark:ring-orange-400/20" : "border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-600"}`}
+            className="indicador-seleccionable-hortyfru group flex min-w-0 items-center gap-3 overflow-hidden rounded-2xl border p-4 text-start"
           >
             <span
               className={`flex size-11 shrink-0 items-center justify-center rounded-2xl ring-1 ring-inset ${tono}`}
@@ -77,7 +77,7 @@ export default function IndicadoresRecepciones({
               <span className="block text-sm font-semibold text-gray-900 dark:text-white">
                 {t(clave)}
               </span>
-              <span className="mt-1 block text-theme-xs leading-5 text-gray-500 dark:text-gray-400">
+              <span className="indicador-seleccionable-hortyfru__ayuda mt-1 block text-theme-xs leading-5">
                 {t(ayuda)}
               </span>
             </span>
@@ -88,14 +88,10 @@ export default function IndicadoresRecepciones({
                   : new Intl.NumberFormat(idioma).format(resumen[clave])}
               </span>
               <IconoAbrir
-                className={`size-3.5 rtl:-scale-x-100 ${seleccionado ? "text-orange-500 dark:text-orange-300" : "text-gray-300 group-hover:text-gray-500 dark:text-gray-600 dark:group-hover:text-gray-300"}`}
+                className="indicador-seleccionable-hortyfru__acceso size-3.5 rtl:-scale-x-100"
                 aria-hidden="true"
               />
             </span>
-            <span
-              aria-hidden="true"
-              className={`absolute inset-x-4 bottom-0 h-0.5 rounded-t-full ${seleccionado ? "bg-orange-500 dark:bg-orange-400" : "bg-transparent"}`}
-            />
           </button>
         );
       })}

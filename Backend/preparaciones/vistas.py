@@ -1,6 +1,6 @@
 from decimal import Decimal
 from django.http import FileResponse, Http404
-from django.db.models import Q, Sum, Exists, OuterRef, Prefetch
+from django.db.models import Q, Sum, Exists, OuterRef, Prefetch, Case, When, Value, F, DecimalField, Min, Count
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import mixins, viewsets
@@ -21,6 +21,8 @@ from .consultas import detalles_con_avance, resumen_productos, version_hoja, dat
 from .serializadores import SerializadorPreparacion, SerializadorPreparacionCompleta, SerializadorFiltrosPreparaciones
 from .permisos import PermisosPreparaciones
 from .servicios import guardar_preparacion, confirmar_preparacion, cancelar_preparacion, ConflictoPreparacion
+from .consultas_jornadas import jornadas_preparacion
+from .serializadores import SerializadorFiltrosJornadas, SerializadorSeleccionLotes
 
 
 class PaginacionPreparaciones(PaginacionDiez):
@@ -70,6 +72,18 @@ class VistaPreparaciones(mixins.ListModelMixin, mixins.RetrieveModelMixin, views
     def get_serializer_class(self):
         return SerializadorPreparacion if self.action == 'list' else SerializadorPreparacionCompleta
 
+    @action(detail=False, methods=['get'])
+    def jornadas(self, request):
+        formulario = SerializadorFiltrosJornadas(data=request.query_params.dict())
+        formulario.is_valid(raise_exception=True)
+        filas = self.paginate_queryset(jornadas_preparacion(formulario.validated_data))
+        return self.get_paginated_response([{
+            'cliente': fila['cliente_jornada'], 'cliente_nombre': fila['nombre_grupo'],
+            'cliente_activo': fila['cliente_activo'], 'fecha_pedidos': fila['fecha_jornada'].isoformat(),
+            **{campo: fila[campo] for campo in ('pedidos', 'sucursales', 'productos', 'borradores', 'confirmadas', 'canceladas', 'borrador_id')},
+            'estado': fila['situacion'],
+        } for fila in filas])
+
     def create(self, request):
         preparacion, creada = guardar_preparacion(request.user, request.data)
         return Response(SerializadorPreparacionCompleta(self.get_queryset().get(pk=preparacion.pk)).data, status=201 if creada else 200)
@@ -111,6 +125,7 @@ class VistaPreparaciones(mixins.ListModelMixin, mixins.RetrieveModelMixin, views
             celdas.setdefault(dato['producto_id'], {}).setdefault(str(dato['pedido__sucursal_id']), {})[dato['columna']] = {
                 'solicitada': dato['solicitada'], 'preparada': dato['preparada'], 'pendiente': dato['restante']}
         datos = [{'id': fila['producto_id'], 'nombre': fila['producto__nombre'], 'categoria': fila['producto__categoria__nombre'],
+            'categoria_id': fila['producto__categoria_id'],
             'imagen': ruta_imagen_preparacion(fila['producto_id'], fila['producto__imagen'], cliente.pk, filtros['fecha_pedidos']),
             **{campo: fila[campo] for campo in ('cajas', 'unidades', 'preparadas_cajas', 'preparadas_unidades', 'pendientes_cajas', 'pendientes_unidades')},
             'sucursales': celdas.get(fila['producto_id'], {})} for fila in productos]
@@ -147,7 +162,9 @@ class VistaPreparaciones(mixins.ListModelMixin, mixins.RetrieveModelMixin, views
     @action(detail=False, methods=['get'])
     def productos(self, request):
         filtros, cliente, base = self.contexto()
-        consulta = base.filter(pendiente__gt=0, pedido__estado='pendiente')
+        consulta = base
+        if filtros['solo_pendientes']:
+            consulta = consulta.filter(producto_id__in=base.filter(pendiente__gt=0, pedido__estado='pendiente').values('producto_id'))
         if filtros.get('categoria'):
             consulta = consulta.filter(producto__categoria_id=filtros['categoria'])
         if filtros.get('buscar'):
@@ -155,6 +172,7 @@ class VistaPreparaciones(mixins.ListModelMixin, mixins.RetrieveModelMixin, views
         return self.get_paginated_response([{'id': fila['producto_id'], 'nombre': fila['producto__nombre'], 'subtitulo': fila['producto__categoria__nombre'],
             'categoria': {'id': fila['producto__categoria_id'], 'nombre': fila['producto__categoria__nombre']},
             'imagen': ruta_imagen_preparacion(fila['producto_id'], fila['producto__imagen'], cliente.pk, filtros['fecha_pedidos']),
+            'cajas': fila['cajas'], 'unidades': fila['unidades'],
             'pendientes_cajas': fila['pendientes_cajas'], 'pendientes_unidades': fila['pendientes_unidades']}
             for fila in self.paginate_queryset(resumen_productos(consulta))])
 
@@ -182,11 +200,28 @@ class VistaPreparaciones(mixins.ListModelMixin, mixins.RetrieveModelMixin, views
         consulta = base.filter(pendiente__gt=0, pedido__estado='pendiente').select_related('pedido__sucursal__cliente', 'producto__categoria')
         if filtros.get('producto'):
             consulta = consulta.filter(producto_id=filtros['producto'])
+        if filtros.get('sucursal'):
+            consulta = consulta.filter(pedido__sucursal_id=filtros['sucursal'])
         if filtros.get('buscar'):
             consulta = consulta.filter(Q(producto_nombre__icontains=filtros['buscar']) | Q(pedido__sucursal_nombre__icontains=filtros['buscar']))
         return self.get_paginated_response([datos_necesidad(obj) for obj in self.paginate_queryset(consulta.order_by('producto_nombre', 'pedido__sucursal_nombre', 'pedido_id', 'columna', 'pk'))])
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='sucursales-producto')
+    def sucursales_producto(self, request):
+        filtros, _, base = self.contexto()
+        if not filtros.get('producto'):
+            raise ValidationError({'producto': 'Selecciona el producto que vas a preparar.'})
+        consulta = base.filter(producto_id=filtros['producto'], pendiente__gt=0, pedido__estado='pendiente')
+        if filtros.get('buscar'):
+            consulta = consulta.filter(pedido__sucursal_nombre__icontains=filtros['buscar'])
+        # Una sucursal aparece una sola vez aunque tenga varios pedidos, CANT y UNI.
+        grupos = consulta.values('pedido__sucursal_id').annotate(
+            nombre=Min('pedido__sucursal_nombre'), pedidos=Count('pedido_id', distinct=True), lineas=Count('pk')
+        ).order_by('nombre', 'pedido__sucursal_id')
+        return self.get_paginated_response([{'id': fila['pedido__sucursal_id'], 'nombre': fila['nombre'],
+            'pedidos': fila['pedidos'], 'lineas': fila['lineas']} for fila in self.paginate_queryset(grupos)])
+
+    @action(detail=False, methods=['get', 'post'])
     def lotes(self, request):
         filtros, _, base = self.contexto()
         if not filtros.get('almacen') or not filtros.get('producto'):
@@ -195,11 +230,21 @@ class VistaPreparaciones(mixins.ListModelMixin, mixins.RetrieveModelMixin, views
             estado='disponible', calidad='apto', producto__activo=True, producto__categoria__activo=True, unidad__activo=True,
             almacen_origen__activo=True, fecha_ingreso__lte=timezone.localdate()).filter(
                 Q(fecha_vencimiento__isnull=True) | Q(fecha_vencimiento__gte=max(timezone.localdate(), filtros['fecha_pedidos'])))
+        if filtros.get('unidad'):
+            consulta = consulta.filter(unidad_id=filtros['unidad'])
         if filtros.get('buscar'):
             consulta = consulta.filter(criterio_busqueda_lotes(filtros['buscar']))
+        seleccion = SerializadorSeleccionLotes(data=request.data if request.method == 'POST' else {})
+        seleccion.is_valid(raise_exception=True)
+        consumos = seleccion.validated_data['consumos']
+        cantidad = DecimalField(max_digits=24, decimal_places=3)
+        usado = Case(*[When(pk=fila['lote'], then=Value(fila['cantidad'])) for fila in consumos],
+            default=Value(Decimal('0')), output_field=cantidad) if consumos else Value(Decimal('0'), output_field=cantidad)
+        consulta = consulta.annotate(disponible_preparacion=F('saldo') - usado).filter(disponible_preparacion__gt=0).exclude(pk__in=seleccion.validated_data['excluir'])
         return self.get_paginated_response([{'id': obj.pk, 'nombre': obj.codigo, 'producto': obj.producto_id, 'producto_nombre': obj.producto_nombre,
             'unidad': obj.unidad_id, 'unidad_nombre': obj.unidad_nombre, 'unidad_abreviatura': obj.unidad_abreviatura,
-            'saldo': format(obj.saldo, '.3f'), 'fecha_vencimiento': obj.fecha_vencimiento, 'es_kg': obj.unidad_abreviatura.casefold().strip() == 'kg'}
+            'saldo': format(obj.saldo, '.3f'), 'disponible_preparacion': format(obj.disponible_preparacion, '.3f'),
+            'fecha_vencimiento': obj.fecha_vencimiento, 'es_kg': obj.unidad_abreviatura.casefold().strip() == 'kg'}
             for obj in self.paginate_queryset(consulta.order_by('fecha_vencimiento', 'fecha_ingreso', 'pk'))])
 
     @action(detail=False, methods=['get'])
@@ -226,6 +271,6 @@ class VistaPreparaciones(mixins.ListModelMixin, mixins.RetrieveModelMixin, views
             consulta = consulta.filter(color__icontains=filtros['buscar'])
         pagina = self.paginate_queryset(consulta.order_by('color', 'pk'))
         cantidades = MovimientoCajilla.objects.filter(cajilla_id__in=[obj.pk for obj in pagina], almacen_id=filtros.get('almacen')).values('cajilla_id').annotate(
-            saldo=sumar_cantidad(Q(tipo__in=['inicial', 'ingreso', 'devolucion'])) - sumar_cantidad(Q(tipo='salida')))
+            saldo=sumar_cantidad(Q(tipo__in=['inicial', 'ingreso', 'devolucion'])) - sumar_cantidad(Q(tipo__in=['salida', 'carga'])))
         saldos = {fila['cajilla_id']: fila['saldo'] for fila in cantidades}
         return self.get_paginated_response([{'id': obj.pk, 'nombre': obj.color, 'saldo': saldos.get(obj.pk, 0)} for obj in pagina])

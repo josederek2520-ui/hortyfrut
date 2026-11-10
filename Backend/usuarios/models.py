@@ -1,3 +1,4 @@
+import uuid
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
@@ -68,3 +69,21 @@ class ActividadUsuario(models.Model):
 
     class Meta:
         ordering = ['-fecha', '-pk']
+
+
+class SesionMovil(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sesiones_moviles')
+    identificador_dispositivo = models.UUIDField()
+    nombre_dispositivo = models.CharField(max_length=80)
+    resumen_credencial = models.CharField(max_length=64, editable=False)
+    huella_autenticacion = models.CharField(max_length=64, editable=False)
+    creada_en = models.DateTimeField(auto_now_add=True)
+    vence_en = models.DateTimeField()
+    revocada_en = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'sesiones_moviles'
+        ordering = ['-creada_en', '-pk']
+        default_permissions = ()
+        constraints = [models.UniqueConstraint(fields=['usuario', 'identificador_dispositivo'], condition=Q(revocada_en__isnull=True), name='sesion_movil_dispositivo_activo_unico')]

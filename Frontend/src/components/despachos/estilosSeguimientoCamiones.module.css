@@ -1,0 +1,22 @@
+.distribucion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+.lista {
+  display: grid;
+  gap: 0.75rem;
+  max-height: 17rem;
+  overflow: auto;
+  scrollbar-gutter: stable;
+  padding: 2px;
+}
+@media (min-width: 1280px) {
+  .distribucion {
+    grid-template-columns: minmax(17rem, 21rem) minmax(0, 1fr);
+  }
+  .lista {
+    max-height: 38rem;
+  }
+}

@@ -1,0 +1,84 @@
+/* Jerarquía y movimiento de apple-design sobre los colores de HortyFru. */
+.pagina {
+  --despachos-curva: cubic-bezier(0.23, 1, 0.32, 1);
+  --despachos-duracion: 220ms;
+  font-optical-sizing: auto;
+}
+
+.titulo {
+  letter-spacing: -0.014em;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.entrada {
+  animation: aparecerListado var(--despachos-duracion) var(--despachos-curva)
+    backwards;
+}
+
+.pulsable {
+  transition: transform 100ms var(--despachos-curva);
+  touch-action: manipulation;
+}
+
+.pulsable:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.fila:focus-within {
+  background: var(--color-orange-25);
+}
+
+.progreso {
+  transform-origin: left center;
+  transition: transform var(--despachos-duracion) var(--despachos-curva);
+}
+
+:global([dir="rtl"]) .progreso {
+  transform-origin: right center;
+}
+
+:global(.dark) .fila:focus-within {
+  background: rgb(251 101 20 / 5%);
+}
+
+@media (hover: hover) {
+  .fila:hover {
+    background: var(--color-gray-50);
+  }
+  :global(.dark) .fila:hover {
+    background: var(--color-gray-800);
+  }
+}
+
+@keyframes aparecerListado {
+  from {
+    opacity: 0.5;
+    transform: translateY(0.375rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aparecerSuave {
+  from {
+    opacity: 0.7;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entrada {
+    animation: aparecerSuave 80ms linear backwards;
+  }
+  .pulsable:active:not(:disabled) {
+    transform: none;
+  }
+  .progreso {
+    transition: none;
+  }
+}

@@ -2,9 +2,20 @@
 
 Aplicación con Next.js, TailAdmin, Django REST Framework y PostgreSQL.
 
+El módulo [Respaldos](documentacion/respaldos_sistema.md) permite crear y descargar
+copias ZIP comunes con fecha día-mes-año desde la administración local.
+
 Consulta [la guía del flujo operativo](documentacion/flujo-operativo.md) para
 configurar el sistema, seguir los pedidos hasta su preparación y ubicar cada
 módulo en el menú lateral.
+
+El chofer dispone de **Mis viajes** (`/mis-viajes`) desde el navegador del teléfono,
+con mapa amplio, preparación del recorrido y descarga por pedido. Consulta el
+[procedimiento web](documentacion/adaptacion_chofer_web.md), incluido el requisito
+HTTPS para GPS. La aplicación Android se conserva hasta validar esta alternativa.
+
+El [túnel HTTPS de prueba con Cloudflare](infraestructura/chofer_https/README.md)
+permite entrar al chofer desde otra red y mantiene la administración local.
 
 ## Iniciar en desarrollo (Git Bash de Windows)
 
@@ -63,7 +74,7 @@ de la API, configuración y pruebas.
 
 ```bash
 # En Backend, con el entorno activado
-python manage.py test usuarios roles auditoria catalogos productos clientes pedidos proveedores compras almacenes inventario recepciones cajillas preparaciones
+python manage.py test usuarios roles auditoria catalogos productos clientes pedidos proveedores compras almacenes inventario recepciones cajillas preparaciones vehiculos despachos
 
 # En Frontend
 npm run build
@@ -161,4 +172,32 @@ de los pedidos. Las cajillas quedan como previsión para el despacho, sin mover
 sus saldos. La hoja de trabajo permite elegir productos con foto, repartir por
 sucursal y revisar/confirmar desde la misma pantalla, conservando cantidades al
 cambiar de producto o página. Incluye historial, permisos y auditoría.
+Al trabajar un producto, la jornada aparece como resumen compacto y «Guardar y
+volver a productos» conserva la posición de la lista tras guardar el borrador.
+La revisión final se ofrece desde la lista; los errores mantienen los datos y
+abren la sección que necesita atención.
 Consulta [su contrato](Backend/preparaciones/README.md).
+
+[Vehículos](http://localhost:3000/vehiculos) administra placa, tipo, marca,
+capacidad declarada y foto opcional con búsqueda, estados y permisos. Consulta
+[su contrato](Backend/vehiculos/README.md).
+
+[Despachos](http://localhost:3000/despachos) organiza transporte y carga confirmada,
+incluidas preparaciones parciales. Su hoja conserva la selección, ordena visitas
+y revisa cajillas reales antes de iniciar. Permite registrar llegadas, comprobar
+productos, confirmar descargas y finalizar desde el panel. Las cajillas distinguen
+almacén, vehículo y sucursal; los productos conservan la salida de Preparaciones.
+El listado separa Activos e Historial, prioriza viajes en ruta y muestra avance
+de descargas y siguiente destino. Sus estados vacíos orientan a crear un viaje,
+consultar Preparaciones o limpiar filtros según la información disponible.
+Consulta [su contrato](Backend/despachos/README.md).
+
+La aplicación [HortyFru Chofer](Movil/README.md) vive en `Movil/`, con React
+Native, Expo y TypeScript. Consume la API móvil de Django para viajes propios,
+llegadas y descarga por pedido, con sesión segura, revisión entre páginas y
+reintentos que conservan la misma operación. El [informe de la etapa 4](documentacion/etapa_cuatro_movil.md)
+detalla las verificaciones iniciales. Mapas y optimización están implementados y
+fueron comprobados visualmente por el usuario. La [etapa 7](documentacion/etapa_siete_movil.md)
+añade GPS autorizado en primer plano y un nuevo APK de desarrollo; falta su prueba
+física. Persistencia sin conexión y segundo plano conservan la etapa 8 del
+[plan móvil](documentacion/plan_aplicacion_movil_rutas_gps.md).

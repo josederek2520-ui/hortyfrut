@@ -5,9 +5,10 @@ import { api } from "@/lib/api";
 export default function useConsultaPreparacion<T>(
   ruta: string | null,
   alError: (error: unknown) => void,
+  revisionExterna = 0,
 ) {
   const [revision, establecerRevision] = useState(0);
-  const clave = JSON.stringify([ruta, revision]);
+  const clave = JSON.stringify([ruta, revision, revisionExterna]);
   const [resultado, establecerResultado] = useState<{
     clave: string;
     datos: T | null;

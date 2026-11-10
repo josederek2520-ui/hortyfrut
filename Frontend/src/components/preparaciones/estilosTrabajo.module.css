@@ -1,0 +1,335 @@
+/* Ritmo y movimiento de apple-design, adaptados al tema de HortyFru. */
+.trabajo {
+  --preparacion-curva: cubic-bezier(0.23, 1, 0.32, 1);
+  --preparacion-duracion: 240ms;
+  --preparacion-pulsacion: 100ms;
+  font-optical-sizing: auto;
+}
+
+.vistaProducto {
+  --preparacion-fondo: var(--color-gray-50);
+  --preparacion-superficie: var(--color-white);
+  --preparacion-boton: var(--color-white);
+  --preparacion-boton-hover: var(--color-gray-100);
+  --preparacion-borde-control: var(--color-brand-300);
+  --preparacion-sucursal: var(--color-brand-50);
+  --superficie-interior: var(--preparacion-superficie);
+  --superficie-contenido: var(--preparacion-superficie);
+  --superficie-resaltada: var(--color-gray-50);
+  --texto-suave: var(--color-gray-900);
+  --texto-secundario-suave: var(--color-gray-600);
+  --borde-contenido: var(--color-gray-200);
+  --sombra-hundida: inset 0 1px 2px rgb(16 24 40 / 3%);
+  height: calc(100dvh - 2rem);
+  min-height: 24rem;
+  scroll-margin-block-start: 1rem;
+  box-shadow: var(--sombra-contenido);
+}
+
+.fondoTrabajoProducto {
+  background-color: var(--preparacion-fondo);
+}
+
+:global(.dark) .vistaProducto {
+  --preparacion-fondo: var(--color-gray-950);
+  --preparacion-superficie: var(--color-gray-900);
+  --preparacion-boton: var(--color-gray-900);
+  --preparacion-boton-hover: var(--color-gray-800);
+  --preparacion-borde-control: #4c745d;
+  --preparacion-sucursal: #284a3b;
+  --superficie-resaltada: var(--color-gray-800);
+  --texto-suave: var(--color-gray-100);
+  --texto-secundario-suave: var(--color-gray-300);
+  --borde-contenido: var(--color-gray-700);
+  --sombra-hundida: inset 0 1px 2px rgb(0 0 0 / 12%);
+}
+
+.vistaProducto :global(.boton-secundario-hortyfru) {
+  color: var(--texto-suave);
+  background: var(--preparacion-boton);
+  box-shadow: none;
+}
+
+.vistaProducto
+  :global(.boton-secundario-hortyfru):hover:not(:disabled):not(
+    [aria-disabled="true"]
+  ) {
+  background: var(--preparacion-boton-hover);
+}
+
+.vistaProducto button[aria-haspopup="dialog"][data-invalido="false"] {
+  color: var(--texto-suave);
+  border-color: var(--borde-campo);
+  background: var(--superficie-interior);
+  box-shadow: var(--sombra-hundida);
+}
+
+.vistaProducto
+  button[aria-haspopup="dialog"][data-invalido="false"]:is(
+    :focus-visible,
+    [aria-expanded="true"]
+  ):not(:disabled) {
+  border-color: var(--borde-enfoque-campo);
+  outline: 2px solid var(--contorno-enfoque-campo);
+  outline-offset: 2px;
+  box-shadow: var(--sombra-enfoque-campo);
+}
+
+.vistaProducto .selectorSucursal[aria-pressed="true"] {
+  border-color: var(--preparacion-borde-control);
+}
+
+.vistaProducto .selectorSucursal[aria-pressed="true"]::before {
+  background: var(--preparacion-sucursal);
+  border-color: var(--preparacion-borde-control);
+}
+
+.vistaProducto .selectorSucursal[aria-pressed="true"] > svg {
+  color: var(--texto-seleccion-suave);
+}
+
+.vistaProducto .selectorSucursal {
+  border-color: var(--borde-contenido);
+}
+
+.vistaProducto .selectorSucursal::before {
+  border: 0;
+  background: var(--preparacion-superficie);
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
+}
+
+.estadoSucursal {
+  display: inline-flex;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.375rem;
+  background: var(--preparacion-boton-hover);
+  color: var(--texto-secundario-suave);
+}
+
+.resumenPedido {
+  padding: 0.875rem;
+  border: 1px solid var(--borde-contenido);
+  background: var(--preparacion-fondo);
+}
+
+.filaLote {
+  padding: 0.875rem;
+  border: 1px solid var(--borde-contenido);
+  border-radius: 0.75rem;
+  background: var(--preparacion-superficie);
+}
+
+.panelCajillas {
+  border: 1px solid var(--borde-contenido);
+  border-radius: 0.75rem;
+  background: var(--preparacion-fondo);
+}
+
+.vistaProducto .filaCajillas {
+  padding-block: 0.75rem;
+}
+
+.vistaProducto .filaCajillas + .filaCajillas {
+  border-block-start: 1px solid var(--borde-contenido);
+}
+
+.vistaProducto .barra {
+  box-shadow: 0 -4px 16px -12px rgb(16 24 40 / 12%);
+}
+
+.ayudaSucursal {
+  color: var(--texto-secundario-suave);
+}
+
+.titulo {
+  letter-spacing: -0.014em;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.paso {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-gray-600);
+  font-size: var(--text-theme-xs);
+  font-weight: 500;
+}
+
+.paso > span:first-child {
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: var(--color-orange-50);
+  color: var(--color-orange-700);
+  font-variant-numeric: tabular-nums;
+}
+
+.segmentos {
+  box-shadow: inset 0 1px 2px rgb(16 24 40 / 4%);
+}
+
+.trabajo button:not(:disabled) {
+  touch-action: manipulation;
+}
+
+.pulsable {
+  transition: transform var(--preparacion-pulsacion, 100ms)
+    var(--preparacion-curva, ease-out);
+}
+
+.pulsable:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.filaProducto:focus-within {
+  background: var(--color-orange-25);
+}
+
+.sucursal {
+  margin-inline: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--borde-contenido);
+  border-radius: 1rem;
+  background: var(--superficie-contenido);
+}
+
+.sucursal + .sucursal {
+  margin-block-start: 1rem;
+}
+
+.sucursal:focus-within {
+  border-color: var(--color-orange-300);
+}
+
+.lote {
+  animation: entradaLote 180ms var(--preparacion-curva) backwards;
+}
+
+.desplegable[open] > .contenidoOpcional {
+  animation: entradaLote var(--preparacion-duracion) var(--preparacion-curva)
+    backwards;
+}
+
+.barra {
+  padding-block-end: max(1rem, env(safe-area-inset-bottom));
+  box-shadow:
+    0 -4px 20px -12px rgb(16 24 40 / 10%),
+    var(--sombra-contenido);
+}
+
+.estado {
+  animation: aparecerEstado 160ms var(--preparacion-curva) backwards;
+}
+
+:global(.dark) .paso {
+  color: var(--color-gray-300);
+}
+
+:global(.dark) .paso > span:first-child {
+  background: rgb(251 101 20 / 12%);
+  color: var(--color-orange-300);
+}
+
+:global(.dark) .filaProducto:focus-within {
+  background: rgb(251 101 20 / 5%);
+}
+
+:global(.dark) .sucursal:focus-within {
+  border-color: var(--color-orange-700);
+}
+
+@media (hover: hover) {
+  .vistaProducto
+    .selectorSucursal:hover:not(:disabled):not([aria-pressed="true"])::before {
+    background: var(--preparacion-boton-hover);
+  }
+
+  .filaProducto:hover {
+    background: var(--color-gray-50);
+  }
+
+  :global(.dark) .filaProducto:hover {
+    background: var(--color-gray-800);
+  }
+}
+
+@keyframes entradaLote {
+  from {
+    opacity: 0.5;
+    transform: translateY(0.375rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aparecerEstado {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trabajo {
+    --preparacion-duracion: 80ms;
+    --preparacion-pulsacion: 0ms;
+  }
+
+  .pulsable:active:not(:disabled) {
+    transform: none;
+  }
+
+  .lote,
+  .desplegable[open] > .contenidoOpcional {
+    animation: aparecerEstado 80ms linear backwards;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .vistaProducto,
+  :global(.dark) .vistaProducto {
+    --preparacion-borde-control: var(--texto-seleccion-suave);
+    --borde-campo: var(--texto-suave);
+    --borde-contenido: var(--texto-secundario-suave);
+    --sombra-hundida: none;
+  }
+
+  .sucursal {
+    border-color: currentColor;
+  }
+}
+
+@media (forced-colors: active) {
+  .vistaProducto,
+  :global(.dark) .vistaProducto {
+    --preparacion-fondo: Canvas;
+    --preparacion-superficie: Canvas;
+    --superficie-interior: Canvas;
+    --borde-campo: CanvasText;
+    --preparacion-boton: Canvas;
+    --preparacion-boton-hover: Canvas;
+    --preparacion-borde-control: Highlight;
+    --preparacion-sucursal: Highlight;
+  }
+
+  .vistaProducto .selectorSucursal[aria-pressed="true"] .ayudaSucursal,
+  .vistaProducto .selectorSucursal[aria-pressed="true"] > svg,
+  .vistaProducto .selectorSucursal[aria-pressed="true"] .estadoSucursal {
+    color: HighlightText;
+  }
+
+  .resumenPedido,
+  .filaLote,
+  .panelCajillas {
+    border-color: CanvasText;
+  }
+}

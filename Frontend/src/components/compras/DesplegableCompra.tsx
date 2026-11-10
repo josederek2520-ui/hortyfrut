@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Button from "@/components/ui/button/Button";
 import Input from "@/components/form/input/InputField";
+import ImagenProducto from "@/components/productos/ImagenProducto";
 import { api, ApiError as ErrorApi } from "@/lib/api";
 import PaginadorOpcionesCompra from "./PaginadorOpcionesCompra";
 import usePanelDesplegable from "./usePanelDesplegable";
@@ -46,6 +47,10 @@ export default function DesplegableCompra<
   nombre,
   tipo,
   descripcion,
+  representarOpcion,
+  mostrarImagen = false,
+  datosConsulta,
+  textoSinOpciones,
 }: {
   ruta: string;
   etiqueta: string;
@@ -59,6 +64,10 @@ export default function DesplegableCompra<
   nombre?: string;
   tipo: "producto" | "proveedor" | "presentacion" | "general";
   descripcion?: (opcion: T) => ReactNode;
+  representarOpcion?: (opcion: T) => ReactNode;
+  mostrarImagen?: boolean;
+  datosConsulta?: Record<string, unknown>;
+  textoSinOpciones?: string;
 }) {
   const t = useTranslations("compras");
   const identificador = useId();
@@ -93,7 +102,11 @@ export default function DesplegableCompra<
     parametros.set("categoria", String(categoria.id));
   if (tipo === "proveedor") parametros.set("todos", String(todos));
   const consulta = `${base}?${parametros}`;
-  const claveConsulta = `${consulta}|${revision}`;
+  const cuerpoConsulta =
+    !eligiendoCategoria && datosConsulta
+      ? JSON.stringify(datosConsulta)
+      : undefined;
+  const claveConsulta = `${consulta}|${revision}|${cuerpoConsulta || ""}`;
   const datos = respuesta?.clave === claveConsulta ? respuesta.datos : null;
   const fallo = !datos && consultaFallida === claveConsulta;
   const cargando = !datos && !fallo;
@@ -123,6 +136,7 @@ export default function DesplegableCompra<
         try {
           const resultado = await api<PaginaOpciones<T>>(consulta, {
             signal: controlador.signal,
+            ...(cuerpoConsulta ? { method: "POST", body: cuerpoConsulta } : {}),
           });
           if (!controlador.signal.aborted)
             establecerRespuesta({ clave: claveConsulta, datos: resultado });
@@ -141,7 +155,7 @@ export default function DesplegableCompra<
           }
         }
       },
-      busquedaActual ? 250 : 0,
+      busquedaActual || cuerpoConsulta ? 250 : 0,
     );
     return () => {
       controlador.abort();
@@ -154,6 +168,7 @@ export default function DesplegableCompra<
     paginaActual,
     busquedaActual,
     eligiendoCategoria,
+    cuerpoConsulta,
     alError,
   ]);
   useEffect(() => {
@@ -258,7 +273,8 @@ export default function DesplegableCompra<
           className={`flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border bg-white px-3 py-2.5 text-start text-sm text-gray-800 shadow-theme-xs focus-visible:ring-3 focus-visible:ring-brand-500/20 focus-visible:outline-none disabled:opacity-60 dark:bg-gray-900 dark:text-gray-100 ${error ? "border-error-500 dark:border-error-400" : abierto ? "border-brand-400 dark:border-brand-400" : "border-gray-300 dark:border-gray-700"}`}
         >
           <span id={`${identificador}-valor`} className="truncate">
-            {valor?.nombre || opcionVacia || t("seleccionar")}
+            {(valor && representarOpcion ? representarOpcion(valor) : null) ??
+              (valor?.nombre || opcionVacia || t("seleccionar"))}
           </span>
           <IconoDesplegar
             className={`size-4 shrink-0 transition-transform motion-reduce:transition-none ${abierto ? "rotate-180" : ""}`}
@@ -461,11 +477,21 @@ export default function DesplegableCompra<
                       onClick={() => elegir(opcion)}
                       className={`flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2.5 ${indiceVisible === indice ? "bg-brand-50 dark:bg-brand-500/10" : ""}`}
                     >
-                      <span className="min-w-0">
+                      {opcion &&
+                        (tipo === "producto" || mostrarImagen) &&
+                        !eligiendoCategoria && (
+                          <ImagenProducto
+                            origen={opcion.imagen || null}
+                            nombre={opcion.nombre}
+                          />
+                        )}
+                      <span className="min-w-0 flex-1">
                         <span
                           className={`block text-sm break-words ${opcion ? "font-medium text-gray-800 dark:text-gray-100" : "text-gray-500 dark:text-gray-400"}`}
                         >
-                          {opcion?.nombre || etiquetaVacia}
+                          {opcion && representarOpcion && !eligiendoCategoria
+                            ? representarOpcion(opcion)
+                            : opcion?.nombre || etiquetaVacia}
                         </span>
                         {opcion && tipo === "proveedor" && (
                           <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
@@ -524,11 +550,12 @@ export default function DesplegableCompra<
                     className="space-y-2 px-3 py-4 text-sm text-gray-500 dark:text-gray-400"
                   >
                     <p>
-                      {t(
-                        tipo === "proveedor" && !todos
-                          ? "sinProveedoresCategoria"
-                          : "sinOpciones",
-                      )}
+                      {(!eligiendoCategoria && textoSinOpciones) ||
+                        t(
+                          tipo === "proveedor" && !todos
+                            ? "sinProveedoresCategoria"
+                            : "sinOpciones",
+                        )}
                     </p>
                     {tipo === "proveedor" && !todos && (
                       <button

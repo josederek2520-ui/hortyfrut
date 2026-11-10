@@ -1,4 +1,6 @@
 from django.db.models import Count, Q
+from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -7,7 +9,7 @@ from config.paginacion import PaginacionDiez
 from catalogos.models import CategoriaProducto
 from productos.models import Producto, PresentacionProducto
 from proveedores.models import Proveedor
-from .consultas import necesidades_fecha, resumen_productos, datos_necesidad
+from .consultas import necesidades_fecha, resumen_productos, datos_necesidad, ruta_imagen_compra
 from .models import Compra
 from .permisos import PermisosCompras
 from .serializadores import (SerializadorCompra, SerializadorCompraCompleta, SerializadorFiltrosCompras,
@@ -78,16 +80,27 @@ class VistaCompras(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
         formulario.is_valid(raise_exception=True)
         filtros = formulario.validated_data
         consulta = necesidades_fecha(filtros['fecha_pedidos'])
+        if filtros['productos']:
+            consulta = consulta.filter(producto_id__in=filtros['productos'])
+        if filtros['excluir_productos']:
+            consulta = consulta.exclude(producto_id__in=filtros['excluir_productos'])
+        if 'categoria' in filtros:
+            consulta = consulta.filter(producto__categoria_id=filtros['categoria'])
+        if filtros['solo_disponibles']:
+            consulta = consulta.filter(producto__activo=True, producto__categoria__activo=True, producto__unidad_medida__activo=True)
         if filtros.get('buscar'):
             consulta = consulta.filter(Q(producto_nombre__icontains=filtros['buscar']) | Q(producto__nombre__icontains=filtros['buscar']))
         resumen = consulta.aggregate(pedidos=Count('pedido_id', distinct=True), sucursales=Count('pedido__sucursal_id', distinct=True), productos=Count('producto_id', distinct=True))
         if filtros['vista'] == 'resumen':
             pagina = self.paginate_queryset(resumen_productos(consulta))
             datos = [{'id': fila['producto_id'], 'nombre': fila['producto__nombre'], 'unidad_nombre': fila['producto__unidad_medida__nombre'],
+                      'imagen': ruta_imagen_compra(fila['producto_id'], fila['producto__imagen']),
+                      'categoria': {'id': fila['producto__categoria_id'], 'nombre': fila['producto__categoria__nombre']},
+                      'subtitulo': fila['producto__categoria__nombre'],
                       'disponible': fila['producto__activo'] and fila['producto__categoria__activo'] and fila['producto__unidad_medida__activo'],
                       'cajas': fila['cajas'], 'unidades': fila['unidades'], 'pedidos': fila['pedidos']} for fila in pagina]
         else:
-            pagina = self.paginate_queryset(consulta.select_related('pedido').order_by('pedido__cliente_nombre', 'pedido__sucursal_nombre', 'pedido_id', 'producto_nombre', 'columna', 'pk'))
+            pagina = self.paginate_queryset(consulta.select_related('pedido', 'producto').order_by('pedido__cliente_nombre', 'pedido__sucursal_nombre', 'pedido_id', 'producto_nombre', 'columna', 'pk'))
             datos = [datos_necesidad(linea) for linea in pagina]
         respuesta = self.get_paginated_response(datos)
         respuesta.data.update({'fecha_pedidos': filtros['fecha_pedidos'].isoformat(), 'resumen': resumen,
@@ -103,14 +116,36 @@ class VistaCompras(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
     def productos(self, request):
         filtros = self.filtros_opciones()
         consulta = Producto.objects.select_related('categoria', 'unidad_medida').filter(activo=True, categoria__activo=True, unidad_medida__activo=True)
+        if filtros['excluir_productos']:
+            consulta = consulta.exclude(pk__in=filtros['excluir_productos'])
         if 'categoria' in filtros:
             consulta = consulta.filter(categoria_id=filtros['categoria'])
         if filtros.get('buscar'):
             consulta = consulta.filter(nombre__icontains=filtros['buscar'])
         pagina = self.paginate_queryset(consulta.order_by('nombre', 'pk'))
+        cantidades = {}
+        if 'fecha_pedidos' in filtros:
+            cantidades = {fila['producto_id']: {'cajas': fila['cajas'], 'unidades': fila['unidades'], 'pedidos': fila['pedidos']}
+                for fila in resumen_productos(necesidades_fecha(filtros['fecha_pedidos']).filter(producto_id__in=[obj.pk for obj in pagina]))}
         return self.get_paginated_response([{'id': obj.pk, 'nombre': obj.nombre, 'unidad_nombre': obj.unidad_medida.nombre,
+                                           'imagen': ruta_imagen_compra(obj.pk, obj.imagen.name),
                                            'subtitulo': obj.categoria.nombre,
+                                           **(cantidades.get(obj.pk, {'cajas': 0, 'unidades': 0, 'pedidos': 0}) if 'fecha_pedidos' in filtros else {}),
                                            'categoria': {'id': obj.categoria_id, 'nombre': obj.categoria.nombre}} for obj in pagina])
+
+    @action(detail=False, methods=['get'], url_path=r'imagenes/(?P<producto_pk>[0-9]+)')
+    def imagen(self, request, producto_pk=None):
+        # Compras es un catálogo operativo central; su permiso de lectura basta.
+        producto = get_object_or_404(Producto, pk=producto_pk)
+        if not producto.imagen:
+            raise Http404
+        try:
+            respuesta = FileResponse(producto.imagen.open('rb'), content_type='image/webp')
+        except OSError as error:
+            raise Http404 from error
+        respuesta['Cache-Control'] = 'private, max-age=300'
+        respuesta['X-Content-Type-Options'] = 'nosniff'
+        return respuesta
 
     @action(detail=False, methods=['get'])
     def categorias(self, request):

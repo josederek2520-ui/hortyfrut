@@ -1,0 +1,74 @@
+.mapa :global(.leaflet-container) {
+  font-family: inherit;
+  z-index: 0;
+}
+.mapaAmplio {
+  width: 100%;
+  height: clamp(24rem, 62dvh, 48rem);
+}
+.mapa :global(.marca-camion) {
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--color-brand-500);
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 4px 18px rgb(0 0 0 / 20%);
+}
+.mapa :global(.marca-camion img) {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+.mapa :global(.marca-ruta) {
+  background: transparent;
+  border: none;
+}
+.mapa :global(.imagen-destino-ruta) {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 2px solid;
+  border-radius: 14px;
+  background: white;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 18%);
+}
+.mapa :global(.imagen-destino-ruta b) {
+  position: absolute;
+  inset-inline-end: -8px;
+  top: -8px;
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  min-height: 22px;
+  padding-inline: 3px;
+  border: 2px solid white;
+  border-radius: 11px;
+  color: white;
+  font-size: 11px;
+}
+:global(.dark) .mapa :global(.imagen-destino-ruta) {
+  background: #1c231f;
+}
+.mapa :global(.leaflet-control-attribution) {
+  max-width: 100%;
+  font-size: 10px;
+}
+.mapa :global(.leaflet-control-zoom a) {
+  min-width: 40px;
+  min-height: 40px;
+  line-height: 40px;
+}
+:global(.dark) .mapa :global(.leaflet-container) {
+  background: #111613;
+}
+:global(.dark) .mapa :global(.leaflet-control-attribution) {
+  background: #1c231f;
+  color: #e6eee8;
+}
+:global(.dark) .mapa :global(.leaflet-control-attribution a) {
+  color: #a5e9bb;
+}

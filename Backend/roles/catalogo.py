@@ -3,6 +3,32 @@ from django.contrib.auth.models import Permission
 from django.db.models import Q
 
 MODULOS = {
+    'precios': {'label': 'Precios acordados', 'app': 'precios', 'model': 'acuerdoprecio', 'permissions': {
+        'view_acuerdoprecio': 'Ver precios acordados', 'add_acuerdoprecio': 'Crear propuestas de precios',
+        'change_acuerdoprecio': 'Editar borradores de precios', 'presentar_acuerdoprecio': 'Registrar propuestas del supermercado',
+        'aceptar_acuerdoprecio': 'Aceptar precios en nombre de HortyFru', 'rechazar_acuerdoprecio': 'Rechazar propuestas de precios',
+        'cancelar_acuerdoprecio': 'Cancelar borradores de precios'}},
+    'devoluciones': {'label': 'Devoluciones', 'app': 'devoluciones', 'model': 'devolucion', 'permissions': {
+        'view_devolucion': 'Ver devoluciones', 'add_devolucion': 'Crear devoluciones', 'change_devolucion': 'Editar borradores de devolución',
+        'recibir_devolucion': 'Confirmar recepción de devoluciones', 'revisar_devolucion': 'Revisar aprovechable y merma',
+        'cancelar_devolucion': 'Cancelar borradores de devolución'}},
+    'respaldos': {'label': 'Respaldos', 'app': 'respaldos', 'model': 'respaldo', 'permissions': {
+        'view_respaldo': 'Ver respaldos', 'add_respaldo': 'Crear respaldos',
+        'descargar_respaldo': 'Descargar respaldos completos del sistema'}},
+    'entregas': {'label': 'Entregas', 'app': 'entregas', 'model': 'entrega', 'permissions': {
+        'view_entrega': 'Ver entregas', 'add_entrega': 'Registrar recepción', 'change_entrega': 'Editar recepción',
+        'enviar_entrega': 'Enviar recepción a revisión', 'confirmar_entrega': 'Confirmar entregas',
+        'ver_todas_entregas': 'Consultar todas las entregas', 'gestionar_todas_entregas': 'Gestionar todas las entregas'}},
+    'vehiculos': {'label': 'Vehículos', 'app': 'vehiculos', 'model': 'vehiculo', 'permissions': {
+        'view_vehiculo': 'Ver vehículos', 'add_vehiculo': 'Crear vehículos', 'change_vehiculo': 'Editar vehículos',
+        'cambiar_estado_vehiculo': 'Activar o desactivar vehículos'}},
+    'despachos': {'label': 'Despachos', 'app': 'despachos', 'model': 'despacho', 'permissions': {
+        'view_despacho': 'Ver despachos', 'add_despacho': 'Crear despachos', 'change_despacho': 'Editar despachos',
+        'iniciar_despacho': 'Iniciar despachos', 'registrar_recorrido': 'Registrar llegadas y descargas',
+        'finalizar_despacho': 'Finalizar despachos', 'cancelar_despacho': 'Cancelar borradores de despacho',
+        'conducir_despacho': 'Ser asignado como chofer', 'enviar_despacho': 'Enviar despachos al chofer',
+        'ver_despachos_propios': 'Consultar despachos propios como chofer',
+        'operar_despachos_propios': 'Operar despachos propios como chofer'}},
     'preparaciones': {'label': 'Preparaciones de pedidos', 'app': 'preparaciones', 'model': 'preparacion', 'permissions': {
         'view_preparacion': 'Ver preparaciones y hoja consolidada', 'add_preparacion': 'Crear preparaciones', 'change_preparacion': 'Editar preparaciones',
         'confirmar_preparacion': 'Confirmar preparaciones', 'cancelar_preparacion': 'Cancelar borradores de preparación'}},

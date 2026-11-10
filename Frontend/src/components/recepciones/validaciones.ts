@@ -1,5 +1,9 @@
 import type { FieldErrors as ErroresCampos } from "@/lib/form-validation";
-import { aMilesRecepcion, mismaUnidadRecepcion } from "./calculos";
+import {
+  aMilesRecepcion,
+  mismaUnidadRecepcion,
+  precisionCantidadRecepcionValida,
+} from "./calculos";
 import type { LineaRecepcion } from "./tipos";
 
 interface MensajesRecepcion {
@@ -27,12 +31,18 @@ export function validarLineasRecepcion(
     const campo = (nombre: string) => `detalle_${indice}_${nombre}`;
     const cantidad = aMilesRecepcion(linea.cantidadInventario);
     const compra = aMilesRecepcion(linea.cantidadCompra, 9);
-    if (cantidad === null)
+    if (
+      cantidad === null ||
+      !precisionCantidadRecepcionValida(linea, "cantidadInventario")
+    )
       errores[campo("cantidad_inventario")] = [mensajes.cantidad];
     else if (confirmar && cantidad <= BigInt(0))
       errores[campo("cantidad_inventario")] = [mensajes.positiva];
     if (vinculada) {
-      if (compra === null)
+      if (
+        compra === null ||
+        !precisionCantidadRecepcionValida(linea, "cantidadCompra")
+      )
         errores[campo("cantidad_compra")] = [mensajes.cantidad];
       else if (confirmar && compra <= BigInt(0))
         errores[campo("cantidad_compra")] = [mensajes.positiva];
@@ -52,7 +62,11 @@ export function validarLineasRecepcion(
     }
     if (!linea.unidad.es_kg && linea.pesoKg.trim()) {
       const peso = aMilesRecepcion(linea.pesoKg);
-      if (peso === null || peso <= BigInt(0))
+      if (
+        peso === null ||
+        peso <= BigInt(0) ||
+        !precisionCantidadRecepcionValida(linea, "pesoKg")
+      )
         errores[campo("peso_kg")] = [mensajes.peso];
     }
     if (

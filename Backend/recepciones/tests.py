@@ -1,12 +1,17 @@
 import uuid
+from io import BytesIO
+from tempfile import TemporaryDirectory
 from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import patch
 from django.contrib.auth.models import Permission
-from django.test import TestCase
+from django.test import TestCase, override_settings
+from django.core.files.base import ContentFile
+from PIL import Image as Imagen
 from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework.exceptions import ValidationError, PermissionDenied
+from auditoria.models import RegistroActividad
 from usuarios.models import Usuario
 from catalogos.models import CategoriaProducto, UnidadMedida
 from catalogos.servicios import guardar_catalogo, version_catalogo
@@ -75,6 +80,63 @@ class PruebasRecepciones(DatosRecepciones, TestCase):
         self.assertFalse(MovimientoInventario.objects.exists())
         self.assertEqual(avance_compra(compra.pk), {})
         self.assertTrue(recepcion.creado_en)
+
+    def test_fotos_operativas_con_permiso_recepciones_sin_permisos_productos_ni_compras(self):
+        with TemporaryDirectory() as carpeta, override_settings(MEDIA_ROOT=carpeta):
+            salida = BytesIO()
+            Imagen.new('RGB', (16, 16), 'green').save(salida, format='WEBP')
+            self.producto.imagen.save('recepcion.webp', ContentFile(salida.getvalue()), save=True)
+            compra = self.compra()
+            recepcion = self.crear(compra)
+            self.client.force_authenticate(self.lector)
+            catalogo = self.client.get('/api/v1/recepciones/productos/')
+            self.assertEqual(catalogo.status_code, 200)
+            foto = catalogo.data['results'][0]['imagen']
+            self.assertTrue(foto.startswith(f'/api/v1/recepciones/imagenes/{self.producto.pk}/'))
+            pendientes = self.client.get('/api/v1/recepciones/compra-detalles/', {'compra': compra.pk, 'solo_pendientes': 'true'})
+            self.assertEqual(pendientes.data['results'][0]['imagen'], foto)
+            guardada = self.client.get(f'/api/v1/recepciones/{recepcion.pk}/')
+            self.assertEqual(guardada.data['detalles'][0]['producto_imagen'], foto)
+            directa = self.crear()
+            self.assertEqual(self.client.get(f'/api/v1/recepciones/{directa.pk}/').data['detalles'][0]['producto_imagen'], foto)
+            imagen = self.client.get(foto)
+            self.assertEqual(imagen.status_code, 200)
+            self.assertEqual(imagen['Content-Type'], 'image/webp')
+            self.assertIn('private', imagen['Cache-Control'])
+            self.assertEqual(imagen['X-Content-Type-Options'], 'nosniff')
+            self.assertTrue(b''.join(imagen.streaming_content))
+            self.assertEqual(self.client.get('/api/v1/productos/').status_code, 403)
+            self.assertEqual(self.client.get('/api/v1/compras/').status_code, 403)
+            self.confirmar(recepcion)
+            self.producto.activo = False
+            self.producto.save(update_fields=['activo'])
+            historica = self.client.get(foto)
+            self.assertEqual(historica.status_code, 200)
+            self.assertTrue(b''.join(historica.streaming_content))
+            confirmada = self.client.get(f'/api/v1/recepciones/{recepcion.pk}/')
+            self.assertEqual(confirmada.data['detalles'][0]['producto_imagen'], foto)
+            self.assertEqual(confirmada.data['detalles'][0]['cantidad_inventario'], '120.000')
+
+    def test_fotos_ausentes_y_permiso_denegado_no_exponen_archivos_ni_admiten_escritura(self):
+        ruta = f'/api/v1/recepciones/imagenes/{self.producto.pk}/'
+        catalogo = self.client.get('/api/v1/recepciones/productos/')
+        self.assertIsNone(catalogo.data['results'][0]['imagen'])
+        recepcion = self.crear()
+        self.assertIsNone(self.client.get(f'/api/v1/recepciones/{recepcion.pk}/').data['detalles'][0]['producto_imagen'])
+        self.assertEqual(self.client.get(ruta).status_code, 404)
+        self.assertEqual(self.client.get('/api/v1/recepciones/imagenes/999999999/').status_code, 404)
+        self.producto.imagen = 'productos/archivo-inexistente.webp'
+        self.producto.save(update_fields=['imagen'])
+        self.assertEqual(self.client.get(ruta).status_code, 404)
+        datos = self.datos()
+        datos['detalles'][0]['producto_imagen'] = '/archivo-no-autorizado.webp'
+        self.assertEqual(self.client.post('/api/v1/recepciones/', datos, format='json').status_code, 400)
+        sin_acceso = Usuario.objects.create_user(email='sinacceso@fotos-recepciones.test', cedula_identidad='89009')
+        self.client.force_authenticate(sin_acceso)
+        self.assertEqual(self.client.get(ruta).status_code, 403)
+        self.assertTrue(RegistroActividad.objects.filter(modulo='recepciones', accion='imagen', resultado='rechazado').exists())
+        self.client.force_authenticate(None)
+        self.assertIn(self.client.get(ruta).status_code, (401, 403))
 
     def test_hoja_pendientes_filtra_antes_de_paginar_y_conserva_proveedores(self):
         proveedores = [Proveedor.objects.create(nombre=f'Proveedor hoja {indice:02d}') for indice in range(12)]

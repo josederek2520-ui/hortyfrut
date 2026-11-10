@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Check as IconoConfirmar, Pencil as IconoEditar } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import Button from "@/components/ui/button/Button";
+import ImagenProducto from "@/components/productos/ImagenProducto";
 import PaginadorCompras from "@/components/compras/PaginadorCompras";
 import { clasePanel, claseEstado } from "@/components/compras/tipos";
 import { mostrarFecha } from "@/components/compras/calculos";
@@ -195,7 +196,13 @@ export default function DetalleRecepcion({
                       className="border-t border-gray-100 text-gray-700 dark:border-gray-800 dark:text-gray-200"
                     >
                       <td className="min-w-40 px-4 py-4 font-medium">
-                        {linea.producto_nombre}
+                        <div className="flex items-center gap-3">
+                          <ImagenProducto
+                            origen={linea.producto_imagen || null}
+                            nombre={linea.producto_nombre}
+                          />
+                          <span>{linea.producto_nombre}</span>
+                        </div>
                       </td>
                       {recepcion.compra && (
                         <td className="px-4 py-4 whitespace-nowrap tabular-nums">

@@ -2,6 +2,9 @@
 
 Backend con Django REST Framework y PostgreSQL.
 
+El módulo [Entregas](entregas/README.md) registra la recepción por sucursal y su
+conciliación posterior a la descarga física, sin otro descuento de inventario.
+
 ## Entorno de desarrollo
 
 En Git Bash de Windows, desde esta carpeta:
@@ -121,7 +124,7 @@ usa los valores privados de `.env`.
 ## Verificación
 
 ```bash
-python manage.py test usuarios roles auditoria catalogos productos clientes pedidos proveedores compras almacenes inventario recepciones cajillas preparaciones
+python manage.py test usuarios roles auditoria catalogos productos clientes pedidos proveedores compras almacenes inventario recepciones cajillas preparaciones vehiculos despachos
 python manage.py check --database default
 python manage.py makemigrations --check --dry-run
 ```
@@ -252,3 +255,35 @@ confirmación parcial o completa registra aportes reales de lotes, separa calida
 genera movimientos de inventario y actualiza el avance de los pedidos de forma
 atómica y auditada. Las cajillas se planifican sin registrar préstamos. Su rol
 independiente se crea mediante `preparar_roles`, sin modificar los anteriores.
+
+## Transporte y viajes
+
+[Vehículos](vehiculos/README.md) y [Despachos](despachos/README.md) incorporan
+catálogo de transporte, selección de preparaciones confirmadas, paradas y
+registro del recorrido desde el panel, con permisos, versiones y auditoría.
+Las cajillas distinguen almacén, tránsito y sucursal; los productos no vuelven
+a descontarse. Mis despachos, GPS y Entregas permanecen como etapas futuras.
+
+## Pruebas aisladas para el proyecto móvil
+
+La etapa cero dispone de una configuración optativa que dirige tanto la conexión
+normal como la del test runner a una base separada. No cambia la configuración
+habitual del servidor ni requiere editar .env.
+
+Desde Backend:
+
+    .venv/Scripts/python.exe manage.py check --settings=config.pruebas_aisladas
+
+    .venv/Scripts/python.exe manage.py test usuarios roles auditoria catalogos productos clientes pedidos proveedores compras almacenes inventario recepciones cajillas preparaciones vehiculos despachos --settings=config.pruebas_aisladas --keepdb --noinput
+
+La base predeterminada es pruebas_hortyfru_movil. HORTYFRU_BD_PRUEBAS permite
+elegir otro nombre con prefijo pruebas_, caracteres permitidos y máximo de 63
+caracteres. Se rechaza la base habitual y cualquier alias adicional sin revisar.
+
+Los archivos se guardan en una carpeta temporal, el correo en memoria y la caché
+en el proceso de prueba. La base usa PostgreSQL con sus migraciones y restricciones
+reales. Los datos sintéticos se revierten o limpian al terminar; no es un entorno
+de demostración permanente ni contiene cuentas manuales preparadas.
+
+Consulta el [informe de la etapa cero](../documentacion/etapa_cero_movil.md)
+y el [plan por etapas](../documentacion/plan_aplicacion_movil_rutas_gps.md).

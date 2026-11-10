@@ -64,7 +64,7 @@ export default function FormularioInicioSesion() {
     }
   };
   return (
-    <div className="flex w-full flex-1 items-center justify-center px-6 py-12 lg:w-1/2 lg:px-12">
+    <div className="flex w-full min-w-0 items-center justify-center py-10 sm:px-4 lg:px-6 lg:py-6">
       <div className="superficie-cristal superficie-acceso w-full max-w-md p-6 sm:p-8">
         <div className="mb-7">
           <MarcaHortyfru />
@@ -144,7 +144,8 @@ export default function FormularioInicioSesion() {
                 type="button"
                 aria-label={t(visible ? "hidePassword" : "showPassword")}
                 onClick={() => establecerVisible(!visible)}
-                className="absolute end-1.5 top-1.5 inline-flex size-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                disabled={enviando}
+                className="absolute end-0 top-0 inline-flex size-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:outline-none disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-200"
               >
                 {visible ? (
                   <EyeCloseIcon aria-hidden="true" className="size-4.5" />
@@ -183,7 +184,7 @@ export default function FormularioInicioSesion() {
             {t(enviando ? "auth.signingIn" : "auth.signIn")}
           </Button>
         </form>
-        <p className="mt-8 text-center text-theme-xs leading-5 text-gray-400 dark:text-gray-500">
+        <p className="mt-8 text-center text-theme-xs leading-5 text-gray-600 dark:text-gray-300">
           {t("auth.help")}
         </p>
       </div>

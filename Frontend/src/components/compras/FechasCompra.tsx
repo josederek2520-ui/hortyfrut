@@ -8,6 +8,7 @@ import CampoFecha from "@/components/form/CampoFecha";
 import Label from "@/components/form/Label";
 import { fechaLocal } from "@/components/pedidos/fechas";
 import { clasePanel } from "./tipos";
+import AvisoPedidosFechaCompra from "./AvisoPedidosFechaCompra";
 
 export default function FechasCompra({
   fechaPedidos,
@@ -29,67 +30,84 @@ export default function FechasCompra({
   const t = useTranslations("compras");
   return (
     <section
-      className={`${clasePanel} grid gap-5 p-5 sm:p-6 xl:grid-cols-[minmax(12rem,1fr)_minmax(0,2fr)] xl:items-start`}
+      className={clasePanel + " grid gap-4 p-4 sm:grid-cols-2 sm:gap-6 sm:px-5"}
       aria-labelledby="titulo-fechas-compra"
     >
-      <div>
-        <h2
-          id="titulo-fechas-compra"
-          className="text-lg font-semibold text-gray-900 dark:text-white"
-        >
-          {t("fechasTitulo")}
-        </h2>
-        <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">
-          {t("fechasAyuda")}
-        </p>
-      </div>
-      <div className="grid gap-5 sm:grid-cols-2">
-        {[
-          {
-            nombre: "fecha_pedidos",
-            valor: fechaPedidos,
-            etiqueta: "fechaPedidos",
-            ayuda: "fechaPedidosAyuda",
-            Icono: IconoPedidos,
-            cambiar: alPedidos,
-          },
-          {
-            nombre: "fecha_compra",
-            valor: fechaCompra,
-            etiqueta: "fechaCompra",
-            ayuda: "fechaCompraAyuda",
-            Icono: IconoCompra,
-            cambiar: alCompra,
-          },
-        ].map(({ nombre, valor, etiqueta, ayuda, Icono, cambiar }) => (
-          <div key={nombre} className="min-w-0">
-            <div className="mb-2 flex items-center gap-2 text-brand-600 dark:text-brand-400">
-              <Icono className="size-4.5" aria-hidden="true" />
-              <Label htmlFor={`compra-${nombre}`} className="mb-0">
-                {t(etiqueta)} <span className="text-error-500">*</span>
-              </Label>
+      <h2 id="titulo-fechas-compra" className="sr-only">
+        {t("fechasTitulo")}
+      </h2>
+      {[
+        {
+          nombre: "fecha_pedidos",
+          valor: fechaPedidos,
+          etiqueta: "fechaPedidosEntrega",
+          ayuda: "fechaPedidosBreve",
+          Icono: IconoPedidos,
+          cambiar: alPedidos,
+        },
+        {
+          nombre: "fecha_compra",
+          valor: fechaCompra,
+          etiqueta: "fechaCompra",
+          ayuda: "fechaCompraBreve",
+          Icono: IconoCompra,
+          cambiar: alCompra,
+        },
+      ].map(({ nombre, valor, etiqueta, ayuda, Icono, cambiar }) => (
+        <div key={nombre} className="min-w-0">
+          <div className="space-y-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <Icono
+                  className="size-4 shrink-0 text-brand-600 dark:text-brand-400"
+                  aria-hidden="true"
+                />
+                <Label htmlFor={"compra-" + nombre} className="mb-0">
+                  {t(etiqueta)} <span className="text-error-500">*</span>
+                </Label>
+              </div>
             </div>
-            <CampoFecha
-              id={`compra-${nombre}`}
-              name={nombre}
-              value={valor}
-              max={nombre === "fecha_compra" ? fechaLocal() : undefined}
-              required
-              disabled={deshabilitado}
-              error={!!errores[nombre]?.length}
-              alCambiar={cambiar}
-              alSalir={alSalir}
-              aria-describedby={`compra-${nombre}-ayuda`}
-            />
-            <p
-              id={`compra-${nombre}-ayuda`}
-              className={`mt-2 text-theme-xs leading-5 ${errores[nombre]?.length ? "text-error-500 dark:text-error-400" : "text-gray-500 dark:text-gray-400"}`}
-            >
-              {errores[nombre]?.join(" ") || t(ayuda)}
-            </p>
+            <div>
+              <CampoFecha
+                id={"compra-" + nombre}
+                name={nombre}
+                value={valor}
+                max={nombre === "fecha_compra" ? fechaLocal() : undefined}
+                required
+                disabled={deshabilitado}
+                error={!!errores[nombre]?.length}
+                alCambiar={cambiar}
+                alSalir={alSalir}
+                aria-describedby={
+                  "compra-" +
+                  nombre +
+                  "-ayuda" +
+                  (nombre === "fecha_pedidos" && fechaPedidos
+                    ? " compra-pedidos-disponibilidad"
+                    : "")
+                }
+              />
+              <p
+                id={"compra-" + nombre + "-ayuda"}
+                className={
+                  "mt-1.5 text-theme-xs " +
+                  (errores[nombre]?.length
+                    ? "text-error-500 dark:text-error-400"
+                    : "text-gray-500 dark:text-gray-400")
+                }
+              >
+                {errores[nombre]?.join(" ") || t(ayuda)}
+              </p>
+              {nombre === "fecha_pedidos" && (
+                <AvisoPedidosFechaCompra
+                  key={fechaPedidos}
+                  fecha={fechaPedidos}
+                />
+              )}
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </section>
   );
 }

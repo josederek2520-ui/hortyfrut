@@ -24,6 +24,11 @@ class SerializadorCliente(SerializadorBaseLectura):
 
 class SerializadorSucursal(SerializadorBaseLectura):
     encargado_pedidos = serializers.SerializerMethodField()
+    encargado_recepcion = serializers.SerializerMethodField()
+
+    def get_encargado_recepcion(self, obj):
+        usuario = obj.encargado_recepcion
+        return {'id': usuario.pk, 'nombre': usuario.get_full_name() or f'Cuenta #{usuario.pk}', 'activo': usuario.is_active} if usuario else None
 
     def get_encargado_pedidos(self, obj):
         usuario = obj.encargado_pedidos
@@ -31,7 +36,7 @@ class SerializadorSucursal(SerializadorBaseLectura):
 
     class Meta:
         model = Sucursal
-        fields = ('id', 'cliente', 'nombre', 'direccion', 'telefono', 'referencia', 'latitud', 'longitud', 'encargado_pedidos', 'activo', 'creado_en', 'version')
+        fields = ('id', 'cliente', 'nombre', 'direccion', 'telefono', 'referencia', 'latitud', 'longitud', 'encargado_pedidos', 'encargado_recepcion', 'activo', 'creado_en', 'version')
         read_only_fields = fields
 
 
@@ -70,6 +75,7 @@ class SerializadorEscrituraCliente(SerializadorEscrituraBase):
 
 class SerializadorEscrituraSucursal(SerializadorEscrituraBase):
     encargado_pedidos_id = serializers.IntegerField(min_value=1, allow_null=True, required=False)
+    encargado_recepcion_id = serializers.IntegerField(min_value=1, allow_null=True, required=False)
     nombre = serializers.CharField(max_length=150)
     direccion = serializers.CharField(max_length=255)
     referencia = serializers.CharField(max_length=255, allow_blank=True, required=False)

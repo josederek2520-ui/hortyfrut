@@ -1,0 +1,12 @@
+{
+  "base": "pruebas_hortyfru_optimizacion_integral",
+  "estado": "finalizado",
+  "motor_real": "OSRM Docker",
+  "trabajador_real": "Celery + Redis Docker",
+  "matriz_puntos": 3,
+  "plan_fijado": true,
+  "tramos_con_geometria_y_color": 3,
+  "productos_sin_segundo_descuento": true,
+  "descargas_reintentadas_sin_duplicacion": true,
+  "calculo_s": "0.166228"
+}
