@@ -6,22 +6,26 @@ variantes claras y oscuras y la identidad verde/naranja existente.
 
 ## Superficies
 
-El fondo usa salvia claro (`#dce8df`), iluminación central tenue y un matiz verde
-discreto en el extremo inferior. Las tarjetas son blancas (`#fdfefd`), con sombra
-suave y cabeceras casi blancas. Los campos claros conservan un relieve interior
+El ajuste del 11 de noviembre de 2026 usa un fondo menta claro (`#e9f1ed`),
+luces verdes suaves en los extremos y un toque cálido naranja arriba. Las luces
+son degradados estáticos sobre el fondo, sin elementos adicionales ni animación.
+Las tarjetas tienen un velo casi blanco al 94 % y un reflejo discreto, con sombra
+suave y cabeceras casi blancas. No usan desenfoque ni crean contextos de apilado
+nuevos para sus selectores o menús. Los campos claros conservan un relieve interior
 mínimo. Las filas no añaden sombras individuales: el contenido y los estados
 conservan su jerarquía.
 
-El menú lateral incorpora cristal esmerilado blanco al 68 %, desenfoque de
-24 px, saturación del 120 %, un reflejo gradual y bordes iluminados. La barra
-superior usa el mismo material al 88 %, con desenfoque de 18 px y saturación del
-115 %. Los reflejos se dibujan en el fondo, sin capas que intercepten clics.
+El menú lateral incorpora cristal esmerilado blanco al 66 %, desenfoque de
+24 px, saturación del 125 %, un reflejo gradual y bordes iluminados. La barra
+superior usa el mismo material al 84 %, con el mismo desenfoque y saturación.
+Los reflejos se dibujan en el fondo, sin capas que intercepten clics.
 El logotipo y los iconos conservan sus colores. El ancho y desplazamiento del
 menú siguen animados; el material no se anima al cambiar de tema.
 
-En móvil el menú utiliza un tinte blanco al 88 % para mantener el contraste sobre
+En móvil el menú utiliza un tinte blanco al 94 % para mantener el contraste sobre
 la pantalla oscurecida por el velo existente. En oscuro, el menú de escritorio
-usa tinte carbón al 84 %; el menú móvil y la barra superior, al 92 %. Los textos
+usa tinte carbón al 90 %; el menú móvil, al 96 %, y la barra superior, al 90 %. Las
+tarjetas usan carbón al 96 % con un reflejo mínimo. Los textos
 secundarios de la navegación oscura usan el token legible del tema.
 
 El modo oscuro usa fondo carbón con matiz salvia, navegación de cristal ahumado
@@ -83,12 +87,12 @@ texto claro en oscuro. Icono, acento lateral, cierre y barra de duración se
 adaptan al tema y al estado, conservando la pausa y el cierre existentes. Sin
 desenfoque o con transparencia reducida usan su fondo sólido; el alto contraste
 retira reflejos y desenfoque, y los colores forzados usan la paleta del sistema.
-La navegación lateral y superior añade desenfoque; las tarjetas y capas flotantes
-siguen opacas.
+La navegación lateral y superior añade desenfoque; las tarjetas solo usan una
+transparencia mínima y las capas flotantes siguen opacas.
 Los diálogos siguen usando el portal, foco y bloqueo de desplazamiento compartidos.
 El fondo es estático y no añade animaciones ni elementos que intercepten clics.
-Sin soporte de desenfoque, la navegación utiliza su superficie sólida. La
-transparencia reducida mantiene ambos paneles sólidos y el alto contraste retira
+Sin soporte de desenfoque, tarjetas y navegación utilizan su superficie sólida. La
+transparencia reducida mantiene estas superficies sólidas y el alto contraste retira
 las luces decorativas y el desenfoque, con bordes más definidos.
 
 ## Accesibilidad y validación
@@ -106,10 +110,17 @@ El ajuste Cristal salvia claro pasó 280 pruebas web, TypeScript, ESLint,
 formato y compilación de producción. La ruta Pedidos compila en desarrollo y
 Next no informa errores de configuración o de las sesiones conectadas.
 
-La composición sRGB aproximada del fondo y los materiales se muestreó en 1681
+En la versión del 8 de noviembre, la composición sRGB aproximada del fondo y los materiales se muestreó en 1681
 puntos por tema, incluyendo saturación y los extremos del reflejo. Los mínimos
 del texto secundario sobre el fondo son 4,78:1 en claro y 5,64:1 en oscuro. El
 menú móvil supera 5,18:1 y la barra sobre contenido blanco/negro, 5,10:1; los
 bordes de campo superan 3,56:1. Los cálculos incluyen el velo existente del menú
 móvil. Esta comprobación técnica no sustituye la revisión visual manual del
 resultado en el navegador.
+
+El ajuste del 11 de noviembre pasó formato CSS y compilación de producción con
+TypeScript. La composición sRGB aproximada de la navegación conserva al menos
+4,62:1 para texto secundario de la cabecera clara sobre un fondo negro, 4,66:1
+para la cabecera oscura sobre blanco incluyendo su reflejo y 4,92:1 para el menú
+oscuro en ese mismo extremo. Se reforzó la opacidad de la navegación donde hacía
+falta contraste. La revisión visual final de la interfaz permanece manual.

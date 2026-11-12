@@ -170,6 +170,8 @@ prueba(
     sesion.abrir();
     sesion.modificar();
     let detenido = 0;
+    const guardadaAnterior = sesion.buscar("ListaProductosPreparacion").props
+      .guardada;
     const formularioPanel = sesion.buscar("VistaProductoPreparacion").props
       .children;
     const formularios = sesion.todos().filter((nodo) => nodo.type === "form");
@@ -191,8 +193,17 @@ prueba(
     afirmar.equal(detenido, 1);
     afirmar.equal(sesion.peticiones.length, 1);
     afirmar.equal(sesion.enProducto(), true);
-    await sesion.resolver();
+    afirmar.equal(
+      sesion.buscar("ListaProductosPreparacion").props.guardada,
+      guardadaAnterior,
+    );
+    const guardada = borrador(1, "v2");
+    await sesion.resolver(guardada);
     afirmar.equal(sesion.enProducto(), false);
+    afirmar.equal(
+      sesion.buscar("ListaProductosPreparacion").props.guardada,
+      guardada,
+    );
   },
 );
 

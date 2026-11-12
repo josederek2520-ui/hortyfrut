@@ -17,7 +17,6 @@ export interface Sucursal extends RegistroComercial {
   cliente: number;
   nombre: string;
   direccion: string;
-  referencia: string;
   latitud: string | null;
   longitud: string | null;
 }

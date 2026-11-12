@@ -65,7 +65,10 @@ class RolesTests(TestCase):
     def test_catalogo_solo_acciones_funcionales_y_ver_usuarios(self):
         response = self.client.get('/api/v1/permisos/')
         permissions = [p for module in response.data for p in module['permissions']]
-        self.assertEqual(len(permissions), 112)
+        self.assertEqual(len(permissions), 118)
+        self.assertEqual({p['code'] for p in permissions if p['module'] == 'ventas'}, {
+            'ventas.view_venta', 'ventas.add_venta', 'ventas.change_venta', 'ventas.emitir_venta', 'ventas.cancelar_venta', 'ventas.descargar_venta',
+        })
         self.assertEqual({p['code'] for p in permissions if p['module'] == 'precios'}, {
             'precios.view_acuerdoprecio', 'precios.add_acuerdoprecio', 'precios.change_acuerdoprecio',
             'precios.presentar_acuerdoprecio', 'precios.aceptar_acuerdoprecio', 'precios.rechazar_acuerdoprecio', 'precios.cancelar_acuerdoprecio',

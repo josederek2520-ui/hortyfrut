@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import { TimeIcon as IconoHistorial, EyeIcon as IconoVer } from "@/icons";
 import type { RegistroActividad } from "./tipos";
+import { nombreAccionActividad } from "./textosActividad";
 
 export default function TablaActividad({
   registros,
@@ -104,9 +105,7 @@ export default function TablaActividad({
               </Celda>
               <Celda className="px-4 py-4">
                 <span className="text-sm font-medium text-gray-800 dark:text-gray-100">
-                  {t.has(`acciones.${registro.accion}`)
-                    ? t(`acciones.${registro.accion}`)
-                    : registro.accion.replaceAll("_", " ")}
+                  {nombreAccionActividad(registro.modulo, registro.accion, t)}
                 </span>
                 <span className="mt-1 block text-theme-xs text-gray-500 dark:text-gray-400">
                   {t.has(`modulos.${registro.modulo}`)

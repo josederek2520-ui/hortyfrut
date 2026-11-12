@@ -119,4 +119,4 @@ class VistaSucursales(VistaDirectorio):
     modulo_auditoria = 'sucursales'
     serializador_lectura = SerializadorSucursal
     serializador_escritura = SerializadorEscrituraSucursal
-    campos_busqueda = ('nombre', 'direccion', 'telefono', 'referencia')
+    campos_busqueda = ('nombre', 'direccion', 'telefono')

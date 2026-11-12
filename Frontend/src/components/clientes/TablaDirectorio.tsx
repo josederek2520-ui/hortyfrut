@@ -149,11 +149,6 @@ export default function TablaDirectorio({
                         {registro.encargado_pedidos.nombre}
                       </p>
                     )}
-                    {registro.referencia && (
-                      <p className="mt-1 text-theme-xs break-words text-gray-400 dark:text-gray-500">
-                        {registro.referencia}
-                      </p>
-                    )}
                     {registro.latitud !== null && registro.longitud !== null ? (
                       <a
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${registro.latitud},${registro.longitud}`)}`}

@@ -26,10 +26,22 @@ productos y navegación anterior/siguiente; el pie presenta el estado del borrad
 y el guardado. El contenido se desplaza entre ambos y mantiene el reparto en
 columnas cuando hay ancho, apilado en móvil.
 
+La disposición mide el borde inferior de su barra fija (altura y separación
+superior) y lo comparte mediante `--limite-barra-aplicacion`. La vista del producto
+reserva ese espacio al abrirse y al calcular su alto, dejando visibles la imagen,
+el nombre y las acciones de cabecera. La medida se actualiza con el tamaño de la
+barra y de la ventana; no supone una altura fija para escritorio o móvil.
+
 La lista permanece montada y oculta mientras se trabaja en el producto. Sus
 filtros, página y documento se conservan; volver restaura el control y la posición
 anteriores. Cambiar de producto no guarda automáticamente y las consultas
 pendientes se cancelan al volver, conservando las reglas anteriores.
+
+Los productos con datos persistidos en el borrador se muestran en filas verdes,
+con marca «Guardado en borrador» y botón «Editar». La señal proviene de la última
+respuesta guardada, también al reabrir la jornada. Las anotaciones exclusivamente
+locales conservan «Continuar» y los productos nuevos, «Preparar». El verde no
+modifica el pendiente confirmado ni confirma movimientos de inventario.
 
 Los formularios de lista y producto son independientes, nunca anidados. La
 validación y el foco de errores usan el formulario activo. Los errores de un

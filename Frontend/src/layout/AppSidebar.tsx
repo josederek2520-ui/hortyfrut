@@ -25,6 +25,7 @@ import {
   DatabaseBackup as IconoRespaldo,
   Undo2 as IconoDevolucion,
   Tags as IconoPrecio,
+  ReceiptText as IconoVenta,
 } from "lucide-react";
 import type { Session as Sesion } from "@/components/users/types";
 import { useChat } from "@/components/chat/ProveedorChat";
@@ -157,6 +158,13 @@ const gruposNavegacion: GrupoNavegacion[] = [
         icono: <IconoPrecio className="size-5" />,
         puedeVer: (sesion) =>
           !sesion.acceso_publico && !!sesion.permisos_precios?.ver,
+      },
+      {
+        clave: "ventas",
+        ruta: "/ventas",
+        icono: <IconoVenta className="size-5" />,
+        puedeVer: (sesion) =>
+          !sesion.acceso_publico && !!sesion.permisos_ventas?.ver,
       },
     ],
   },

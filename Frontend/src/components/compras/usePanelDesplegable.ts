@@ -13,7 +13,7 @@ export default function usePanelDesplegable({
   abierto: boolean;
   ancla: RefObject<HTMLButtonElement | null>;
   panel: RefObject<HTMLDivElement | null>;
-  entrada: RefObject<HTMLInputElement | null>;
+  entrada: RefObject<HTMLElement | null>;
   alCerrar: () => void;
   anchoRem: number;
 }) {
@@ -84,7 +84,7 @@ export default function usePanelDesplegable({
       if (evento.key !== "Tab") return;
       const controles = Array.from(
         contenedor.querySelectorAll<HTMLElement>(
-          "input:not([disabled]), button:not([disabled])",
+          'input:not([disabled]), button:not([disabled]), [role="listbox"][tabindex="0"]',
         ),
       );
       const primero = controles[0];

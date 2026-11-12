@@ -12,9 +12,15 @@ Los identificadores y teléfonos se guardan como texto para conservar ceros.
 El correo se normaliza en minúsculas y el nombre normaliza espacios.
 
 `Sucursal`: cliente protegido con `PROTECT`, nombre (150), dirección obligatoria
-(255), teléfono opcional (30), referencia opcional (255), latitud y longitud
+(255), teléfono opcional (30), latitud y longitud
 opcionales (7 decimales), estado y fechas automáticas. El nombre es único dentro
 del cliente, sin distinguir mayúsculas, incluso si está inactiva.
+
+La referencia de ubicación se retiró de creación, edición, listado, búsquedas y
+administrador interno. El frontend no envía `referencia` al guardar. El campo
+legado de la API y su almacenamiento se conservan por compatibilidad; editar
+otros datos no borra el texto histórico. La auditoría conserva su protección y
+la traducción del campo en los registros anteriores.
 
 Las coordenadas se guardan juntas o ambas nulas. Latitud admite -90 a 90 y
 longitud -180 a 180; se rechazan valores no finitos y precisión excesiva. El
@@ -43,7 +49,7 @@ simula con usuarios o identificadores sin relación.
 Todos los listados son de **10 registros**, con parámetros `pagina`, `buscar`,
 `activo` y `orden` (`nombre`, `-nombre`, `creado_en`, `-creado_en`). En Clientes,
 el orden por nombre utiliza la razón social y se incluye `cantidad_sucursales`.
-Se busca por datos comerciales/contacto, o por nombre/dirección/referencia en
+Se busca por datos comerciales/contacto, o por nombre/dirección/teléfono en
 sucursales. Las rutas hijas comprueban el cliente: no permiten mover registros
 ni acceder a una sucursal de otro cliente.
 

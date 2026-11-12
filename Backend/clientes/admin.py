@@ -15,4 +15,5 @@ class AdministracionSucursal(CatalogoAdmin):
     list_display = ('nombre', 'cliente', 'activo', 'creado_en')
     list_select_related = ('cliente',)
     search_fields = ('nombre', 'cliente__razon_social')
-    readonly_fields = ('nombre', 'cliente', 'direccion', 'telefono', 'referencia', 'latitud', 'longitud', 'activo', 'creado_en')
+    exclude = (*CatalogoAdmin.exclude, 'referencia')
+    readonly_fields = ('nombre', 'cliente', 'direccion', 'telefono', 'latitud', 'longitud', 'activo', 'creado_en')

@@ -1,17 +1,21 @@
-/* Cristal salvia claro: fondo suave, tarjetas blancas y navegacion translucida. */
+/* Cristal salvia: luz menta y calida, contenido legible y navegacion esmerilada. */
 :root {
   color-scheme: light;
   accent-color: var(--color-brand-500);
-  --fondo-marca: #dce8df;
-  --luz-marca: #e6efea;
-  --matiz-salvia: rgb(151 183 162 / 22%);
+  --fondo-marca: #e9f1ed;
+  --luz-marca: #f7faf8;
+  --luz-menta: rgb(111 201 153 / 28%);
+  --luz-calida: rgb(255 174 108 / 16%);
+  --matiz-salvia: rgb(94 160 122 / 16%);
   --superficie-contenido: #fdfefd;
+  --velo-contenido: rgb(253 254 253 / 94%);
+  --reflejo-contenido: rgb(255 255 255 / 64%);
   --cabecera-contenido: #f4f8f6;
-  --superficie-lateral: rgb(252 255 253 / 68%);
-  --superficie-lateral-movil: rgb(252 255 253 / 88%);
-  --superficie-barra: rgb(252 255 253 / 88%);
-  --reflejo-navegacion: rgb(255 255 255 / 38%);
-  --borde-navegacion: rgb(255 255 255 / 88%);
+  --superficie-lateral: rgb(252 255 253 / 66%);
+  --superficie-lateral-movil: rgb(252 255 253 / 94%);
+  --superficie-barra: rgb(252 255 253 / 84%);
+  --reflejo-navegacion: rgb(255 255 255 / 46%);
+  --borde-navegacion: rgb(255 255 255 / 92%);
   --superficie-interior: #fbfdfc;
   --superficie-flotante: #ffffff;
   --borde-contenido: #d6e2db;
@@ -52,16 +56,20 @@
 
 .dark {
   color-scheme: dark;
-  --fondo-marca: #141e20;
-  --luz-marca: #1d2c29;
-  --matiz-salvia: rgb(67 108 89 / 18%);
+  --fondo-marca: #14201e;
+  --luz-marca: #1d302a;
+  --luz-menta: rgb(64 141 99 / 16%);
+  --luz-calida: rgb(174 111 66 / 7%);
+  --matiz-salvia: rgb(59 112 86 / 16%);
   --superficie-contenido: #252f35;
+  --velo-contenido: rgb(37 47 53 / 96%);
+  --reflejo-contenido: rgb(193 227 209 / 3%);
   --cabecera-contenido: #202a2f;
-  --superficie-lateral: rgb(30 43 41 / 84%);
-  --superficie-lateral-movil: rgb(30 43 41 / 92%);
-  --superficie-barra: rgb(35 47 46 / 92%);
-  --reflejo-navegacion: rgb(189 224 207 / 6%);
-  --borde-navegacion: rgb(194 225 208 / 20%);
+  --superficie-lateral: rgb(30 43 41 / 90%);
+  --superficie-lateral-movil: rgb(30 43 41 / 96%);
+  --superficie-barra: rgb(35 47 46 / 90%);
+  --reflejo-navegacion: rgb(189 224 207 / 8%);
+  --borde-navegacion: rgb(194 225 208 / 24%);
   --superficie-interior: #1e282d;
   --superficie-flotante: #29353b;
   --borde-contenido: #3b4950;
@@ -106,13 +114,23 @@ body.fondo-hortyfru {
   background-color: var(--fondo-marca);
   background-image:
     radial-gradient(
-      ellipse 72% 70% at 48% 38%,
-      var(--luz-marca),
-      transparent 84%
+      ellipse 44rem 34rem at 4% 5%,
+      var(--luz-menta),
+      transparent 76%
     ),
     radial-gradient(
-      ellipse 100% 90% at 100% 100%,
+      ellipse 38rem 32rem at 100% 12%,
+      var(--luz-calida),
+      transparent 78%
+    ),
+    radial-gradient(
+      ellipse 56rem 40rem at 88% 100%,
       var(--matiz-salvia),
+      transparent 80%
+    ),
+    radial-gradient(
+      ellipse 82% 78% at 45% 42%,
+      var(--luz-marca),
       transparent 82%
     );
   background-attachment: fixed;
@@ -237,23 +255,29 @@ body.fondo-hortyfru {
   border-radius: 1.5rem;
 }
 
-/* Cristal solo en navegacion: el contenido y las capas flotantes son opacos. */
+/* El contenido lleva un velo casi blanco sin filtro: conserva sus capas internas.
+   Solo la navegacion desenfoca; dialogos y menus flotantes siguen solidos. */
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .superficie-cristal {
+    background:
+      linear-gradient(150deg, var(--reflejo-contenido), transparent 58%),
+      var(--velo-contenido);
+  }
   .panel-lateral-hortyfru {
     background:
       linear-gradient(145deg, var(--reflejo-navegacion), transparent 48%),
       var(--superficie-lateral);
     border-color: var(--borde-navegacion);
-    -webkit-backdrop-filter: blur(24px) saturate(120%);
-    backdrop-filter: blur(24px) saturate(120%);
+    -webkit-backdrop-filter: blur(24px) saturate(125%);
+    backdrop-filter: blur(24px) saturate(125%);
   }
   .barra-superior-hortyfru {
     background:
       linear-gradient(120deg, var(--reflejo-navegacion), transparent 58%),
       var(--superficie-barra);
     border-color: var(--borde-navegacion);
-    -webkit-backdrop-filter: blur(18px) saturate(115%);
-    backdrop-filter: blur(18px) saturate(115%);
+    -webkit-backdrop-filter: blur(24px) saturate(125%);
+    backdrop-filter: blur(24px) saturate(125%);
   }
 }
 
@@ -794,6 +818,7 @@ body.fondo-hortyfru {
   }
 }
 @media (prefers-reduced-transparency: reduce) {
+  .superficie-cristal,
   .panel-lateral-hortyfru,
   .barra-superior-hortyfru {
     background: var(--cristal-solido);
@@ -830,6 +855,7 @@ body.fondo-hortyfru {
   body.fondo-hortyfru {
     background-image: none;
   }
+  .superficie-cristal,
   .panel-lateral-hortyfru,
   .barra-superior-hortyfru {
     background: var(--superficie-contenido);

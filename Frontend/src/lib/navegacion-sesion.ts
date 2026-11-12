@@ -27,6 +27,7 @@ export function rutaInicial(sesion: Sesion | null): string {
   if (sesion?.permisos_vehiculos?.ver) return "/vehiculos";
   if (!sesion?.acceso_publico && sesion?.permisos_precios?.ver)
     return "/precios-acordados";
+  if (!sesion?.acceso_publico && sesion?.permisos_ventas?.ver) return "/ventas";
   if (!sesion?.acceso_publico && sesion?.permisos_respaldos?.ver)
     return "/respaldos";
   if (sesion?.user.is_active) return "/chat";

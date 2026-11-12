@@ -184,9 +184,10 @@ class AuditoriaTests(TestCase):
 
     def test_filtros_fecha_horaria_busqueda_y_resultado(self):
         momento = timezone.make_aware(datetime(2026, 4, 12, 23, 59))
-        registro = registrar_actividad('inventario', 'ajustar', actor=self.administrador, objeto_nombre='Lote especial', fecha=momento, resultado='rechazado')
-        otro = registrar_actividad('inventario', 'crear', fecha=timezone.make_aware(datetime(2026, 4, 13, 0, 0)))
-        respuesta = self.client.get('/api/v1/actividad/?modulo=inventario&desde=2026-04-12&hasta=2026-04-12&resultado=rechazado&buscar=Lote')
+        registro = registrar_actividad('lotes', 'bloquear_lote', actor=self.administrador, objeto_nombre='Lote especial', fecha=momento,
+                                       resultado='rechazado', solicitud=RequestFactory().post('/api/v1/lotes/1/estado/'), codigo_http=400)
+        otro = registrar_actividad('lotes', 'bloquear_lote', objeto_tipo='inventario.lote', fecha=timezone.make_aware(datetime(2026, 4, 13, 0, 0)))
+        respuesta = self.client.get('/api/v1/actividad/?modulo=lotes&desde=2026-04-12&hasta=2026-04-12&resultado=rechazado&buscar=Lote')
         self.assertEqual(respuesta.status_code, 200)
         self.assertEqual([elemento['id'] for elemento in respuesta.data['results']], [registro.pk])
         self.assertNotIn(otro.pk, [elemento['id'] for elemento in respuesta.data['results']])
@@ -198,7 +199,8 @@ class AuditoriaTests(TestCase):
 
     def test_resumen_opciones_y_paginacion(self):
         for indice in range(25):
-            registrar_actividad('compras', 'crear', resultado='rechazado' if indice == 0 else 'exito')
+            registrar_actividad('compras', 'crear', objeto_tipo='compras.compra',
+                                **({'resultado': 'rechazado', 'solicitud': RequestFactory().post('/api/v1/compras/'), 'codigo_http': 400} if indice == 0 else {}))
         self.assertEqual(self.client.get('/api/v1/actividad/?modulo=compras').data['count'], 25)
         self.assertEqual(len(self.client.get('/api/v1/actividad/?modulo=compras&page=2').data['results']), 10)
         self.assertEqual(len(self.client.get('/api/v1/actividad/?modulo=compras&page=3').data['results']), 5)
@@ -216,9 +218,9 @@ class AuditoriaTests(TestCase):
 
     def test_paginacion_no_desplaza_filas_al_llegar_eventos(self):
         for indice in range(25):
-            registrar_actividad('pruebas', 'crear')
+            registrar_actividad('compras', 'crear', objeto_tipo='compras.compra')
         primera = self.client.get('/api/v1/actividad/').data
-        registrar_actividad('pruebas', 'evento_nuevo')
+        registrar_actividad('compras', 'crear', objeto_tipo='compras.compra')
         segunda = self.client.get(f'/api/v1/actividad/?page=2&corte={primera["corte"]}').data
         self.assertEqual(primera['count'], 25)
         self.assertEqual(segunda['count'], 25)

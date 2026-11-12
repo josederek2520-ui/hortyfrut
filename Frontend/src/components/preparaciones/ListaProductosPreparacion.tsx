@@ -2,6 +2,7 @@
 import { useTranslations } from "next-intl";
 import {
   ArrowRight as IconoAbrir,
+  CircleCheck as IconoGuardado,
   Search as IconoBuscar,
   PackageSearch as IconoSinProductos,
 } from "lucide-react";
@@ -14,7 +15,11 @@ import { clasePanel } from "@/components/compras/tipos";
 import CantidadesPedidoPreparacion from "./CantidadesPedidoPreparacion";
 import CargaTrabajoPreparacion from "./CargaTrabajoPreparacion";
 import estilos from "./estilosTrabajo.module.css";
-import type { DocumentoEditable, ProductoPreparacion } from "./tipos";
+import type {
+  DocumentoEditable,
+  Preparacion,
+  ProductoPreparacion,
+} from "./tipos";
 import type { ConsultaProductosTrabajoPreparacion } from "./useProductosTrabajoPreparacion";
 
 const columnasProductos =
@@ -23,17 +28,26 @@ const columnasProductos =
 export default function ListaProductosPreparacion({
   modelo,
   documento,
+  guardada,
   alElegir,
   ocupado,
   alError,
 }: {
   modelo: ConsultaProductosTrabajoPreparacion;
   documento: DocumentoEditable;
+  guardada?: Preparacion;
   alElegir: (producto: ProductoPreparacion) => void;
   ocupado: boolean;
   alError: (error: unknown) => void;
 }) {
   const t = useTranslations("preparaciones");
+  const guardados = new Set([
+    ...(guardada?.asignaciones.map((fila) => fila.producto) || []),
+    ...(guardada?.lineas.map((fila) => fila.producto) || []),
+    ...(guardada?.cajillas.flatMap((fila) =>
+      fila.producto ? [fila.producto] : [],
+    ) || []),
+  ]);
   const anotados = new Set([
     ...Object.values(documento.asignaciones)
       .filter(
@@ -191,6 +205,7 @@ export default function ListaProductosPreparacion({
                 <div
                   key={producto.id}
                   role="row"
+                  data-guardado={guardados.has(producto.id) || undefined}
                   className={`${estilos.filaProducto} grid grid-cols-2 items-center gap-4 px-5 py-4 sm:px-6 ${columnasProductos}`}
                 >
                   <div
@@ -208,6 +223,15 @@ export default function ListaProductosPreparacion({
                       <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
                         {producto.categoria?.nombre || producto.subtitulo}
                       </p>
+                      {guardados.has(producto.id) && (
+                        <span className="mt-1.5 inline-flex items-center gap-1.5 text-theme-xs font-medium text-brand-800 dark:text-brand-200">
+                          <IconoGuardado
+                            className="size-3.5 shrink-0"
+                            aria-hidden="true"
+                          />
+                          {t("productoGuardadoTrabajo")}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div role="cell">
@@ -242,9 +266,11 @@ export default function ListaProductosPreparacion({
                       data-producto-preparacion={producto.id}
                       disabled={ocupado}
                       aria-label={t(
-                        anotados.has(producto.id)
-                          ? "continuarProductoAccesible"
-                          : "abrirProductoTrabajo",
+                        guardados.has(producto.id)
+                          ? "editarProductoAccesible"
+                          : anotados.has(producto.id)
+                            ? "continuarProductoAccesible"
+                            : "abrirProductoTrabajo",
                         {
                           producto: producto.nombre,
                         },
@@ -254,9 +280,11 @@ export default function ListaProductosPreparacion({
                       endIcon={<IconoAbrir className="size-4 rtl:rotate-180" />}
                     >
                       {t(
-                        anotados.has(producto.id)
-                          ? "continuarProductoTrabajo"
-                          : "prepararTrabajo",
+                        guardados.has(producto.id)
+                          ? "editarProductoTrabajo"
+                          : anotados.has(producto.id)
+                            ? "continuarProductoTrabajo"
+                            : "prepararTrabajo",
                       )}
                     </Button>
                   </div>

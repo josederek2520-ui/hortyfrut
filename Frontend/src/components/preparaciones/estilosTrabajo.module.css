@@ -7,6 +7,7 @@
 }
 
 .vistaProducto {
+  --preparacion-inicio: calc(var(--limite-barra-aplicacion, 6.5rem) + 1rem);
   --preparacion-fondo: var(--color-gray-50);
   --preparacion-superficie: var(--color-white);
   --preparacion-boton: var(--color-white);
@@ -20,9 +21,9 @@
   --texto-secundario-suave: var(--color-gray-600);
   --borde-contenido: var(--color-gray-200);
   --sombra-hundida: inset 0 1px 2px rgb(16 24 40 / 3%);
-  height: calc(100dvh - 2rem);
+  height: calc(100dvh - var(--preparacion-inicio) - 1rem);
   min-height: 24rem;
-  scroll-margin-block-start: 1rem;
+  scroll-margin-block-start: var(--preparacion-inicio);
   box-shadow: var(--sombra-contenido);
 }
 
@@ -186,7 +187,11 @@
   transform: scale(0.97);
 }
 
-.filaProducto:focus-within {
+.filaProducto[data-guardado="true"] {
+  background: var(--fondo-seleccion-suave);
+}
+
+.filaProducto:not([data-guardado="true"]):focus-within {
   background: var(--color-orange-25);
 }
 
@@ -235,7 +240,7 @@
   color: var(--color-orange-300);
 }
 
-:global(.dark) .filaProducto:focus-within {
+:global(.dark) .filaProducto:not([data-guardado="true"]):focus-within {
   background: rgb(251 101 20 / 5%);
 }
 
@@ -249,11 +254,11 @@
     background: var(--preparacion-boton-hover);
   }
 
-  .filaProducto:hover {
+  .filaProducto:not([data-guardado="true"]):hover {
     background: var(--color-gray-50);
   }
 
-  :global(.dark) .filaProducto:hover {
+  :global(.dark) .filaProducto:not([data-guardado="true"]):hover {
     background: var(--color-gray-800);
   }
 }
@@ -309,6 +314,10 @@
 }
 
 @media (forced-colors: active) {
+  .filaProducto[data-guardado="true"] {
+    background: Canvas;
+  }
+
   .vistaProducto,
   :global(.dark) .vistaProducto {
     --preparacion-fondo: Canvas;

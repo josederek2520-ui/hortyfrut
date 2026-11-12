@@ -256,6 +256,7 @@ export default function LineaFormularioRecepcion({
           >
             <DesplegableCompra<UnidadRecepcion>
               tipo="general"
+              mostrarBuscador={false}
               ruta={`recepciones/unidades/?producto=${linea.producto.id}`}
               etiqueta={t("medirEn")}
               nombre={nombre("unidad_inventario")}

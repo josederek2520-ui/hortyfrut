@@ -7,6 +7,7 @@ from config.paginacion import PaginacionDiez
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from .models import RegistroActividad
+from .consultas import actividad_modulos
 from .serializers import RegistroActividadListaSerializer, RegistroActividadDetalleSerializer, FiltrosActividadSerializer
 
 
@@ -28,9 +29,9 @@ class RegistroActividadViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         return RegistroActividadDetalleSerializer if self.action == 'retrieve' else RegistroActividadListaSerializer
 
     def get_queryset(self):
-        consulta = RegistroActividad.objects.all()
         if self.action == 'retrieve':
-            return consulta
+            return RegistroActividad.objects.all()
+        consulta = actividad_modulos()
         formulario = FiltrosActividadSerializer(data=self.request.query_params)
         formulario.is_valid(raise_exception=True)
         filtros = formulario.validated_data
@@ -59,7 +60,7 @@ class RegistroActividadViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         filtros.is_valid(raise_exception=True)
         self.corte = filtros.validated_data.get('corte')
         if self.corte is None:
-            self.corte = RegistroActividad.objects.aggregate(ultimo=Max('pk'))['ultimo'] or 0
+            self.corte = actividad_modulos().aggregate(ultimo=Max('pk'))['ultimo'] or 0
         respuesta = super().list(request, *args, **kwargs)
         self.ignorar_resultado = True
         respuesta.data['corte'] = self.corte
@@ -77,6 +78,6 @@ class RegistroActividadViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
 
     @action(detail=False, methods=['get'])
     def opciones(self, request):
-        consulta = RegistroActividad.objects.order_by()
+        consulta = actividad_modulos().order_by()
         return Response({'modulos': list(consulta.values_list('modulo', flat=True).distinct().order_by('modulo')),
                          'acciones': list(consulta.values_list('accion', flat=True).distinct().order_by('accion'))})

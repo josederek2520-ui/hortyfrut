@@ -49,6 +49,7 @@ export default function DesplegableCompra<
   descripcion,
   representarOpcion,
   mostrarImagen = false,
+  mostrarBuscador = true,
   datosConsulta,
   textoSinOpciones,
 }: {
@@ -66,6 +67,7 @@ export default function DesplegableCompra<
   descripcion?: (opcion: T) => ReactNode;
   representarOpcion?: (opcion: T) => ReactNode;
   mostrarImagen?: boolean;
+  mostrarBuscador?: boolean;
   datosConsulta?: Record<string, unknown>;
   textoSinOpciones?: string;
 }) {
@@ -89,9 +91,18 @@ export default function DesplegableCompra<
   const ancla = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const entrada = useRef<HTMLInputElement>(null);
+  const lista = useRef<HTMLDivElement>(null);
   const cerrar = useCallback(() => establecerAbierto(false), []);
   const paginaActual = eligiendoCategoria ? paginaCategoria : pagina;
-  const busquedaActual = eligiendoCategoria ? buscarCategoria : buscar;
+  const busquedaActual = mostrarBuscador
+    ? eligiendoCategoria
+      ? buscarCategoria
+      : buscar
+    : "";
+  const enfocarEntrada = () =>
+    (mostrarBuscador ? entrada.current : lista.current)?.focus({
+      preventScroll: true,
+    });
   const [base, consultaBase] = (
     eligiendoCategoria ? "compras/categorias/" : ruta
   ).split("?");
@@ -123,7 +134,7 @@ export default function DesplegableCompra<
     abierto,
     ancla,
     panel,
-    entrada,
+    entrada: mostrarBuscador ? entrada : lista,
     alCerrar: cerrar,
     anchoRem: tipo === "producto" ? 24 : 21,
   });
@@ -194,14 +205,14 @@ export default function DesplegableCompra<
       establecerPagina(1);
       establecerEligiendoCategoria(false);
       establecerIndiceActivo(-1);
-      entrada.current?.focus({ preventScroll: true });
+      enfocarEntrada();
       return;
     }
     alElegir(opcion);
     cerrar();
     ancla.current?.focus({ preventScroll: true });
   };
-  const alTeclaBusqueda = (evento: KeyboardEvent<HTMLInputElement>) => {
+  const alTeclaOpciones = (evento: KeyboardEvent<HTMLElement>) => {
     if (evento.nativeEvent.isComposing) return;
     if (["ArrowDown", "ArrowUp"].includes(evento.key)) {
       evento.preventDefault();
@@ -222,7 +233,7 @@ export default function DesplegableCompra<
     if (eligiendoCategoria) establecerPaginaCategoria(nueva);
     else establecerPagina(nueva);
     establecerIndiceActivo(-1);
-    entrada.current?.focus({ preventScroll: true });
+    enfocarEntrada();
   };
   return (
     <div className="min-w-0">
@@ -308,7 +319,7 @@ export default function DesplegableCompra<
                     onClick={() => {
                       establecerEligiendoCategoria(false);
                       establecerIndiceActivo(-1);
-                      entrada.current?.focus();
+                      enfocarEntrada();
                     }}
                     className="flex min-h-8 items-center gap-1 rounded text-sm font-medium text-gray-700 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-gray-200"
                   >
@@ -335,46 +346,48 @@ export default function DesplegableCompra<
                   <IconoLimpiar className="size-4" aria-hidden="true" />
                 </button>
               </div>
-              <div className="relative">
-                <IconoBuscar
-                  className="pointer-events-none absolute start-3 top-3.5 z-1 size-4 text-gray-400"
-                  aria-hidden="true"
-                />
-                <Input
-                  ref={entrada}
-                  role="combobox"
-                  aria-autocomplete="list"
-                  aria-expanded="true"
-                  aria-controls={`${identificador}-lista`}
-                  aria-activedescendant={
-                    indiceVisible >= 0
-                      ? `${identificador}-opcion-${indiceVisible}`
-                      : undefined
-                  }
-                  type="text"
-                  autoComplete="off"
-                  maxLength={150}
-                  value={busquedaActual}
-                  placeholder={t(
-                    eligiendoCategoria ? "buscarCategoria" : "buscarOpciones",
-                  )}
-                  aria-label={t(
-                    eligiendoCategoria ? "buscarCategoria" : "buscarOpciones",
-                  )}
-                  className="ps-9!"
-                  onKeyDown={alTeclaBusqueda}
-                  onChange={(evento) => {
-                    if (eligiendoCategoria) {
-                      establecerBuscarCategoria(evento.target.value);
-                      establecerPaginaCategoria(1);
-                    } else {
-                      establecerBuscar(evento.target.value);
-                      establecerPagina(1);
+              {mostrarBuscador && (
+                <div className="relative">
+                  <IconoBuscar
+                    className="pointer-events-none absolute start-3 top-3.5 z-1 size-4 text-gray-400"
+                    aria-hidden="true"
+                  />
+                  <Input
+                    ref={entrada}
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded="true"
+                    aria-controls={`${identificador}-lista`}
+                    aria-activedescendant={
+                      indiceVisible >= 0
+                        ? `${identificador}-opcion-${indiceVisible}`
+                        : undefined
                     }
-                    establecerIndiceActivo(-1);
-                  }}
-                />
-              </div>
+                    type="text"
+                    autoComplete="off"
+                    maxLength={150}
+                    value={busquedaActual}
+                    placeholder={t(
+                      eligiendoCategoria ? "buscarCategoria" : "buscarOpciones",
+                    )}
+                    aria-label={t(
+                      eligiendoCategoria ? "buscarCategoria" : "buscarOpciones",
+                    )}
+                    className="ps-9!"
+                    onKeyDown={alTeclaOpciones}
+                    onChange={(evento) => {
+                      if (eligiendoCategoria) {
+                        establecerBuscarCategoria(evento.target.value);
+                        establecerPaginaCategoria(1);
+                      } else {
+                        establecerBuscar(evento.target.value);
+                        establecerPagina(1);
+                      }
+                      establecerIndiceActivo(-1);
+                    }}
+                  />
+                </div>
+              )}
               {tipo === "proveedor" && (
                 <div className="space-y-2">
                   {categoriaProducto && (
@@ -398,7 +411,7 @@ export default function DesplegableCompra<
                           establecerTodos(mostrarTodos);
                           establecerPagina(1);
                           establecerIndiceActivo(-1);
-                          entrada.current?.focus();
+                          enfocarEntrada();
                         }}
                         className="pestana-hortyfru min-h-9 flex-1 rounded-md px-2 text-theme-xs font-medium text-gray-700 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-gray-200"
                       >
@@ -418,7 +431,7 @@ export default function DesplegableCompra<
                     onClick={() => {
                       establecerEligiendoCategoria(true);
                       establecerIndiceActivo(-1);
-                      entrada.current?.focus();
+                      enfocarEntrada();
                     }}
                     className="flex min-h-9 min-w-0 flex-1 items-center gap-2 rounded-lg border border-gray-200 px-2.5 text-start text-theme-xs text-gray-700 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-brand-400 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                   >
@@ -442,7 +455,7 @@ export default function DesplegableCompra<
                         establecerCategoria(null);
                         establecerPagina(1);
                         establecerIndiceActivo(-1);
-                        entrada.current?.focus();
+                        enfocarEntrada();
                       }}
                       className="flex size-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-brand-400 dark:text-gray-400 dark:hover:bg-gray-800"
                     >
@@ -454,13 +467,21 @@ export default function DesplegableCompra<
             </div>
             <div className="custom-scrollbar min-h-0 overflow-y-auto p-1.5">
               <div
+                ref={lista}
                 id={`${identificador}-lista`}
                 role="listbox"
+                tabIndex={mostrarBuscador ? undefined : 0}
+                onKeyDown={mostrarBuscador ? undefined : alTeclaOpciones}
+                aria-activedescendant={
+                  !mostrarBuscador && indiceVisible >= 0
+                    ? `${identificador}-opcion-${indiceVisible}`
+                    : undefined
+                }
                 aria-label={
                   eligiendoCategoria ? t("categoriasProductos") : etiqueta
                 }
                 aria-busy={cargando}
-                className="max-h-64"
+                className="max-h-64 rounded-lg focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-400"
               >
                 {!cargando &&
                   !fallo &&

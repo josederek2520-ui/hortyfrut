@@ -4,6 +4,7 @@ import { Modal } from "@/components/ui/modal";
 import Button from "@/components/ui/button/Button";
 import { TimeIcon as IconoHistorial, LockIcon as IconoCandado } from "@/icons";
 import type { DetalleActividad as DatosActividad } from "./tipos";
+import { nombreAccionActividad } from "./textosActividad";
 
 export default function DetalleActividad({
   registro,
@@ -81,9 +82,7 @@ export default function DetalleActividad({
                 {t("eventoNumero", { id: registro.id })}
               </h2>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {t.has(`acciones.${registro.accion}`)
-                  ? t(`acciones.${registro.accion}`)
-                  : registro.accion.replaceAll("_", " ")}
+                {nombreAccionActividad(registro.modulo, registro.accion, t)}
               </p>
             </div>
           </div>

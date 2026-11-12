@@ -131,6 +131,9 @@ export default function GestionActividad({ sesion }: { sesion: Sesion }) {
   }, [permitido, buscar, filtros, resultado, pagina, revision, t, tratarError]);
   const reiniciarConsulta = () => {
     corte.current = null;
+    establecerDatos(null);
+    establecerResumen(null);
+    establecerCargando(true);
     establecerPagina(1);
     establecerRevision((valor) => valor + 1);
   };
@@ -197,7 +200,7 @@ export default function GestionActividad({ sesion }: { sesion: Sesion }) {
                   <span
                     className={`rounded-full px-1.5 py-0.5 text-theme-xs tabular-nums ${resultado === pestana.valor ? "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300" : "bg-white text-gray-500 dark:bg-gray-900 dark:text-gray-400"}`}
                   >
-                    {pestana.cantidad ?? "—"}
+                    {cargando || fallo ? "—" : (pestana.cantidad ?? "—")}
                   </span>
                 </button>
               ))}
@@ -246,39 +249,43 @@ export default function GestionActividad({ sesion }: { sesion: Sesion }) {
             alVer={(registro) => void verDetalle(registro)}
           />
         )}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <p
-            role="status"
-            className="text-theme-xs text-gray-500 dark:text-gray-400"
-          >
-            {t("paginacion", {
-              desde: datos?.count ? (pagina - 1) * 10 + 1 : 0,
-              hasta: Math.min(pagina * 10, datos?.count || 0),
-              total: datos?.count || 0,
-            })}
-          </p>
-          <div className="flex items-center gap-3">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={pagina <= 1 || cargando}
-              onClick={() => establecerPagina((valor) => valor - 1)}
+        {!cargando && !fallo && (
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p
+              role="status"
+              className="text-theme-xs text-gray-500 dark:text-gray-400"
             >
-              {t("anterior")}
-            </Button>
-            <span className="text-theme-xs text-gray-500 tabular-nums dark:text-gray-400">
-              {pagina} / {paginas}
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={pagina >= paginas || cargando}
-              onClick={() => establecerPagina((valor) => valor + 1)}
-            >
-              {t("siguiente")}
-            </Button>
+              {t("paginacion", {
+                desde: datos?.count ? (pagina - 1) * 10 + 1 : 0,
+                hasta: Math.min(pagina * 10, datos?.count || 0),
+                total: datos?.count || 0,
+              })}
+            </p>
+            {paginas > 1 && (
+              <div className="flex items-center gap-3">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={pagina <= 1 || cargando}
+                  onClick={() => establecerPagina((valor) => valor - 1)}
+                >
+                  {t("anterior")}
+                </Button>
+                <span className="text-theme-xs text-gray-500 tabular-nums dark:text-gray-400">
+                  {pagina} / {paginas}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={pagina >= paginas || cargando}
+                  onClick={() => establecerPagina((valor) => valor + 1)}
+                >
+                  {t("siguiente")}
+                </Button>
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </Contenedor>
       <p className="flex items-start gap-2 text-theme-xs leading-5 text-gray-500 dark:text-gray-400">
         <IconoInformacion className="mt-0.5 size-4 shrink-0" />

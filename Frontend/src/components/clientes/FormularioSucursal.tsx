@@ -34,7 +34,6 @@ export default function FormularioSucursal({
     nombre: sucursal?.nombre || "",
     direccion: sucursal?.direccion || "",
     telefono: sucursal?.telefono || "",
-    referencia: sucursal?.referencia || "",
     latitud: sucursal?.latitud || "",
     longitud: sucursal?.longitud || "",
   };
@@ -242,18 +241,6 @@ export default function FormularioSucursal({
             disabled={guardando}
             errores={errores.direccion}
             placeholder={t("ejemploDireccion")}
-            onChange={(evento) => cambiar(evento.currentTarget)}
-            onBlur={(evento) => salirCampo(evento.currentTarget)}
-          />
-          <CampoDirectorio
-            id="sucursal-referencia"
-            etiqueta={t("referencia")}
-            name="referencia"
-            maxLength={255}
-            value={datos.referencia}
-            disabled={guardando}
-            errores={errores.referencia}
-            ayuda={t("ayudaReferencia")}
             onChange={(evento) => cambiar(evento.currentTarget)}
             onBlur={(evento) => salirCampo(evento.currentTarget)}
           />

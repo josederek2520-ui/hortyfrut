@@ -778,6 +778,7 @@ export default function FormularioPreparacion({
           <ListaProductosPreparacion
             modelo={productosTrabajo}
             documento={documento}
+            guardada={actual}
             alElegir={abrirDesdeLista}
             ocupado={guardando}
             alError={alError}

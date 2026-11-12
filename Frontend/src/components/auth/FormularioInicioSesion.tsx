@@ -6,7 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
-import { EyeIcon, EyeCloseIcon, LockIcon, ArrowRightIcon } from "@/icons";
+import { EyeIcon, EyeCloseIcon, ArrowRightIcon } from "@/icons";
 import { api, ApiError as ErrorApi } from "@/lib/api";
 import { rutaInicial } from "@/lib/navegacion-sesion";
 import { useToast as useNotificaciones } from "@/hooks/useToast";
@@ -64,22 +64,23 @@ export default function FormularioInicioSesion() {
     }
   };
   return (
-    <div className="flex w-full min-w-0 items-center justify-center py-10 sm:px-4 lg:px-6 lg:py-6">
-      <div className="superficie-cristal superficie-acceso w-full max-w-md p-6 sm:p-8">
-        <div className="mb-7">
-          <MarcaHortyfru />
+    <div className="flex w-full min-w-0 items-center justify-center px-6 py-7 sm:px-10 sm:py-8 lg:px-12">
+      <div className="w-full max-w-sm">
+        <div className="mb-5">
+          <MarcaHortyfru pequena />
         </div>
-        <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1 text-theme-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
-          <LockIcon className="size-3.5" />
-          {t("auth.secureAccess")}
-        </span>
-        <h1 className="text-title-sm font-semibold tracking-tight text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">
           {t("auth.title")}
         </h1>
-        <p className="mt-3 mb-8 text-sm leading-6 text-gray-500 dark:text-gray-400">
+        <p className="mt-2 mb-6 text-sm leading-6 text-gray-500 dark:text-gray-400">
           {t("auth.subtitle")}
         </p>
-        <form noValidate onSubmit={enviar} className="space-y-5">
+        <form
+          noValidate
+          onSubmit={enviar}
+          aria-busy={enviando}
+          className="space-y-4"
+        >
           <div>
             <Label htmlFor="inicio-correo">{t("fields.email")}</Label>
             <Input
@@ -184,7 +185,7 @@ export default function FormularioInicioSesion() {
             {t(enviando ? "auth.signingIn" : "auth.signIn")}
           </Button>
         </form>
-        <p className="mt-8 text-center text-theme-xs leading-5 text-gray-600 dark:text-gray-300">
+        <p className="mt-6 text-theme-xs leading-5 text-gray-500 dark:text-gray-400">
           {t("auth.help")}
         </p>
       </div>

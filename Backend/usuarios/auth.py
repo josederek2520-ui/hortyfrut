@@ -26,6 +26,7 @@ from despachos.permisos import permisos_despachos
 from entregas.permisos import permisos_entregas
 from devoluciones.permisos import permisos_devoluciones
 from precios.permisos import permisos_precios
+from ventas.permisos import permisos_ventas
 from respaldos.permisos import permisos_respaldos
 from .serializers import LoginSerializer, UsuarioListaSerializer, UsuarioDetalleSerializer, PerfilSerializer, PasswordSerializer
 
@@ -70,6 +71,7 @@ def session_data(request):
         'permisos_entregas': permisos_entregas(user),
         'permisos_devoluciones': permisos_devoluciones(user),
         'permisos_precios': permisos_precios(user),
+        'permisos_ventas': permisos_ventas(user),
         'permisos_respaldos': permisos_respaldos(user),
         'permisos_proveedores': permisos_proveedores(user),
         'permisos_compras': permisos_compras(user),

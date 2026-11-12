@@ -4,7 +4,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
-import React from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
 
 export default function DisposicionAplicacion({
   children,
@@ -12,16 +12,46 @@ export default function DisposicionAplicacion({
   alSalir,
   rutaInicio,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   modoChofer?: boolean;
   alSalir?: () => Promise<void>;
   rutaInicio?: string;
 }) {
+  const contenido = useRef<HTMLDivElement>(null);
   const {
     isExpanded: expandido,
     isHovered: conCursor,
     isMobileOpen: menuMovilAbierto,
   } = useSidebar();
+
+  useLayoutEffect(() => {
+    const contenedor = contenido.current;
+    const barra = contenedor?.querySelector<HTMLElement>(
+      ":scope > .barra-superior-hortyfru",
+    );
+    if (!contenedor || !barra) return;
+    const medirBarra = () => {
+      const altura = barra.getBoundingClientRect().height;
+      if (altura <= 0) return;
+      const separacion = parseFloat(getComputedStyle(barra).top) || 0;
+      contenedor.style.setProperty(
+        "--limite-barra-aplicacion",
+        `${Math.ceil(altura + separacion)}px`,
+      );
+    };
+    medirBarra();
+    const observador =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(medirBarra);
+    observador?.observe(barra);
+    window.addEventListener("resize", medirBarra);
+    return () => {
+      observador?.disconnect();
+      window.removeEventListener("resize", medirBarra);
+      contenedor.style.removeProperty("--limite-barra-aplicacion");
+    };
+  }, []);
 
   const margenContenido = menuMovilAbierto
     ? "ms-0"
@@ -34,6 +64,7 @@ export default function DisposicionAplicacion({
       <AppSidebar />
       <Backdrop />
       <div
+        ref={contenido}
         className={`min-w-0 flex-1 px-3 transition-all duration-300 ease-in-out motion-reduce:transition-none sm:px-4 ${margenContenido}`}
       >
         <AppHeader

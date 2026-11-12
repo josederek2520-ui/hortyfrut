@@ -1,4 +1,5 @@
 export { default as AngleDownIcon } from "./angle-down.svg";
+export { default as IsotipoHortyfru } from "./IsotipoHortyfru.svg";
 export { default as AngleUpIcon } from "./angle-up.svg";
 export { default as ArrowDownIcon } from "./arrow-down.svg";
 export { default as ArrowUpIcon } from "./arrow-up.svg";

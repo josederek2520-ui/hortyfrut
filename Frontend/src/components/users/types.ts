@@ -41,6 +41,7 @@ export interface Capabilities {
   reset_password: boolean;
 }
 export interface Session {
+  permisos_ventas?: import("@/components/ventas/tipos").PermisosVentas;
   permisos_precios?: import("@/components/precios/tipos").PermisosPrecios;
   permisos_respaldos?: { ver: boolean; crear: boolean; descargar: boolean };
   permisos_entregas?: import("@/components/entregas/tipos").PermisosEntregas;

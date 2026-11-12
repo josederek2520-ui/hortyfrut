@@ -5,6 +5,7 @@ import Input from "@/components/form/input/InputField";
 import CampoFecha from "@/components/form/CampoFecha";
 import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
+import { nombreAccionActividad } from "./textosActividad";
 import {
   SearchIcon as IconoBuscar,
   FilterLinesIcon as IconoFiltros,
@@ -141,9 +142,7 @@ export default function FiltrosActividad({
                 <option value="">{t("todasAcciones")}</option>
                 {opciones.acciones.map((accion) => (
                   <option key={accion} value={accion}>
-                    {t.has(`acciones.${accion}`)
-                      ? t(`acciones.${accion}`)
-                      : accion.replaceAll("_", " ")}
+                    {nombreAccionActividad(borrador.modulo, accion, t)}
                   </option>
                 ))}
               </select>

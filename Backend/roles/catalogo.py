@@ -3,6 +3,9 @@ from django.contrib.auth.models import Permission
 from django.db.models import Q
 
 MODULOS = {
+    'ventas': {'label': 'Ventas y saldos', 'app': 'ventas', 'model': 'venta', 'permissions': {
+        'view_venta': 'Ver ventas y saldos', 'add_venta': 'Crear borradores de venta', 'change_venta': 'Editar borradores de venta',
+        'emitir_venta': 'Emitir resúmenes de venta', 'cancelar_venta': 'Cancelar borradores de venta', 'descargar_venta': 'Descargar resúmenes de venta'}},
     'precios': {'label': 'Precios acordados', 'app': 'precios', 'model': 'acuerdoprecio', 'permissions': {
         'view_acuerdoprecio': 'Ver precios acordados', 'add_acuerdoprecio': 'Crear propuestas de precios',
         'change_acuerdoprecio': 'Editar borradores de precios', 'presentar_acuerdoprecio': 'Registrar propuestas del supermercado',
