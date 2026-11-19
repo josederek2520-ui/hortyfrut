@@ -1,36 +1,42 @@
-/* Cristal salvia: luz menta y calida, contenido legible y navegacion esmerilada. */
+/* Cristal menta: verdes frescos y claros con superficies suavemente esmeriladas. */
 :root {
   color-scheme: light;
   accent-color: var(--color-brand-500);
-  --fondo-marca: #e9f1ed;
-  --luz-marca: #f7faf8;
-  --luz-menta: rgb(111 201 153 / 28%);
-  --luz-calida: rgb(255 174 108 / 16%);
-  --matiz-salvia: rgb(94 160 122 / 16%);
-  --superficie-contenido: #fdfefd;
-  --velo-contenido: rgb(253 254 253 / 94%);
-  --reflejo-contenido: rgb(255 255 255 / 64%);
-  --cabecera-contenido: #f4f8f6;
-  --superficie-lateral: rgb(252 255 253 / 66%);
-  --superficie-lateral-movil: rgb(252 255 253 / 94%);
-  --superficie-barra: rgb(252 255 253 / 84%);
-  --reflejo-navegacion: rgb(255 255 255 / 46%);
-  --borde-navegacion: rgb(255 255 255 / 92%);
-  --superficie-interior: #fbfdfc;
+  --fondo-marca: #d9f1df;
+  --fondo-degradado-inicio: #c8ecd3;
+  --fondo-degradado-final: #d8f4dc;
+  --luz-marca: #dff6e5;
+  --luz-menta: rgb(117 214 158 / 25%);
+  --luz-hoja: rgb(154 225 136 / 22%);
+  --superficie-contenido: #edf8ef;
+  --velo-contenido: rgb(242 251 244 / 72%);
+  --reflejo-contenido: rgb(255 255 255 / 22%);
+  --cabecera-contenido: #e5f5e9;
+  --superficie-filtros: #e4f4e6;
+  --superficie-cabecera-listado: #d5eddb;
+  --superficie-lateral: rgb(243 252 246 / 62%);
+  --superficie-lateral-movil: rgb(240 250 242 / 96%);
+  --superficie-lateral-solida: #eff8f1;
+  --superficie-barra: rgb(242 252 246 / 64%);
+  --reflejo-navegacion: rgb(255 255 255 / 36%);
+  --reflejo-frio-navegacion: rgb(185 237 196 / 16%);
+  --borde-navegacion: rgb(255 255 255 / 78%);
+  --texto-navegacion-secundario: #354e43;
+  --superficie-interior: #e8f6eb;
   --superficie-flotante: #ffffff;
-  --borde-contenido: #d6e2db;
-  --borde-campo: #778b7e;
+  --borde-contenido: #cce5d2;
+  --borde-campo: #6f9177;
   --texto-suave: #1f2b26;
   --texto-secundario-suave: #4c6055;
-  --fondo-seleccion-suave: #def2e5;
-  --borde-seleccion-suave: #b7d5c1;
+  --fondo-seleccion-suave: #d0edcf;
+  --borde-seleccion-suave: #b1d8b2;
   --texto-seleccion-suave: #13552d;
   --duracion-seleccion-suave: 220ms;
   --curva-seleccion-suave: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --superficie-resaltada: #edf5f0;
+  --superficie-resaltada: #e1f3e5;
   --sombra-contenido:
-    0 16px 36px -24px rgb(58 91 70 / 30%), 0 3px 10px -6px rgb(58 91 70 / 16%),
-    inset 0 1px 0 rgb(255 255 255 / 96%);
+    0 14px 32px -22px rgb(53 117 72 / 24%),
+    0 3px 10px -6px rgb(53 117 72 / 12%), inset 0 1px 0 rgb(255 255 255 / 80%);
   --sombra-control:
     0 3px 8px -3px rgb(75 103 84 / 24%), inset 0 1px 0 rgb(255 255 255 / 96%);
   --sombra-hundida:
@@ -44,9 +50,9 @@
   --cristal-solido: var(--superficie-contenido);
   --borde-cristal: var(--borde-contenido);
   --sombra-cristal:
-    inset 0 1px 0 rgb(255 255 255 / 96%), inset 0 -1px 0 rgb(255 255 255 / 40%),
-    inset 0 0 0 0.5px rgb(255 255 255 / 48%),
-    0 16px 36px -24px rgb(46 83 59 / 34%), 0 3px 10px -6px rgb(46 83 59 / 18%);
+    inset 0 1px 0 rgb(255 255 255 / 80%), inset 0 -1px 0 rgb(255 255 255 / 22%),
+    inset 0 0 0 0.5px rgb(255 255 255 / 32%),
+    0 12px 30px -22px rgb(49 112 68 / 24%), 0 3px 10px -6px rgb(49 112 68 / 12%);
   --sombra-boton:
     4px 4px 10px rgb(20 87 44 / 19%), -3px -3px 9px rgb(255 255 255 / 72%),
     inset 0 1px 0 rgb(225 255 228 / 18%);
@@ -56,20 +62,26 @@
 
 .dark {
   color-scheme: dark;
-  --fondo-marca: #14201e;
-  --luz-marca: #1d302a;
+  --fondo-marca: #142125;
+  --fondo-degradado-inicio: #142b23;
+  --fondo-degradado-final: #1b2e3a;
+  --luz-marca: #19262a;
   --luz-menta: rgb(64 141 99 / 16%);
-  --luz-calida: rgb(174 111 66 / 7%);
-  --matiz-salvia: rgb(59 112 86 / 16%);
+  --luz-hoja: rgb(80 139 169 / 14%);
   --superficie-contenido: #252f35;
   --velo-contenido: rgb(37 47 53 / 96%);
   --reflejo-contenido: rgb(193 227 209 / 3%);
   --cabecera-contenido: #202a2f;
-  --superficie-lateral: rgb(30 43 41 / 90%);
-  --superficie-lateral-movil: rgb(30 43 41 / 96%);
-  --superficie-barra: rgb(35 47 46 / 90%);
-  --reflejo-navegacion: rgb(189 224 207 / 8%);
-  --borde-navegacion: rgb(194 225 208 / 24%);
+  --superficie-filtros: #202e29;
+  --superficie-cabecera-listado: #2b4035;
+  --superficie-lateral: rgb(30 43 41 / 80%);
+  --superficie-lateral-movil: rgb(30 43 41 / 94%);
+  --superficie-lateral-solida: #1e2b29;
+  --superficie-barra: rgb(35 47 46 / 82%);
+  --reflejo-navegacion: rgb(189 224 207 / 5%);
+  --reflejo-frio-navegacion: rgb(150 204 220 / 3%);
+  --borde-navegacion: rgb(194 225 221 / 28%);
+  --texto-navegacion-secundario: #d0dfd8;
   --superficie-interior: #1e282d;
   --superficie-flotante: #29353b;
   --borde-contenido: #3b4950;
@@ -97,7 +109,7 @@
   --sombra-cristal:
     inset 0 1px 0 rgb(207 237 222 / 16%),
     inset 0 0 0 0.5px rgb(207 237 222 / 5%),
-    0 16px 36px -20px rgb(3 12 9 / 62%), 0 3px 10px -6px rgb(3 12 9 / 36%);
+    0 16px 36px -22px rgb(3 12 9 / 50%), 0 3px 10px -6px rgb(3 12 9 / 28%);
   --sombra-boton:
     4px 4px 10px rgb(5 14 10 / 48%), -3px -3px 10px rgb(80 112 95 / 14%),
     inset 0 1px 0 rgb(218 255 230 / 17%);
@@ -114,24 +126,20 @@ body.fondo-hortyfru {
   background-color: var(--fondo-marca);
   background-image:
     radial-gradient(
-      ellipse 44rem 34rem at 4% 5%,
+      ellipse 52rem 40rem at 0% 8%,
       var(--luz-menta),
       transparent 76%
     ),
     radial-gradient(
-      ellipse 38rem 32rem at 100% 12%,
-      var(--luz-calida),
-      transparent 78%
-    ),
-    radial-gradient(
-      ellipse 56rem 40rem at 88% 100%,
-      var(--matiz-salvia),
+      ellipse 50rem 42rem at 100% 100%,
+      var(--luz-hoja),
       transparent 80%
     ),
-    radial-gradient(
-      ellipse 82% 78% at 45% 42%,
-      var(--luz-marca),
-      transparent 82%
+    linear-gradient(
+      135deg,
+      var(--fondo-degradado-inicio),
+      var(--luz-marca) 48%,
+      var(--fondo-degradado-final)
     );
   background-attachment: fixed;
 }
@@ -193,6 +201,7 @@ body.fondo-hortyfru {
 
 .panel-lateral-hortyfru,
 .barra-superior-hortyfru {
+  --color-gray-500: var(--texto-navegacion-secundario);
   background: var(--cristal-solido);
   border-color: var(--borde-cristal);
   box-shadow: var(--sombra-cristal);
@@ -202,8 +211,8 @@ body.fondo-hortyfru {
 
 .dark .panel-lateral-hortyfru,
 .dark .barra-superior-hortyfru {
-  --color-gray-400: var(--texto-secundario-suave);
-  --color-gray-500: var(--texto-secundario-suave);
+  --color-gray-400: var(--texto-navegacion-secundario);
+  --color-gray-500: var(--texto-navegacion-secundario);
 }
 
 .superficie-cristal.superficie-cristal-modal {
@@ -222,6 +231,8 @@ body.fondo-hortyfru {
   z-index: 35;
 }
 .panel-lateral-hortyfru {
+  --color-gray-500: var(--texto-suave);
+  background: var(--superficie-lateral-solida);
   top: 1rem;
   inset-inline-start: 1rem;
   height: calc(100dvh - 2rem);
@@ -236,6 +247,10 @@ body.fondo-hortyfru {
   color: var(--texto-seleccion-suave);
   background: var(--fondo-seleccion-suave);
   box-shadow: var(--sombra-hundida);
+}
+.panel-lateral-hortyfru .menu-item-active:not(:focus-visible) {
+  outline: 1px solid var(--borde-seleccion-suave);
+  outline-offset: -1px;
 }
 .dark .panel-lateral-hortyfru .menu-item-active {
   color: var(--texto-seleccion-suave);
@@ -255,7 +270,7 @@ body.fondo-hortyfru {
   border-radius: 1.5rem;
 }
 
-/* El contenido lleva un velo casi blanco sin filtro: conserva sus capas internas.
+/* El contenido lleva un velo menta translucido sin filtro: conserva sus capas internas.
    Solo la navegacion desenfoca; dialogos y menus flotantes siguen solidos. */
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
   .superficie-cristal {
@@ -266,18 +281,20 @@ body.fondo-hortyfru {
   .panel-lateral-hortyfru {
     background:
       linear-gradient(145deg, var(--reflejo-navegacion), transparent 48%),
+      linear-gradient(325deg, var(--reflejo-frio-navegacion), transparent 58%),
       var(--superficie-lateral);
     border-color: var(--borde-navegacion);
-    -webkit-backdrop-filter: blur(24px) saturate(125%);
-    backdrop-filter: blur(24px) saturate(125%);
+    -webkit-backdrop-filter: blur(20px) saturate(125%);
+    backdrop-filter: blur(20px) saturate(125%);
   }
   .barra-superior-hortyfru {
     background:
       linear-gradient(120deg, var(--reflejo-navegacion), transparent 58%),
+      linear-gradient(300deg, var(--reflejo-frio-navegacion), transparent 65%),
       var(--superficie-barra);
     border-color: var(--borde-navegacion);
-    -webkit-backdrop-filter: blur(24px) saturate(125%);
-    backdrop-filter: blur(24px) saturate(125%);
+    -webkit-backdrop-filter: blur(20px) saturate(125%);
+    backdrop-filter: blur(20px) saturate(125%);
   }
 }
 
@@ -730,6 +747,9 @@ body.fondo-hortyfru {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
+  .panel-lateral-hortyfru {
+    background: var(--superficie-lateral-solida);
+  }
 }
 @media (prefers-contrast: more) {
   .aviso-cristal,
@@ -873,8 +893,12 @@ body.fondo-hortyfru {
   .dark {
     --superficie-interior: Canvas;
     --superficie-flotante: Canvas;
+    --superficie-filtros: Canvas;
+    --superficie-cabecera-listado: Canvas;
+    --superficie-lateral-solida: Canvas;
     --texto-suave: CanvasText;
     --texto-secundario-suave: CanvasText;
+    --texto-navegacion-secundario: CanvasText;
     --borde-campo: CanvasText;
     --borde-enfoque-campo: Highlight;
     --contorno-enfoque-campo: Highlight;

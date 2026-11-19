@@ -9,12 +9,7 @@ export default function DiferenciaEntrega({
 }) {
   const t = useTranslations("entregas"),
     idioma = useLocale();
-  if (diferencia === null)
-    return (
-      <span className="text-xs text-gray-500 dark:text-gray-400">
-        {t("diferenciaPendiente")}
-      </span>
-    );
+  if (diferencia === null) return null;
   const coincide = diferencia === "0";
   const sobra = diferencia.startsWith("-");
   return (

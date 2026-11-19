@@ -33,6 +33,44 @@
   box-shadow: 0 -4px 16px -12px rgb(16 24 40 / 16%);
 }
 
+.panelLateral:global(.superficie-cristal) {
+  --desplazamiento-panel: 1rem;
+  width: min(100%, 36rem);
+  height: 100dvh;
+  max-height: 100dvh;
+  border: 0;
+  border-inline-start: 1px solid var(--borde-contenido);
+  border-radius: 0;
+  background: var(--superficie-flotante);
+  box-shadow: var(--shadow-theme-xl);
+  animation: abrirPanelEntrega 180ms ease-out both;
+}
+
+:global([dir="rtl"]) .panelLateral {
+  --desplazamiento-panel: -1rem;
+}
+
+.piePanel {
+  padding-block-end: max(1rem, env(safe-area-inset-bottom));
+}
+
+@keyframes abrirPanelEntrega {
+  from {
+    opacity: 0;
+    transform: translateX(var(--desplazamiento-panel));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panelLateral:global(.superficie-cristal) {
+    animation: none;
+  }
+}
+
 @media (prefers-contrast: more) {
   .entregas,
   :global(.dark) .entregas {
@@ -41,6 +79,9 @@
 }
 
 @media (forced-colors: active) {
+  .panelLateral:global(.superficie-cristal) {
+    box-shadow: none;
+  }
   .entregas,
   :global(.dark) .entregas {
     --superficie-interior: Canvas;

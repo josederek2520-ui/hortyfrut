@@ -9,7 +9,8 @@ from productos.models import Producto
 from entregas.models import Entrega
 from .models import AcuerdoPrecio, DetallePrecio, EntregaPrecio, OperacionPrecio
 from .consultas import huella, version_acuerdo, acuerdos_actuales
-from .permisos import exigir
+from .permisos import exigir, es_supermercado, acuerdos_permitidos
+from .origen_pedidos import validar_productos_supermercado
 from .serializadores import SerializadorAcuerdo, SerializadorAccion
 
 
@@ -27,13 +28,19 @@ def entrada(clase, datos):
 
 def bloquear(actor, accion, identificador=None, cliente_id=None):
     solo_propias = getattr(actor, '_entregas_solo_propias', False)
+    precios_propios = es_supermercado(actor)
     actor = get_object_or_404(get_user_model(), pk=actor.pk)
     actor._entregas_solo_propias = solo_propias
+    actor._precios_solo_propios = precios_propios
     exigir(actor, accion)
     if identificador:
-        cliente_id = get_object_or_404(AcuerdoPrecio, pk=identificador).cliente_id
+        cliente_id = get_object_or_404(acuerdos_permitidos(AcuerdoPrecio.objects.all(), actor), pk=identificador).cliente_id
     cliente = get_object_or_404(Cliente.objects.select_for_update(), pk=cliente_id)
     acuerdo = get_object_or_404(AcuerdoPrecio.objects.select_for_update(of=('self',)).select_related('anterior'), pk=identificador) if identificador else None
+    actor = get_object_or_404(get_user_model(), pk=actor.pk)
+    actor._entregas_solo_propias = solo_propias
+    actor._precios_solo_propios = precios_propios
+    exigir(actor, accion, cliente)
     return actor, cliente, acuerdo
 
 
@@ -116,6 +123,8 @@ def guardar(actor, datos, identificador=None):
         raise ConflictoPrecio('Solo se editan borradores; las propuestas registradas conservan sus precios.')
     if cliente.pk != datos['cliente']:
         raise ValidationError({'cliente': 'El supermercado del borrador no se puede cambiar.'})
+    if es_supermercado(actor) and not (acuerdo and acuerdo.anterior_id):
+        validar_productos_supermercado(cliente, datos)
     productos_ids = [fila['producto'] for fila in datos['lineas']]
     if len(productos_ids) != len(set(productos_ids)) or len(datos['entregas']) != len(set(datos['entregas'])):
         raise ValidationError({'lineas': 'Hay productos o entregas repetidos.'})
@@ -166,6 +175,8 @@ def actuar(actor, identificador, accion, datos):
     if acuerdo.estado != esperado:
         raise ConflictoPrecio('La propuesta ya cambió de estado. Recarga antes de continuar.')
     if accion == 'nueva_version':
+        if es_supermercado(actor) and acuerdo.alcance != 'periodo':
+            raise ValidationError({'alcance': 'Las correcciones del supermercado conservan acuerdos por período de pedidos.'})
         if acuerdo.versiones.filter(estado='aceptado').exists():
             raise ConflictoPrecio('Crea la corrección desde la última versión aceptada.')
         if not datos['motivo'].strip():
@@ -179,6 +190,10 @@ def actuar(actor, identificador, accion, datos):
         registrar(actor, nuevo, accion, datos, firma)
         return nuevo
     if accion in ['presentar', 'aceptar']:
+        if es_supermercado(actor) and not acuerdo.anterior_id:
+            validar_productos_supermercado(cliente, {'alcance': acuerdo.alcance, 'desde': acuerdo.desde, 'hasta': acuerdo.hasta,
+                'entregas': list(acuerdo.entregas.values_list('entrega_id', flat=True)),
+                'lineas': list(acuerdo.lineas.values('producto'))})
         # Las filas del catálogo se bloquean al decidir; las medidas físicas no se alteran.
         list(Producto.objects.select_for_update().filter(pk__in=acuerdo.lineas.values('producto_id')).order_by('pk'))
         validar_documento(acuerdo, cliente, completo=True)

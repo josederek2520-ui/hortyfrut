@@ -6,10 +6,14 @@ from usuarios.acceso_publico_chofer import AccesoPublicoChofer, SesionPublicaCho
 from usuarios.acceso_chofer_web import AccesoChoferWeb
 from despachos.vistas_chofer_web import VistaViajesChoferWeb
 from entregas.vistas import VistaEntregasPublica
+from precios.vistas import VistaPreciosPublica
+from pagos.vistas import VistaMisPagos
 
 router = DefaultRouter()
 router.register('chofer/mis-viajes', VistaViajesChoferWeb, basename='viajes-chofer-https')
 router.register('entregas', VistaEntregasPublica, basename='entregas-publicas')
+router.register('precios-acordados', VistaPreciosPublica, basename='precios-publicos')
+router.register('mis-pagos', VistaMisPagos, basename='mis-pagos-publicos')
 urlpatterns = [
     path('api/v1/', include('chat.rutas')),
     path('api/v1/auth/csrf/', csrf),

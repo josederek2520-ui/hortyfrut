@@ -117,7 +117,11 @@ class ErrorApi extends Error {
     this.errors = errors;
   }
 }
-function escenario(solicitar) {
+function escenario(
+  solicitar,
+  nombre = "components/ventas/useGestionVenta",
+  dependencias = {},
+) {
   let cursor = 0;
   const memoria = [],
     efectos = [],
@@ -174,6 +178,7 @@ function escenario(solicitar) {
       "@/lib/chofer/infraestructura/crearClaveOperacion": {
         crearClaveOperacion: generarUuid,
       },
+      ...dependencias,
     },
     {
       window: {
@@ -185,11 +190,11 @@ function escenario(solicitar) {
         },
       },
     },
-  )("components/ventas/useGestionVenta").default;
+  )(nombre).default;
   return {
-    dibujar() {
+    dibujar(...parametros) {
       cursor = 0;
-      const resultado = usar();
+      const resultado = usar(...parametros);
       efectos.splice(0).forEach((funcion) => funcion());
       return resultado;
     },
@@ -205,6 +210,138 @@ function anotar(entorno) {
   entorno.dibujar().cambiar(formulario());
   return entorno.dibujar();
 }
+
+function buscarElemento(elemento, coincide) {
+  if (!elemento || typeof elemento !== "object") return null;
+  if (coincide(elemento)) return elemento;
+  for (const hijo of React.Children.toArray(elemento.props?.children)) {
+    const encontrado = buscarElemento(hijo, coincide);
+    if (encontrado) return encontrado;
+  }
+  return null;
+}
+function contextoInteractivo() {
+  let datos = formulario();
+  const entorno = escenario(null, "components/ventas/ContextoVenta", {
+    "react/jsx-runtime": jsx,
+    "next-intl": {
+      useLocale: () => "es",
+      useTranslations: () => (clave) => clave,
+    },
+    "lucide-react": new Proxy({}, { get: () => "svg" }),
+    "@/components/ui/button/Button": { default: "button" },
+    "@/components/form/CampoFecha": { default: "calendario" },
+  });
+  const dibujar = (revision = false, editable = true) =>
+    entorno.dibujar({
+      formulario: datos,
+      documento: null,
+      revision,
+      editable,
+      bloqueado: false,
+      alCambiar: (cambios) => {
+        datos = { ...datos, ...cambios };
+      },
+      alElegirCliente() {},
+    });
+  const periodo = () => {
+    const componente = buscarElemento(
+      dibujar(),
+      (e) => typeof e.props.alModo === "function",
+    );
+    return componente.type(componente.props);
+  };
+  return { dibujar, periodo, datos: () => datos };
+}
+prueba(
+  "un dia cambia ambas fechas y alternar el periodo conserva las entregas",
+  () => {
+    const contexto = contextoInteractivo();
+    const calendario = (identificador) =>
+      buscarElemento(contexto.periodo(), (e) => e.props.id === identificador);
+    const modo = (nombre) =>
+      buscarElemento(
+        contexto.periodo(),
+        (e) => e.type === "button" && e.props.children === nombre,
+      );
+    afirmar.equal(calendario("venta-hasta"), null);
+    calendario("venta-desde").props.alCambiar("2026-11-12");
+    afirmar.equal(contexto.datos().desde, "2026-11-12");
+    afirmar.equal(contexto.datos().hasta, "2026-11-12");
+    modo("variosDias").props.onClick();
+    calendario("venta-hasta").props.alCambiar("2026-11-14");
+    afirmar.equal(contexto.datos().hasta, "2026-11-14");
+    modo("unDia").props.onClick();
+    afirmar.equal(contexto.datos().hasta, contexto.datos().desde);
+    afirmar.equal(contexto.datos().entregas.length, 1);
+    afirmar.equal(contexto.datos().entregas[0].fecha_recepcion, "2026-11-11");
+    afirmar.ok(validarVenta(contexto.datos(), true).includes("fueraPeriodo"));
+  },
+);
+prueba(
+  "revisar muestra el vencimiento y volver conserva el modo varios dias",
+  () => {
+    const contexto = contextoInteractivo();
+    afirmar.equal(
+      buscarElemento(
+        contexto.dibujar(),
+        (e) => e.props.id === "venta-vencimiento",
+      ),
+      null,
+    );
+    buscarElemento(
+      contexto.periodo(),
+      (e) => e.type === "button" && e.props.children === "variosDias",
+    ).props.onClick();
+    const vencimiento = buscarElemento(
+      contexto.dibujar(true),
+      (e) => e.props.id === "venta-vencimiento",
+    );
+    afirmar.ok(vencimiento);
+    vencimiento.props.alCambiar("2026-12-15");
+    afirmar.equal(contexto.datos().vencimiento, "2026-12-15");
+    afirmar.ok(
+      buscarElemento(contexto.periodo(), (e) => e.props.id === "venta-hasta"),
+    );
+    afirmar.equal(
+      buscarElemento(
+        contexto.dibujar(true, false),
+        (e) => e.props.id === "venta-vencimiento",
+      ),
+      null,
+    );
+    afirmar.equal(contexto.datos().entregas.length, 1);
+  },
+);
+prueba(
+  "cambiar el vencimiento en revision exige guardar y utiliza la nueva version al emitir",
+  async () => {
+    const peticiones = [];
+    let vencimiento = null;
+    const entorno = escenario(async (ruta, opciones) => {
+      const datos = JSON.parse(opciones.body);
+      peticiones.push({ ruta, datos });
+      if ("vencimiento" in datos) vencimiento = datos.vencimiento;
+      return documento({
+        version: "v" + peticiones.length,
+        revision: "revision" + peticiones.length,
+        vencimiento,
+      });
+    });
+    await anotar(entorno).operar("revisar");
+    entorno.dibujar().cambiar({ vencimiento: "2026-12-15" });
+    afirmar.equal(entorno.dibujar().paso, "revision");
+    await entorno.dibujar().operar("emitir");
+    afirmar.equal(peticiones.length, 1);
+    await entorno.dibujar().operar("revisar");
+    afirmar.equal(peticiones[1].ruta, "ventas/" + documento().id + "/guardar/");
+    afirmar.equal(peticiones[1].datos.vencimiento, "2026-12-15");
+    afirmar.equal(entorno.dibujar().modificado, false);
+    await entorno.dibujar().operar("emitir");
+    afirmar.equal(peticiones[2].datos.version, "v2");
+    afirmar.equal(peticiones[2].datos.revision, "revision2");
+  },
+);
 prueba(
   "revisar guarda primero y emitir usa la version y la revision recibidas",
   async () => {
@@ -287,20 +424,73 @@ for (const idioma of ["es", "en"]) {
       "utf8",
     ),
   );
-  const cargarVista = crearCargadorChofer({
-    react: React,
-    "react/jsx-runtime": jsx,
-    "next-intl": {
-      useLocale: () => idioma,
-      useTranslations: (espacio) =>
-        crearTraductor({
-          locale: idioma,
-          messages: mensajes,
-          namespace: espacio,
+  const cargarVista = crearCargadorChofer(
+    {
+      react: React,
+      "react/jsx-runtime": jsx,
+      "next-intl": {
+        useLocale: () => idioma,
+        useTranslations: (espacio) =>
+          crearTraductor({
+            locale: idioma,
+            messages: mensajes,
+            namespace: espacio,
+          }),
+      },
+      "lucide-react": new Proxy({}, { get: () => () => null }),
+      "@/i18n/navigation": {
+        Link: ({ href, children, ...propiedades }) =>
+          React.createElement("a", { href, ...propiedades }, children),
+      },
+      "@/components/form/CampoFecha": {
+        default: () => React.createElement("input"),
+      },
+      "@/components/pedidos/PaginadorPedidos": { default: () => null },
+      "@/hooks/useConsultaPaginada": {
+        default: () => ({
+          datos: {
+            count: 1,
+            results: [
+              documento({
+                estado: "emitida",
+                total: "109.50",
+                saldo: "9.50",
+                cobrado: "100.00",
+                estado_cobro: "parcial",
+              }),
+            ],
+            resumen: {
+              total: "109.50",
+              pendiente_cobro: "9.50",
+              emitidas: 1,
+              borradores: 0,
+            },
+          },
+          recargar() {},
         }),
+      },
     },
-    "lucide-react": new Proxy({}, { get: () => () => null }),
-  });
+    { URLSearchParams },
+  );
+  prueba(
+    "la tarjeta pendiente usa el saldo y conserva el total original en la fila en " +
+      idioma,
+    () => {
+      const Lista = cargarVista("components/ventas/ListaVentas").default;
+      const html = representar(
+        React.createElement(Lista, {
+          sesion: { permisos_ventas: { crear: false } },
+        }),
+      );
+      const inicio = html.indexOf(mensajes.ventas.pendienteCobro);
+      const fin = html.indexOf(mensajes.ventas.ventasEmitidas, inicio);
+      afirmar.ok(inicio >= 0 && fin > inicio);
+      const tarjeta = html.slice(inicio, fin);
+      afirmar.ok(tarjeta.includes(mostrarBolivianos("9.50", idioma)));
+      afirmar.ok(!tarjeta.includes(mostrarBolivianos("109.50", idioma)));
+      afirmar.ok(html.includes(mostrarBolivianos("109.50", idioma)));
+    },
+  );
   const Resumen = cargarVista("components/ventas/ResumenVenta").default;
   prueba("resumen accesible y saldo historico en " + idioma, () => {
     const html = representar(

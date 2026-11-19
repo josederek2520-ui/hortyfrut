@@ -7,6 +7,7 @@ class Venta(models.Model):
     cliente = models.ForeignKey('clientes.Cliente', on_delete=models.PROTECT, related_name='ventas')
     cliente_nombre = models.CharField(max_length=150)
     cliente_nit = models.CharField(max_length=20)
+    empresa = models.JSONField(default=dict, blank=True)
     estado = models.CharField(max_length=12, default='borrador', choices=[('borrador', 'Borrador'), ('emitida', 'Emitida'), ('cancelada', 'Cancelada')])
     desde = models.DateField()
     hasta = models.DateField()

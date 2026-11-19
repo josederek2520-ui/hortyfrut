@@ -6,6 +6,7 @@ import {
 import { mostrarBolivianos } from "@/lib/moneda";
 import { mostrarPesoVenta } from "./calculosVenta";
 import { panelVenta, type Venta } from "./tipos";
+import EstadoCobroVenta from "./EstadoCobroVenta";
 
 export default function ResumenVenta({
   total,
@@ -56,18 +57,23 @@ export default function ResumenVenta({
         </p>
       </div>
       {emitida && (
-        <dl className="mt-5 space-y-3 text-sm">
-          <div className="flex justify-between gap-3">
-            <dt className="text-gray-500 dark:text-gray-400">{t("cobrado")}</dt>
-            <dd>{mostrarBolivianos(venta.cobrado ?? "0", idioma)}</dd>
-          </div>
-          <div className="flex justify-between gap-3">
-            <dt className="font-medium">{t("saldo")}</dt>
-            <dd className="font-semibold">
-              {mostrarBolivianos(venta.saldo!, idioma)}
-            </dd>
-          </div>
-        </dl>
+        <div className="mt-5 space-y-3">
+          <EstadoCobroVenta estado={venta.estado_cobro} />
+          <dl className="space-y-3 text-sm">
+            <div className="flex justify-between gap-3">
+              <dt className="text-gray-500 dark:text-gray-400">
+                {t("cobrado")}
+              </dt>
+              <dd>{mostrarBolivianos(venta.cobrado ?? "0", idioma)}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="font-medium">{t("saldo")}</dt>
+              <dd className="font-semibold">
+                {mostrarBolivianos(venta.saldo!, idioma)}
+              </dd>
+            </div>
+          </dl>
+        </div>
       )}
       <div className="mt-5 flex items-start gap-2 border-t border-gray-100 pt-4 text-xs leading-5 text-gray-500 dark:border-gray-800 dark:text-gray-400">
         <IconoConfirmado

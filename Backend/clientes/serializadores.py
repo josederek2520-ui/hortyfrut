@@ -14,11 +14,20 @@ class SerializadorBaseLectura(serializers.ModelSerializer):
 
 
 class SerializadorCliente(SerializadorBaseLectura):
+    encargado_pagos = serializers.SerializerMethodField()
+    encargado_precios = serializers.SerializerMethodField()
+
+    def get_encargado_precios(self, obj):
+        usuario = obj.encargado_precios
+        return {'id': usuario.pk, 'nombre': usuario.get_full_name() or f'Cuenta #{usuario.pk}', 'activo': usuario.is_active} if usuario else None
+    def get_encargado_pagos(self, obj):
+        usuario = obj.encargado_pagos
+        return {'id': usuario.pk, 'nombre': usuario.get_full_name() or f'Cuenta #{usuario.pk}', 'activo': usuario.is_active} if usuario else None
     cantidad_sucursales = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Cliente
-        fields = ('id', 'razon_social', 'nit', 'telefono', 'email', 'activo', 'creado_en', 'version', 'cantidad_sucursales')
+        fields = ('id', 'razon_social', 'nit', 'telefono', 'email', 'encargado_precios', 'encargado_pagos', 'activo', 'creado_en', 'version', 'cantidad_sucursales')
         read_only_fields = fields
 
 
@@ -54,6 +63,8 @@ class SerializadorEscrituraBase(serializers.Serializer):
 
 
 class SerializadorEscrituraCliente(SerializadorEscrituraBase):
+    encargado_pagos_id = serializers.IntegerField(min_value=1, allow_null=True, required=False)
+    encargado_precios_id = serializers.IntegerField(min_value=1, allow_null=True, required=False)
     razon_social = serializers.CharField(max_length=150)
     nit = serializers.RegexField(r'\A[0-9]+\Z', max_length=20)
     email = serializers.EmailField(max_length=150, allow_blank=True, required=False)

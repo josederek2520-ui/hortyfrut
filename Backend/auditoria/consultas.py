@@ -6,6 +6,7 @@ from .models import RegistroActividad
 
 ACCIONES_CATALOGO = ('crear', 'editar', 'activar', 'desactivar')
 ACCIONES_MODULOS = {
+    'pagos': ('informar', 'observar'),
     **{modulo: ACCIONES_CATALOGO for modulo in (
         'unidades_medida', 'categorias_productos', 'productos', 'presentaciones',
         'clientes', 'sucursales', 'proveedores', 'almacenes', 'vehiculos',
@@ -28,13 +29,18 @@ ACCIONES_MODULOS = {
     'entregas': ('guardar', 'enviar', 'confirmar', 'devolver'),
     'devoluciones': ('guardar', 'guardar_revision', 'recibir', 'revisar', 'cancelar'),
     'precios': ('guardar', 'presentar', 'aceptar', 'rechazar', 'cancelar', 'nueva_version'),
+    # contexto, productos_del_periodo e imagen son consultas técnicas de Precios;
+    # crear_rol prepara permisos y no cuenta como otra operación comercial.
     'ventas': ('guardar', 'emitir', 'cancelar', 'descargar'),
+    'empresa': ('guardar',),
+    'cobros': ('registrar',),
     # La finalización automática conserva evidencia, sin volver a contar la solicitud.
     'respaldos': ('solicitar_respaldo', 'descargar_respaldo'),
 }
 
 # Los rechazos HTTP pueden usar el nombre de la acción de la vista, previo al servicio.
 ACCIONES_HTTP_ADICIONALES = {
+    'pagos': ('confirmar',),
     **{modulo: ('cambiar_estado',) for modulo, acciones in ACCIONES_MODULOS.items() if 'activar' in acciones},
     'lotes': ('cambiar_estado',),
     'unidades_inventario': ('crear', 'cambiar_estado'),
@@ -44,6 +50,8 @@ ACCIONES_HTTP_ADICIONALES = {
     'devoluciones': ('crear', 'revision'),
     'precios': ('crear',),
     'ventas': ('crear',),
+    'empresa': ('crear',),
+    'cobros': ('crear',),
     'respaldos': ('crear', 'descargar'),
 }
 

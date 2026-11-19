@@ -27,6 +27,21 @@ const cuenta = {
     roles: [],
   },
   acceso_publico: true,
+  precios_supermercado: true,
+  cliente_precios: { id: 10, nombre: "Supermercado de prueba" },
+  fecha_precios: "2026-11-12",
+  permisos_mis_pagos: { ver: true, informar: true },
+  cliente_pagos: { id: 10, nombre: "Supermercado de prueba", nit: "123" },
+  permisos_pagos: { ver: false, confirmar: false, observar: false },
+  permisos_precios: {
+    ver: true,
+    crear: true,
+    editar: true,
+    presentar: true,
+    cancelar: true,
+    aceptar: false,
+    rechazar: false,
+  },
   permisos_chofer: { ver: true, operar: true },
   permisos_entregas: {
     ver: true,
@@ -176,6 +191,12 @@ try {
     "/mis-viajes/5",
     "/entregas",
     "/entregas/5/7",
+    "/precios-acordados",
+    "/precios-acordados/nueva",
+    "/precios-acordados/5",
+    "/mis-pagos",
+    "/mis-pagos/nuevo",
+    "/mis-pagos/5",
   ]) {
     const documento = await consultar(pasarela.address().port, ruta);
     afirmar.equal(documento.estado, 200, ruta);

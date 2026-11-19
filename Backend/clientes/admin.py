@@ -7,7 +7,7 @@ from .models import Cliente, Sucursal
 class AdministracionCliente(CatalogoAdmin):
     list_display = ('razon_social', 'nit', 'activo', 'creado_en')
     search_fields = ('razon_social', 'nit')
-    readonly_fields = ('razon_social', 'nit', 'telefono', 'email', 'activo', 'creado_en')
+    readonly_fields = ('razon_social', 'nit', 'telefono', 'email', 'encargado_precios', 'activo', 'creado_en')
 
 
 @admin.register(Sucursal)

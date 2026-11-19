@@ -14,6 +14,8 @@ import ProductosPrecio from "./ProductosPrecio";
 import SelectorOpcionesPrecio from "./SelectorOpcionesPrecio";
 import RevisionPrecio from "./RevisionPrecio";
 import HistorialPrecio from "./HistorialPrecio";
+import CabeceraPrecioSupermercado from "./CabeceraPrecioSupermercado";
+import useProductosPedidosPrecio from "./useProductosPedidosPrecio";
 import {
   campoPrecio,
   panelPrecio,
@@ -30,13 +32,62 @@ export default function HojaPrecio({
 }) {
   const t = useTranslations("precios"),
     navegador = useRouter();
-  const gestion = useGestionPrecio(identificador);
+  const supermercado = !!sesion.precios_supermercado;
+  const gestion = useGestionPrecio(
+    identificador,
+    supermercado
+      ? {
+          cliente: sesion.cliente_precios ?? null,
+          fecha: sesion.fecha_precios ?? "",
+        }
+      : undefined,
+  );
   const { documento, formulario, ocupado, incierto, errores } = gestion,
     permisos = sesion.permisos_precios!;
   const editable =
     (!documento || documento.estado === "borrador") &&
     (documento ? permisos.editar : permisos.crear);
-  const bloqueado = ocupado || incierto;
+  const [revisionOrigen, establecerRevisionOrigen] = useState(0);
+  const origen = useProductosPedidosPrecio(
+    supermercado &&
+      editable &&
+      !documento?.anterior &&
+      !ocupado &&
+      !incierto &&
+      (!identificador || revisionOrigen > 0) &&
+      formulario.cliente &&
+      formulario.desde &&
+      formulario.hasta
+      ? {
+          cliente: formulario.cliente.id,
+          desde: formulario.desde,
+          hasta: formulario.hasta,
+          revision: revisionOrigen,
+        }
+      : null,
+  );
+  const bloqueado = ocupado || incierto || origen.cargando;
+  const origenAplicado = useRef<string | null>(null);
+  const cambiarFormulario = gestion.cambiar;
+  useEffect(() => {
+    if (
+      !origen.lineas ||
+      origenAplicado.current === origen.clave ||
+      ocupado ||
+      incierto
+    )
+      return;
+    origenAplicado.current = origen.clave;
+    cambiarFormulario((anterior) => ({
+      ...anterior,
+      lineas: origen.lineas!.map((fila) => ({
+        ...fila,
+        precio_kg:
+          anterior.lineas.find((anotada) => anotada.producto === fila.producto)
+            ?.precio_kg ?? "",
+      })),
+    }));
+  }, [origen.lineas, origen.clave, cambiarFormulario, ocupado, incierto]);
   const [pagina, establecerPagina] = useState(1),
     [buscar, establecerBuscar] = useState("");
   const [selector, establecerSelector] = useState<
@@ -48,8 +99,14 @@ export default function HojaPrecio({
     | "rechazar"
     | "nueva_version"
     | "cambiarCliente"
+    | "cambiarPeriodo"
+    | "actualizarProductos"
     | null
   >(null);
+  const [periodoPendiente, establecerPeriodoPendiente] = useState<{
+    desde: string;
+    hasta: string;
+  } | null>(null);
   const [revision, establecerRevision] = useState<
     "presentar" | "aceptar" | null
   >(null);
@@ -110,7 +167,12 @@ export default function HojaPrecio({
   }, [focoPendiente, pagina, buscar, formulario.lineas]);
   async function actuar(accion: AccionPrecio, razon = "") {
     const resultado = await gestion.operar(accion, razon);
-    if (resultado && resultado.id !== identificador)
+    if (
+      resultado?.estado === "propuesta" &&
+      (accion === "presentar" || accion === "reintentar")
+    )
+      navegador.replace("/precios-acordados");
+    else if (resultado && resultado.id !== identificador)
       navegador.replace("/precios-acordados/" + resultado.id);
   }
   const volver = () => {
@@ -137,6 +199,7 @@ export default function HojaPrecio({
             categoria_nombre: opcion.categoria_nombre ?? "",
             precio_kg: "",
             precio_anterior: null,
+            imagen: opcion.imagen ?? null,
           },
         ],
       }));
@@ -159,6 +222,35 @@ export default function HojaPrecio({
   };
   const mensajeError = (mensaje: string) =>
     t.has("errores." + mensaje) ? t("errores." + mensaje) : mensaje;
+  const aplicarPeriodo = (desde: string, hasta: string) => {
+    gestion.cambiar((anterior) => ({
+      ...anterior,
+      alcance: "periodo",
+      desde,
+      hasta,
+      lineas: [],
+      entregas: [],
+    }));
+    establecerRevisionOrigen((anterior) => anterior + 1);
+    establecerPagina(1);
+    establecerBuscar("");
+  };
+  const cambiarPeriodo = (desde: string, hasta: string) => {
+    if (desde === formulario.desde && hasta === formulario.hasta) return;
+    if (formulario.lineas.some((fila) => fila.precio_kg.trim())) {
+      establecerPeriodoPendiente({ desde, hasta });
+      establecerConfirmacion("cambiarPeriodo");
+    } else aplicarPeriodo(desde, hasta);
+  };
+  const recargarProductos = () => {
+    establecerPagina(1);
+    establecerRevisionOrigen((anterior) => anterior + 1);
+  };
+  const actualizarProductos = () => {
+    if (formulario.lineas.some((fila) => fila.precio_kg.trim()))
+      establecerConfirmacion("actualizarProductos");
+    else recargarProductos();
+  };
   if (identificador && !documento)
     return (
       <div className={panelPrecio + " space-y-4 p-6"}>
@@ -177,14 +269,29 @@ export default function HojaPrecio({
       ref={raiz}
       className="space-y-5 pb-5 text-gray-900 dark:text-white"
     >
-      <CabeceraPrecio
-        gestion={gestion}
-        editable={editable}
-        alVolver={volver}
-        alCliente={() => establecerSelector("clientes")}
-        alEntregas={() => establecerSelector("entregas")}
-        alHistorial={() => establecerHistorial((v) => !v)}
-      />
+      {supermercado && (!documento || documento.alcance === "periodo") ? (
+        <CabeceraPrecioSupermercado
+          gestion={gestion}
+          editable={editable}
+          cargando={origen.cargando}
+          falloOrigen={origen.fallo}
+          alVolver={volver}
+          alCliente={() => establecerSelector("clientes")}
+          alPeriodo={cambiarPeriodo}
+          alActualizar={actualizarProductos}
+          alReintentar={origen.reintentar}
+          alHistorial={() => establecerHistorial((valor) => !valor)}
+        />
+      ) : (
+        <CabeceraPrecio
+          gestion={gestion}
+          editable={editable}
+          alVolver={volver}
+          alCliente={() => establecerSelector("clientes")}
+          alEntregas={() => establecerSelector("entregas")}
+          alHistorial={() => establecerHistorial((v) => !v)}
+        />
+      )}
       {gestion.fallo && (
         <div
           role="alert"
@@ -227,6 +334,8 @@ export default function HojaPrecio({
         version={!!documento?.anterior}
         bloqueado={bloqueado}
         errores={errores}
+        origenPedidos={supermercado}
+        cargando={origen.cargando}
         alPagina={establecerPagina}
         alBuscar={(valor) => {
           establecerBuscar(valor);
@@ -309,30 +418,35 @@ export default function HojaPrecio({
                   if (gestion.validar()) establecerRevision("presentar");
                 }}
               >
-                {t("revisarPropuesta")}
+                {t(supermercado ? "revisarEnviar" : "revisarPropuesta")}
               </Button>
             )}
-          {documento?.estado === "propuesta" && permisos.rechazar && (
-            <Button
-              variant="outline"
-              disabled={bloqueado}
-              startIcon={<X className="size-4" />}
-              onClick={() => abrirConfirmacion("rechazar")}
-            >
-              {t("rechazarPropuesta")}
-            </Button>
-          )}
-          {documento?.estado === "propuesta" && permisos.aceptar && (
-            <Button
-              disabled={bloqueado}
-              startIcon={<Check className="size-4" />}
-              onClick={() => establecerRevision("aceptar")}
-            >
-              {t("aceptarPrecios")}
-            </Button>
-          )}
+          {documento?.estado === "propuesta" &&
+            permisos.rechazar &&
+            !supermercado && (
+              <Button
+                variant="outline"
+                disabled={bloqueado}
+                startIcon={<X className="size-4" />}
+                onClick={() => abrirConfirmacion("rechazar")}
+              >
+                {t("rechazarPropuesta")}
+              </Button>
+            )}
+          {documento?.estado === "propuesta" &&
+            permisos.aceptar &&
+            !supermercado && (
+              <Button
+                disabled={bloqueado}
+                startIcon={<Check className="size-4" />}
+                onClick={() => establecerRevision("aceptar")}
+              >
+                {t("aceptarPrecios")}
+              </Button>
+            )}
           {documento?.estado === "aceptado" &&
             documento.es_actual &&
+            (!supermercado || documento.alcance === "periodo") &&
             permisos.crear && (
               <Button
                 variant="outline"
@@ -368,6 +482,7 @@ export default function HojaPrecio({
       )}
       {revision && (
         <RevisionPrecio
+          supermercado={supermercado}
           formulario={formulario}
           aceptar={revision === "aceptar"}
           ocupado={ocupado}
@@ -394,6 +509,9 @@ export default function HojaPrecio({
             const accion = confirmacion;
             establecerConfirmacion(null);
             if (accion === "salir") navegador.push("/precios-acordados");
+            else if (accion === "cambiarPeriodo" && periodoPendiente)
+              aplicarPeriodo(periodoPendiente.desde, periodoPendiente.hasta);
+            else if (accion === "actualizarProductos") recargarProductos();
             else if (accion === "cambiarCliente" && clientePendiente) {
               gestion.cambiar((f) => ({
                 ...f,

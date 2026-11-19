@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import { rutaInicial } from "@/lib/navegacion-sesion";
 import { bloquearDesplazamiento } from "@/lib/bloqueoDesplazamiento";
 import MarcaHortyfru from "@/components/common/MarcaHortyfru";
+import GrupoMenuLateral from "./GrupoMenuLateral";
 import {
   Store as IconoProveedor,
   ShoppingCart as IconoCompra,
@@ -26,6 +27,8 @@ import {
   Undo2 as IconoDevolucion,
   Tags as IconoPrecio,
   ReceiptText as IconoVenta,
+  Banknote as IconoCobro,
+  Building2 as IconoEmpresa,
 } from "lucide-react";
 import type { Session as Sesion } from "@/components/users/types";
 import { useChat } from "@/components/chat/ProveedorChat";
@@ -112,17 +115,17 @@ const gruposNavegacion: GrupoNavegacion[] = [
         icono: <IconoVehiculo className="size-5" />,
         puedeVer: (sesion) => !!sesion.permisos_chofer?.ver,
       },
-      {
-        clave: "chat",
-        ruta: "/chat",
-        icono: <IconoChat className="size-5" />,
-        puedeVer: (sesion) => !!sesion.user.is_active,
-      },
     ],
   },
   {
     clave: "inventario",
     elementos: [
+      {
+        clave: "almacenes",
+        ruta: "/almacenes",
+        icono: <IconoAlmacen className="size-5" />,
+        puedeVer: (sesion) => !!sesion.permisos_almacenes?.ver,
+      },
       {
         clave: "lotes",
         ruta: "/lotes",
@@ -141,12 +144,6 @@ const gruposNavegacion: GrupoNavegacion[] = [
         icono: <IconoCajilla className="size-5" />,
         puedeVer: (sesion) => !!sesion.permisos_cajillas?.ver,
       },
-      {
-        clave: "almacenes",
-        ruta: "/almacenes",
-        icono: <IconoAlmacen className="size-5" />,
-        puedeVer: (sesion) => !!sesion.permisos_almacenes?.ver,
-      },
     ],
   },
   {
@@ -157,7 +154,14 @@ const gruposNavegacion: GrupoNavegacion[] = [
         ruta: "/precios-acordados",
         icono: <IconoPrecio className="size-5" />,
         puedeVer: (sesion) =>
-          !sesion.acceso_publico && !!sesion.permisos_precios?.ver,
+          (!sesion.acceso_publico || !!sesion.precios_supermercado) &&
+          !!sesion.permisos_precios?.ver,
+      },
+      {
+        clave: "mis_pagos",
+        ruta: "/mis-pagos",
+        icono: <IconoCobro className="size-5" />,
+        puedeVer: (sesion) => !!sesion.permisos_mis_pagos?.ver,
       },
       {
         clave: "ventas",
@@ -166,29 +170,25 @@ const gruposNavegacion: GrupoNavegacion[] = [
         puedeVer: (sesion) =>
           !sesion.acceso_publico && !!sesion.permisos_ventas?.ver,
       },
+      {
+        clave: "pagos",
+        ruta: "/pagos-por-verificar",
+        icono: <IconoCobro className="size-5" />,
+        puedeVer: (sesion) =>
+          !sesion.acceso_publico && !!sesion.permisos_pagos?.ver,
+      },
+      {
+        clave: "cobros",
+        ruta: "/cobros",
+        icono: <IconoCobro className="size-5" />,
+        puedeVer: (sesion) =>
+          !sesion.acceso_publico && !!sesion.permisos_cobros?.ver,
+      },
     ],
   },
   {
     clave: "catalogos",
     elementos: [
-      {
-        clave: "clientes",
-        ruta: "/clientes",
-        icono: <IconoCliente />,
-        puedeVer: (sesion) => !!sesion.permisos_clientes?.ver,
-      },
-      {
-        clave: "proveedores",
-        ruta: "/proveedores",
-        icono: <IconoProveedor className="size-5" />,
-        puedeVer: (sesion) => !!sesion.permisos_proveedores?.ver,
-      },
-      {
-        clave: "vehiculos",
-        ruta: "/vehiculos",
-        icono: <IconoVehiculo className="size-5" />,
-        puedeVer: (sesion) => !!sesion.permisos_vehiculos?.ver,
-      },
       {
         clave: "productos",
         ruta: "/productos",
@@ -208,11 +208,36 @@ const gruposNavegacion: GrupoNavegacion[] = [
         icono: <IconoRegla />,
         puedeVer: (sesion) => !!sesion.permisos_catalogos?.unidades_medida.ver,
       },
+      {
+        clave: "clientes",
+        ruta: "/clientes",
+        icono: <IconoCliente />,
+        puedeVer: (sesion) => !!sesion.permisos_clientes?.ver,
+      },
+      {
+        clave: "proveedores",
+        ruta: "/proveedores",
+        icono: <IconoProveedor className="size-5" />,
+        puedeVer: (sesion) => !!sesion.permisos_proveedores?.ver,
+      },
+      {
+        clave: "vehiculos",
+        ruta: "/vehiculos",
+        icono: <IconoVehiculo className="size-5" />,
+        puedeVer: (sesion) => !!sesion.permisos_vehiculos?.ver,
+      },
     ],
   },
   {
     clave: "administracion",
     elementos: [
+      {
+        clave: "empresa",
+        ruta: "/datos-empresa",
+        icono: <IconoEmpresa className="size-5" />,
+        puedeVer: (sesion) =>
+          !sesion.acceso_publico && !!sesion.permisos_empresa?.ver,
+      },
       {
         clave: "users",
         ruta: "/usuarios",
@@ -310,7 +335,11 @@ export default function AppSidebar() {
 
   const mostrarEnlace = (elemento: Omit<ElementoNavegacion, "puedeVer">) => {
     const activo = estaActivo(elemento.ruta);
-    const etiqueta = t(`items.${elemento.clave}`);
+    const etiqueta = t(
+      elemento.clave === "precios" && sesion?.precios_supermercado
+        ? "items.mis_precios"
+        : `items.${elemento.clave}`,
+    );
     return (
       <Link
         href={elemento.ruta}
@@ -340,7 +369,12 @@ export default function AppSidebar() {
         </span>
         {mostrarTexto && <span className="menu-item-text">{etiqueta}</span>}
         {elemento.clave === "chat" && !!resumenChat?.no_leidos && (
-          <span className="ms-auto inline-flex min-w-5 justify-center rounded-full bg-brand-600 px-1 text-xs leading-5 font-semibold text-white">
+          <span
+            className={cn(
+              "inline-flex min-w-5 justify-center rounded-full bg-brand-600 px-1 text-xs leading-5 font-semibold text-white",
+              mostrarTexto ? "ms-auto" : "absolute -end-1 -top-1",
+            )}
+          >
             {resumenChat.no_leidos > 99 ? "99+" : resumenChat.no_leidos}
           </span>
         )}
@@ -374,7 +408,7 @@ export default function AppSidebar() {
           }
         }
       }}
-      className={`superficie-cristal panel-lateral-hortyfru fixed inset-s-0 top-0 z-50 flex h-full flex-col border-e border-gray-200 bg-white px-5 text-gray-900 transition-[width,transform,translate] duration-300 ease-in-out motion-reduce:transition-none xl:mt-0 dark:border-gray-800 dark:bg-gray-900 ${
+      className={`superficie-cristal panel-lateral-hortyfru fixed inset-s-0 top-0 z-50 flex h-full flex-col border-e border-gray-200 bg-white px-4 text-gray-900 transition-[width,transform,translate] duration-300 ease-in-out motion-reduce:transition-none xl:mt-0 dark:border-gray-800 dark:bg-gray-900 ${
         expandido || movilAbierto ? "w-72.5" : conCursor ? "w-72.5" : "w-22.5"
       } ${
         movilAbierto
@@ -386,7 +420,7 @@ export default function AppSidebar() {
     >
       <div
         className={cn(
-          "flex min-h-28 shrink-0 items-center py-5",
+          "flex min-h-24 shrink-0 items-center border-b border-gray-200 py-4 dark:border-gray-800",
           !mostrarTexto && "xl:justify-center",
         )}
       >
@@ -412,9 +446,9 @@ export default function AppSidebar() {
       <nav
         aria-label={t("navegacionPrincipal")}
         aria-busy={!consultaSesion.lista}
-        className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5"
+        className="custom-scrollbar min-h-0 flex-1 overflow-y-auto py-2 pe-1"
       >
-        <div className="space-y-6">
+        <div className="space-y-4">
           {!consultaSesion.lista ? (
             <p
               role="status"
@@ -437,43 +471,38 @@ export default function AppSidebar() {
             </p>
           ) : (
             gruposVisibles.map((grupo) => (
-              <section
+              <GrupoMenuLateral
                 key={grupo.clave}
-                aria-labelledby={`grupo-menu-${grupo.clave}`}
+                clave={grupo.clave}
+                titulo={t(`groups.${grupo.clave}`)}
+                mostrarTexto={mostrarTexto}
               >
-                <h2
-                  id={`grupo-menu-${grupo.clave}`}
-                  className={
-                    mostrarTexto
-                      ? "mb-2 px-3 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400"
-                      : "sr-only"
-                  }
-                >
-                  {t(`groups.${grupo.clave}`)}
-                </h2>
-                {!mostrarTexto && (
-                  <div
-                    aria-hidden="true"
-                    className="mx-auto mb-2 h-px w-5 bg-gray-200 dark:bg-gray-700"
-                  />
-                )}
-                <ul className="space-y-1">
+                <ul className="space-y-0.5 pb-2">
                   {grupo.elementos.map((elemento) => (
                     <li key={elemento.clave}>{mostrarEnlace(elemento)}</li>
                   ))}
                 </ul>
-              </section>
+              </GrupoMenuLateral>
             ))
           )}
         </div>
       </nav>
-      <div className="shrink-0 border-t border-gray-200 py-3 dark:border-gray-800">
+      <nav
+        aria-label={t("accesosPersonales")}
+        className="shrink-0 space-y-1 border-t border-gray-200 py-2 dark:border-gray-800"
+      >
+        {sesion?.user.is_active &&
+          mostrarEnlace({
+            clave: "chat",
+            ruta: "/chat",
+            icono: <IconoChat className="size-5" />,
+          })}
         {mostrarEnlace({
           clave: "userProfile",
           ruta: "/profile",
           icono: <IconoUsuario />,
         })}
-      </div>
+      </nav>
     </aside>
   );
 }

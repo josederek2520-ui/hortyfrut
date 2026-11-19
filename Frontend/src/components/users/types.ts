@@ -41,6 +41,14 @@ export interface Capabilities {
   reset_password: boolean;
 }
 export interface Session {
+  permisos_mis_pagos?: { ver: boolean; informar: boolean };
+  permisos_pagos?: { ver: boolean; confirmar: boolean; observar: boolean };
+  cliente_pagos?: import("@/components/ventas/tipos").ClienteVenta | null;
+  permisos_empresa?: { ver: boolean; editar: boolean };
+  permisos_cobros?: { ver: boolean; registrar: boolean };
+  precios_supermercado?: boolean;
+  cliente_precios?: { id: number; nombre: string } | null;
+  fecha_precios?: string | null;
   permisos_ventas?: import("@/components/ventas/tipos").PermisosVentas;
   permisos_precios?: import("@/components/precios/tipos").PermisosPrecios;
   permisos_respaldos?: { ver: boolean; crear: boolean; descargar: boolean };

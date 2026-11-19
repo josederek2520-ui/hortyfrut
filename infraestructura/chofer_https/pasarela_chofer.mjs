@@ -124,7 +124,11 @@ export function crearPasarela({
         /^\/api\/v1\/entregas\/[1-9]\d{0,14}\/pedidos\/[1-9]\d{0,14}\/comprobante\/?$/.test(
           caminoSolicitud,
         );
-      const limiteCuerpo = adjuntoEntrega
+      const adjuntoPago = /^\/api\/v1\/mis-pagos(?:\/revisar)?\/?$/.test(
+        caminoSolicitud,
+      );
+      const admiteAdjunto = adjuntoEntrega || adjuntoPago;
+      const limiteCuerpo = admiteAdjunto
         ? 8 * 1024 * 1024 + 65536
         : caminoSolicitud.startsWith("/api/v1/entregas/")
           ? 1024 * 1024
@@ -134,7 +138,7 @@ export function crearPasarela({
       if (
         escritura &&
         !(
-          adjuntoEntrega &&
+          admiteAdjunto &&
           /^multipart\/form-data\s*;/i.test(
             solicitud.headers["content-type"] ?? "",
           )

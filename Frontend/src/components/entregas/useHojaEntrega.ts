@@ -21,8 +21,7 @@ import type {
 
 type SolicitudPendiente = {
   ruta: string;
-  cuerpo: string | FormData;
-  archivo?: boolean;
+  cuerpo: string;
 };
 export default function useHojaEntrega(
   despacho: number,
@@ -39,7 +38,6 @@ export default function useHojaEntrega(
   const [aportes, establecerAportes] = useState<Record<string, AporteEditable>>(
     {},
   );
-  const [archivo, establecerArchivo] = useState<File | null>(null);
   const [modificado, establecerModificado] = useState(false),
     [ocupado, establecerOcupado] = useState(false);
   const [fallo, establecerFallo] = useState(""),
@@ -99,11 +97,11 @@ export default function useHojaEntrega(
     };
   }, [ruta, aplicar, revisionConsulta]);
   useEffect(() => {
-    if (!modificado && !archivo && !incierto) return;
+    if (!modificado && !incierto) return;
     const avisar = (evento: BeforeUnloadEvent) => evento.preventDefault();
     window.addEventListener("beforeunload", avisar);
     return () => window.removeEventListener("beforeunload", avisar);
-  }, [modificado, archivo, incierto]);
+  }, [modificado, incierto]);
   async function solicitar(solicitud: SolicitudPendiente) {
     pendiente.current = solicitud;
     try {
@@ -115,7 +113,6 @@ export default function useHojaEntrega(
       pendiente.current = null;
       establecerIncierto(false);
       aplicar(datos);
-      if (solicitud.archivo) establecerArchivo(null);
       return datos;
     } catch (error) {
       if (!vigente.current) return null;
@@ -195,7 +192,12 @@ export default function useHojaEntrega(
       }
       if (
         accion !== "devolver" &&
-        (modificado || !hoja.id || hoja.receptor_por_registrar)
+        (modificado ||
+          !hoja.id ||
+          hoja.receptor_por_registrar ||
+          Object.values(lineas).some(
+            (linea) => !linea.unidades_recibidas.trim(),
+          ))
       ) {
         const preparada = prepararLineas(lineas);
         if (Object.keys(preparada.errores).length) {
@@ -256,19 +258,6 @@ export default function useHojaEntrega(
         if (!resultado) return;
         actual = resultado;
       }
-      if (archivo && accion !== "devolver") {
-        const formulario = new FormData();
-        formulario.set("version", actual.version);
-        formulario.set("clave_operacion", crearClaveOperacion());
-        formulario.set("comprobante", archivo);
-        const resultado = await solicitar({
-          ruta: `${ruta}comprobante/`,
-          cuerpo: formulario,
-          archivo: true,
-        });
-        if (!resultado) return;
-        actual = resultado;
-      }
       if (accion !== "guardar") {
         const resultado = await solicitar({
           ruta: `${ruta}${accion}/`,
@@ -312,7 +301,6 @@ export default function useHojaEntrega(
     recibidoPor,
     lineas,
     aportes,
-    archivo,
     modificado,
     ocupado,
     fallo,
@@ -363,6 +351,5 @@ export default function useHojaEntrega(
             limpiarError(`lotes_${producto.producto}`);
         }
       }),
-    cambiarArchivo: (valor: File | null) => establecerArchivo(valor),
   };
 }

@@ -25,6 +25,13 @@ from .documentos import generar_resumen_pdf
 
 
 class DatosVentas(DatosPrecios):
+    @classmethod
+    def preparar_descargas(cls):
+        super().preparar_descargas()
+        from empresa.models import DatosEmpresa
+        DatosEmpresa.objects.update_or_create(pk=1, defaults={'razon_social': 'Empresa de pruebas', 'nit': '123456',
+            'direccion': 'Dirección de pruebas', 'telefono': '2222222', 'ciudad': 'La Paz'})
+
     def datos_venta(self, entrega=None, **cambios):
         return {'clave_operacion': str(uuid.uuid4()), 'version': '', 'cliente': self.cliente.pk,
             'desde': str(self.hoy), 'hasta': str(self.hoy), 'vencimiento': None,

@@ -34,7 +34,8 @@ class AcuerdoPrecio(models.Model):
         default_permissions = ('view', 'add', 'change')
         permissions = [('presentar_acuerdoprecio', 'Registrar propuestas del supermercado'),
             ('aceptar_acuerdoprecio', 'Aceptar precios en nombre de HortyFru'),
-            ('rechazar_acuerdoprecio', 'Rechazar propuestas de precios'), ('cancelar_acuerdoprecio', 'Cancelar borradores de precios')]
+            ('rechazar_acuerdoprecio', 'Rechazar propuestas de precios'), ('cancelar_acuerdoprecio', 'Cancelar borradores de precios'),
+            ('proponer_precios_propios', 'Usar precios solo de los supermercados asignados')]
         ordering = ['-creado_en', '-pk']
         indexes = [models.Index(fields=['cliente', 'estado'], name='precios_cliente_estado')]
         constraints = [

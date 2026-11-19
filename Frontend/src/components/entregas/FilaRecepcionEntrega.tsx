@@ -66,6 +66,7 @@ export default function FilaRecepcionEntrega({
           }
           type="text"
           inputMode={entero ? "numeric" : "decimal"}
+          placeholder={campo === "unidades_recibidas" ? "0" : undefined}
           autoComplete="off"
           aria-label={producto.nombre + ": " + etiqueta}
           aria-invalid={!!error}
@@ -127,33 +128,11 @@ export default function FilaRecepcionEntrega({
           {t("rechazoIncluido")}
         </p>
         <div className="grid gap-3 pb-3 sm:grid-cols-3">
-          {(
-            [
-              "cajas_rechazadas",
-              "unidades_rechazadas",
-              "peso_rechazado_kg",
-            ] as const
-          ).map((campo, indice) => (
-            <div key={campo}>
-              <p className="mb-1 text-xs">
-                {t(
-                  ["cajasRechazadas", "unidadesRechazadas", "pesoRechazado"][
-                    indice
-                  ],
-                )}
-              </p>
-              {campoEntrada(
-                campo,
-                t(
-                  ["cajasRechazadas", "unidadesRechazadas", "pesoRechazado"][
-                    indice
-                  ],
-                ),
-                indice < 2,
-              )}
-            </div>
-          ))}
-          <div className="sm:col-span-3">
+          <div>
+            <p className="mb-1 text-xs">{t("pesoRechazado")}</p>
+            {campoEntrada("peso_rechazado_kg", t("pesoRechazado"))}
+          </div>
+          <div className="sm:col-span-2">
             <label
               htmlFor={soloLectura ? undefined : idMotivo}
               className="mb-1 block text-xs"
@@ -311,7 +290,7 @@ export default function FilaRecepcionEntrega({
       <tr className="border-b border-gray-100 dark:border-gray-800">
         <td colSpan={9} className="px-4 pb-4">
           <div className="flex flex-wrap items-start gap-4">
-            <div className="min-w-40 pt-3">{diferencia}</div>
+            <div className="min-w-40 pt-3 empty:hidden">{diferencia}</div>
             {rechazo}
           </div>
         </td>

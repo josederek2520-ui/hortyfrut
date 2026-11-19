@@ -96,12 +96,16 @@ def calcular_entrega(entrega, incluir_lineas=True):
 
 
 def revisar_venta(venta, entregas=None):
+    from empresa.servicios import instantanea_empresa
+    empresa = instantanea_empresa()
     entregas = list(entregas if entregas is not None else entregas_con_datos().filter(seleccionventa__venta=venta).order_by('fecha_recepcion', 'pk'))
     grupos = [calcular_entrega(entrega) for entrega in entregas]
     lineas = [fila for grupo in grupos for fila in grupo.pop('lineas')]
     incidencias = sorted({i for grupo in grupos for i in grupo['incidencias']})
     if not entregas:
         incidencias.append('sin_entregas')
+    if not empresa:
+        incidencias.append('empresa_incompleta')
     if len(lineas) > 500:
         incidencias.append('demasiadas_lineas')
     if any(e.pedido.sucursal.cliente_id != venta.cliente_id or not e.fecha_recepcion or not venta.desde <= e.fecha_recepcion <= venta.hasta for e in entregas):
@@ -116,5 +120,5 @@ def revisar_venta(venta, entregas=None):
     datos = {'entregas': grupos, 'lineas': lineas, 'incidencias': sorted(set(incidencias)),
         'total': str(total) if not incidencias else None,
         'peso_aceptado_kg': str(sum((Decimal(f['peso_aceptado_kg']) for f in lineas), Decimal(0)))}
-    datos['revision'] = huella([version_venta(venta), venta.cliente.razon_social, venta.cliente.nit, datos])
+    datos['revision'] = huella([version_venta(venta), venta.cliente.razon_social, venta.cliente.nit, huella(empresa), datos])
     return datos

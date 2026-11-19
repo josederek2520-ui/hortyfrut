@@ -15,7 +15,8 @@ def representar(acuerdo, completo=True):
         anteriores = {fila.producto_id: fila.precio_kg for fila in acuerdo.anterior.lineas.all()} if acuerdo.anterior_id else {}
         datos['lineas'] = [{'producto': fila.producto_id, 'producto_nombre': fila.producto_nombre, 'categoria_nombre': fila.categoria_nombre,
             'precio_kg': str(fila.precio_kg) if fila.precio_kg is not None else None,
-            'precio_anterior': str(anteriores[fila.producto_id]) if fila.producto_id in anteriores else None} for fila in acuerdo.lineas.all()]
+            'precio_anterior': str(anteriores[fila.producto_id]) if fila.producto_id in anteriores else None,
+            'imagen': f'/api/v1/precios-acordados/imagenes/{fila.producto_id}/?acuerdo={acuerdo.pk}' if fila.producto.imagen else None} for fila in acuerdo.lineas.select_related('producto')]
         datos['entregas'] = list(acuerdo.entregas.order_by('entrega_id').values_list('entrega_id', flat=True))
     return datos
 

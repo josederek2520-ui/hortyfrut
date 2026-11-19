@@ -208,7 +208,7 @@ class PruebasPrecios(DatosPrecios, TestCase):
 
     def test_flujo_http_csrf_sin_permiso_de_catalogos(self):
         operador = Usuario.objects.create_user(email='comercial@pruebas.test', cedula_identidad='70702')
-        operador.user_permissions.set(Permission.objects.filter(content_type__app_label='precios'))
+        operador.user_permissions.set(Permission.objects.filter(content_type__app_label='precios').exclude(codename='proponer_precios_propios'))
         cliente = APIClient(enforce_csrf_checks=True)
         cliente.force_login(operador)
         self.assertFalse(operador.has_perm('productos.view_producto'))
@@ -226,8 +226,8 @@ class PruebasPrecios(DatosPrecios, TestCase):
         self.assertEqual(respuesta.data['estado'], 'aceptado')
 
     @override_settings(ROOT_URLCONF='config.rutas_chofer_https')
-    def test_no_se_publica_en_https_ni_se_exponen_permisos(self):
-        self.assertEqual(self.client.get('/api/v1/precios-acordados/').status_code, 404)
+    def test_https_no_admite_administrador_sin_supermercado_asignado(self):
+        self.assertEqual(self.client.get('/api/v1/precios-acordados/').status_code, 403)
         self.assertFalse(any(self.client.get('/api/v1/auth/me/').data['permisos_precios'].values()))
 
 

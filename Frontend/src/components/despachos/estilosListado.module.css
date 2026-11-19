@@ -1,4 +1,4 @@
-/* Jerarquía y movimiento de apple-design sobre los colores de HortyFru. */
+/* Superficies salvia y movimiento del listado de Despachos. */
 .pagina {
   --despachos-curva: cubic-bezier(0.23, 1, 0.32, 1);
   --despachos-duracion: 220ms;
@@ -9,6 +9,66 @@
   letter-spacing: -0.014em;
   line-height: 1.25;
   text-wrap: balance;
+}
+
+.filtros {
+  background: var(--superficie-filtros);
+  border-block-end: 1px solid var(--borde-contenido);
+}
+
+.vistas {
+  background: var(--superficie-cabecera-listado);
+  border: 1px solid var(--borde-contenido);
+}
+
+.cantidad,
+.pie {
+  background: var(--cabecera-contenido);
+}
+
+.cabecera {
+  background: var(--superficie-cabecera-listado);
+  border-block: 1px solid var(--borde-contenido);
+}
+
+.pie {
+  border-block-start: 1px solid var(--borde-contenido);
+}
+
+.pie > div {
+  padding-block-start: 0;
+  border-block-start: 0;
+}
+
+.pie button {
+  min-height: 2.75rem;
+  padding-block: 0.5rem;
+}
+
+.fila {
+  background: var(--superficie-contenido);
+}
+
+.fila:nth-child(even) {
+  background: var(--cabecera-contenido);
+}
+
+.fila + .fila {
+  border-color: var(--borde-contenido);
+}
+
+.fila .accion {
+  background: var(--superficie-filtros);
+}
+
+.pendienteSalida {
+  color: var(--color-warning-800);
+  background: var(--color-warning-100);
+}
+
+:global(.dark) .pendienteSalida {
+  color: var(--color-warning-200);
+  background: var(--color-warning-950);
 }
 
 .entrada {
@@ -26,7 +86,7 @@
 }
 
 .fila:focus-within {
-  background: var(--color-orange-25);
+  background: var(--superficie-filtros);
 }
 
 .progreso {
@@ -38,16 +98,9 @@
   transform-origin: right center;
 }
 
-:global(.dark) .fila:focus-within {
-  background: rgb(251 101 20 / 5%);
-}
-
 @media (hover: hover) {
   .fila:hover {
-    background: var(--color-gray-50);
-  }
-  :global(.dark) .fila:hover {
-    background: var(--color-gray-800);
+    background: var(--superficie-filtros);
   }
 }
 
@@ -80,5 +133,19 @@
   }
   .progreso {
     transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .fila,
+  .fila:nth-child(even),
+  .pendienteSalida,
+  :global(.dark) .pendienteSalida {
+    color: CanvasText;
+    background: Canvas;
+  }
+
+  .pendienteSalida {
+    outline: 1px solid CanvasText;
   }
 }

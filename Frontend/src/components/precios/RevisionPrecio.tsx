@@ -13,12 +13,14 @@ export default function RevisionPrecio({
   ocupado,
   alCerrar,
   alConfirmar,
+  supermercado = false,
 }: {
   formulario: FormularioPrecio;
   aceptar: boolean;
   ocupado: boolean;
   alCerrar: () => void;
   alConfirmar: () => void;
+  supermercado?: boolean;
 }) {
   const t = useTranslations("precios"),
     idioma = useLocale(),
@@ -52,8 +54,15 @@ export default function RevisionPrecio({
           <p className="font-semibold">{formulario.cliente?.nombre}</p>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {formulario.alcance === "periodo"
-              ? fecha(formulario.desde) + " — " + fecha(formulario.hasta)
-              : t("entregasSeleccionadas", {
+              ? t("preciosParaPedidos") +
+                " " +
+                fecha(formulario.desde) +
+                (formulario.desde === formulario.hasta
+                  ? ""
+                  : " " + t("hastaPeriodo") + " " + fecha(formulario.hasta))
+              : t("preciosParaEntregas") +
+                " · " +
+                t("entregasSeleccionadas", {
                   total: formulario.entregas.length,
                 })}
           </p>
@@ -98,7 +107,9 @@ export default function RevisionPrecio({
                 ? "procesando"
                 : aceptar
                   ? "aceptarPrecios"
-                  : "registrarPropuesta",
+                  : supermercado
+                    ? "enviarHortyfru"
+                    : "registrarPropuesta",
             )}
           </Button>
         </div>

@@ -19,6 +19,7 @@ import useConsultaPaginada, {
 import { mostrarBolivianos } from "@/lib/moneda";
 import type { Session as Sesion } from "@/components/users/types";
 import EstadoVenta from "./EstadoVenta";
+import EstadoCobroVenta from "./EstadoCobroVenta";
 import { mostrarFechaVenta } from "./calculosVenta";
 import { panelVenta, campoVenta, enlaceVenta, type Venta } from "./tipos";
 
@@ -43,7 +44,12 @@ export default function ListaVentas({ sesion }: { sesion: Sesion }) {
   );
   const datos = consulta.datos as
     | (PaginaNegocio<Venta> & {
-        resumen: { total: string; emitidas: number; borradores: number };
+        resumen: {
+          total: string;
+          pendiente_cobro: string;
+          emitidas: number;
+          borradores: number;
+        };
       })
     | undefined;
   const filtrado = !!(buscar || estado || desde || hasta);
@@ -73,7 +79,9 @@ export default function ListaVentas({ sesion }: { sesion: Sesion }) {
         {[
           {
             etiqueta: "pendienteCobro",
-            valor: datos ? mostrarBolivianos(datos.resumen.total, idioma) : "—",
+            valor: datos
+              ? mostrarBolivianos(datos.resumen.pendiente_cobro, idioma)
+              : "—",
             icono: IconoSaldo,
           },
           {
@@ -283,8 +291,9 @@ export default function ListaVentas({ sesion }: { sesion: Sesion }) {
                         ? "—"
                         : mostrarBolivianos(venta.saldo, idioma)}
                     </div>
-                    <div>
+                    <div className="flex flex-wrap gap-2">
                       <EstadoVenta estado={venta.estado} />
+                      <EstadoCobroVenta estado={venta.estado_cobro} />
                     </div>
                     <span className="flex items-center gap-2 text-sm text-brand-700 dark:text-brand-300">
                       <span className="xl:sr-only">{t("verVenta")}</span>

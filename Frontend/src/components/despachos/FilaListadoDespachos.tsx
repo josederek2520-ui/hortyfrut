@@ -23,6 +23,8 @@ export default function FilaListadoDespachos({
   const t = useTranslations("despachos");
   const idioma = useLocale();
   const accion = accionListadoDespacho(despacho, puedeEditar);
+  const pendienteSalida =
+    despacho.estado === "borrador" && !!despacho.enviado_en;
   const { completadas, paradas } = despacho.resumen;
   const proporcion = paradas
     ? Math.min(1, Math.max(0, completadas / paradas))
@@ -37,14 +39,14 @@ export default function FilaListadoDespachos({
   return (
     <div
       role="row"
-      className={`${estilos.fila} grid grid-cols-2 items-center gap-4 px-5 py-5 sm:px-6 ${columnasListadoDespachos}`}
+      className={`${estilos.fila} grid grid-cols-2 items-center gap-4 px-5 py-4 sm:px-6 ${columnasListadoDespachos}`}
     >
       <div
         role="cell"
         className="col-span-2 flex min-w-0 items-start gap-3 @4xl:col-span-1"
       >
         <span
-          className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${despacho.estado === "en_ruta" ? "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-300" : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"}`}
+          className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${despacho.estado === "en_ruta" ? "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-300" : "bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300"}`}
         >
           <IconoVehiculo className="size-5" aria-hidden="true" />
         </span>
@@ -121,11 +123,11 @@ export default function FilaListadoDespachos({
         )}
       </div>
       <div role="cell">
-        <span className={claseEstadoDespacho(despacho.estado)}>
+        <span
+          className={`${claseEstadoDespacho(despacho.estado)} ${pendienteSalida ? estilos.pendienteSalida : ""}`}
+        >
           {t(
-            despacho.estado === "borrador" && despacho.enviado_en
-              ? "pendienteSalida"
-              : `estados.${despacho.estado}`,
+            pendienteSalida ? "pendienteSalida" : `estados.${despacho.estado}`,
           )}
         </span>
       </div>
@@ -133,7 +135,7 @@ export default function FilaListadoDespachos({
         <Link
           href={accion.ruta}
           aria-label={t(accion.descripcion, { codigo: despacho.codigo })}
-          className={`${estilos.pulsable} boton-secundario-hortyfru inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-theme-xs font-medium text-gray-800 ring-1 ring-gray-200 ring-inset focus-visible:ring-3 focus-visible:ring-brand-400 dark:text-gray-100 dark:ring-gray-700`}
+          className={`${estilos.pulsable} ${estilos.accion} boton-secundario-hortyfru inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-theme-xs font-medium text-gray-800 ring-1 ring-gray-200 ring-inset focus-visible:ring-3 focus-visible:ring-brand-400 dark:text-gray-100 dark:ring-gray-700`}
         >
           {t(accion.etiqueta)}
           <IconoAbrir

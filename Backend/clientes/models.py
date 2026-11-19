@@ -23,6 +23,8 @@ class RegistroComercial(models.Model):
 
 
 class Cliente(RegistroComercial):
+    encargado_pagos = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='supermercados_pagos')
+    encargado_precios = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='supermercados_precios')
     razon_social = models.CharField(max_length=150)
     nit = models.CharField(max_length=20, validators=[validar_digitos])
     email = models.EmailField(max_length=150, blank=True)

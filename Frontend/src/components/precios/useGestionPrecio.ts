@@ -14,9 +14,17 @@ const vacio: FormularioPrecio = {
   lineas: [],
   entregas: [],
 };
-export default function useGestionPrecio(identificador?: number) {
+export default function useGestionPrecio(
+  identificador?: number,
+  inicial?: { cliente: FormularioPrecio["cliente"]; fecha: string },
+) {
   const [documento, establecerDocumento] = useState<AcuerdoPrecio | null>(null);
-  const [formulario, establecerFormulario] = useState<FormularioPrecio>(vacio);
+  const [formulario, establecerFormulario] = useState<FormularioPrecio>(() => ({
+    ...vacio,
+    ...(inicial
+      ? { cliente: inicial.cliente, desde: inicial.fecha, hasta: inicial.fecha }
+      : {}),
+  }));
   const [ocupado, establecerOcupado] = useState(false),
     [modificado, establecerModificado] = useState(false),
     [incierto, establecerIncierto] = useState(false);
@@ -170,14 +178,15 @@ export default function useGestionPrecio(identificador?: number) {
       if (vigente.current) establecerOcupado(false);
     }
   }
-  const cambiar = (
-    actualizar: (anterior: FormularioPrecio) => FormularioPrecio,
-  ) => {
-    if (ocupado || incierto) return;
-    establecerFormulario(actualizar);
-    establecerModificado(true);
-    establecerAviso("");
-  };
+  const cambiar = useCallback(
+    (actualizar: (anterior: FormularioPrecio) => FormularioPrecio) => {
+      if (ocupado || incierto) return;
+      establecerFormulario(actualizar);
+      establecerModificado(true);
+      establecerAviso("");
+    },
+    [ocupado, incierto],
+  );
   return {
     documento,
     formulario,

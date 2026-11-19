@@ -2,15 +2,28 @@
 
 Ruta local `/ventas`, en **Comercial**, después de Precios acordados. Implementa
 el resumen de venta comercial del paso F18 del documento de referencia. No es
-una factura fiscal. No crea cobros ni permite marcar manualmente una venta como
-pagada: el registro y aplicación de pagos corresponde a la etapa posterior Cobros.
-Hasta esa integración, una venta emitida tiene cobrado cero y saldo igual al total.
+una factura fiscal. Los pagos se registran en el módulo independiente Cobros:
+el importe cobrado, el saldo y Pendiente/Pago parcial/Pagada se calculan desde
+sus aplicaciones. No se marca una venta como pagada manualmente ni se modifican
+los importes y líneas emitidos. Ver [Empresa y Cobros](empresa_cobros.md).
 
 ## Flujo y pantalla
 
 1. **Nueva venta** elige un supermercado activo. Las fechas filtran la fecha real
    de recepción en la sucursal, no la fecha de creación del pedido o del acuerdo.
    Se pueden reunir uno o varios días y varias sucursales del mismo supermercado.
+   **Fecha de recepción** ofrece **Un día** con un calendario o
+   **Varios días** con Desde y Hasta. Cambiar un día actualiza ambas fechas a la
+   vez; elegir Un día desde un período conserva la fecha inicial y las entregas
+   seleccionadas, señalando las que quedan fuera. El modo elegido se conserva
+   al pasar a revisión y volver.
+   El selector y los calendarios se alinean con altura de 44 px; Desde y Hasta
+   usan etiquetas en línea y el día único conserva su etiqueta accesible.
+   Un botón **Elegir supermercado** comparte fila con el modo y los calendarios
+   cuando hay espacio; al elegirlo, el mismo botón muestra su nombre. No se repite
+   el texto Sin supermercado seleccionado. Los borradores guardados conservan el
+   cliente de solo lectura. La cabecera de entregas alinea título, búsqueda y
+   Elegidas con la explicación debajo y márgenes interiores comunes.
 2. **Elegir entregas** muestra entregas confirmadas con kilos aceptados positivos
    que aún no se incluyeron en una venta. Búsqueda por sucursal, pedido o entrega;
    páginas de diez, selección persistente entre páginas y vista Elegidas. Cambiar
@@ -22,7 +35,13 @@ Hasta esa integración, una venta emitida tiene cobrado cero y saldo igual al to
 4. **Revisar venta** guarda primero si hay cambios, utiliza la versión devuelta y
    muestra kilos aceptados, precio por kg e importe. Los pedidos, lotes y acuerdos
    quedan en Ver trazabilidad. La tabla de líneas se pagina de diez en servidor.
+   **Vencimiento de pago (opcional)** se captura en este paso. Cambiarlo conserva
+   la revisión abierta y exige **Actualizar revisión** antes de emitir, usando
+   el guardado, versión y huella habituales. En ventas emitidas es de solo lectura.
 5. **Emitir venta** requiere confirmación con el importe y una revisión vigente.
+   Las nuevas emisiones exigen los datos de empresa completos y conservan su
+   logo, NIT, razón social, dirección, teléfono y ciudad; la revisión también
+   detecta cambios en esa ficha. Los documentos históricos conservan su formato.
    Conserva los datos históricos y excluye las entregas de nuevas ventas.
    El documento emitido no se edita ni cancela. Solo se cancelan borradores.
 6. **Descargar PDF** produce un resumen privado, con texto seleccionable, columnas
@@ -33,6 +52,11 @@ respetan los mismos filtros antes de paginar de diez. Diferencia el primer uso,
 los filtros sin coincidencias y los fallos de conexión. Las fichas y filas se
 adaptan a pantallas pequeñas; tema claro/oscuro, foco, campos de fecha compartidos,
 notificaciones y confirmaciones reutilizan el diseño existente. Español e inglés.
+
+La tarjeta **Pendiente de cobro** suma los saldos actuales de todas las ventas
+emitidas filtradas, descontando sus cobros parciales o completos antes de paginar.
+`resumen.total` conserva el total original emitido; `resumen.pendiente_cobro`
+informa el saldo actual de la tarjeta. Borradores y canceladas no aportan deuda.
 
 ## Cálculos y evidencia histórica
 

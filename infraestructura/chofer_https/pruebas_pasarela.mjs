@@ -40,6 +40,84 @@ prueba(
 );
 
 const require = crearRequire(import.meta.url);
+
+prueba(
+  "Mis pagos publica solo consultas e informes propios; la verificación permanece local",
+  () => {
+    for (const ruta of ["/mis-pagos", "/mis-pagos/nuevo", "/en/mis-pagos/12"])
+      afirmar.equal(resolverDestino(ruta, "GET"), "web", ruta);
+    for (const ruta of [
+      "/api/v1/mis-pagos/",
+      "/api/v1/mis-pagos/clientes/",
+      "/api/v1/mis-pagos/ventas/?historial=1",
+      "/api/v1/mis-pagos/12/",
+      "/api/v1/mis-pagos/12/aplicaciones/",
+      "/api/v1/mis-pagos/12/comprobante/",
+    ])
+      afirmar.equal(resolverDestino(ruta, "GET"), "api", ruta);
+    for (const ruta of ["/api/v1/mis-pagos/", "/api/v1/mis-pagos/revisar/"])
+      afirmar.equal(resolverDestino(ruta, "POST"), "api", ruta);
+    for (const ruta of [
+      "/pagos-por-verificar",
+      "/pagos-por-verificar/12",
+      "/api/v1/pagos-por-verificar/",
+      "/api/v1/pagos-por-verificar/12/confirmar/",
+      "/api/v1/mis-pagos/12/confirmar/",
+      "/api/v1/mis-pagos/12/observar/",
+      "/api/v1/cobros/",
+      "/api/v1/ventas/",
+    ])
+      for (const metodo of ["GET", "POST", "PUT", "DELETE"])
+        afirmar.equal(resolverDestino(ruta, metodo), null, metodo + " " + ruta);
+    afirmar.equal(resolverDestino("/api/v1/mis-pagos/12/", "POST"), null);
+    afirmar.equal(
+      resolverDestino("/api/v1/mis-pagos/12/comprobante/", "POST"),
+      null,
+    );
+  },
+);
+
+prueba(
+  "Precios permite propuestas propias y deja la aceptación de HortyFru en local",
+  () => {
+    for (const ruta of [
+      "/precios-acordados",
+      "/precios-acordados/nueva",
+      "/en/precios-acordados/12",
+    ])
+      afirmar.equal(resolverDestino(ruta, "GET"), "web");
+    for (const ruta of [
+      "/api/v1/precios-acordados/",
+      "/api/v1/precios-acordados/clientes/",
+      "/api/v1/precios-acordados/contexto/",
+      "/api/v1/precios-acordados/productos-pedidos/?cliente=2&desde=2026-11-12&hasta=2026-11-12",
+      "/api/v1/precios-acordados/imagenes/3/?acuerdo=12",
+      "/api/v1/precios-acordados/12/",
+      "/api/v1/precios-acordados/12/historial/",
+    ])
+      afirmar.equal(resolverDestino(ruta, "GET"), "api", ruta);
+    for (const ruta of [
+      "/api/v1/precios-acordados/",
+      "/api/v1/precios-acordados/12/guardar/",
+      "/api/v1/precios-acordados/12/presentar/",
+      "/api/v1/precios-acordados/12/cancelar/",
+      "/api/v1/precios-acordados/12/nueva-version/",
+    ])
+      afirmar.equal(resolverDestino(ruta, "POST"), "api", ruta);
+    for (const ruta of [
+      "/api/v1/precios-acordados/12/aceptar/",
+      "/api/v1/precios-acordados/12/rechazar/",
+      "/api/v1/precios-acordados/productos/",
+      "/clientes",
+      "/api/v1/clientes/",
+    ])
+      afirmar.equal(
+        resolverDestino(ruta, "POST") ?? resolverDestino(ruta, "GET"),
+        null,
+        ruta,
+      );
+  },
+);
 const {
   computeCacheBustingSearchParam: calcularHuellaRsc,
 } = require("../../Frontend/node_modules/next/dist/shared/lib/router/utils/cache-busting-search-param.js");
@@ -99,6 +177,13 @@ prueba(
     for (const ruta of [
       "/admin",
       "/usuarios",
+      "/datos-empresa",
+      "/cobros",
+      "/cobros/nuevo",
+      "/api/v1/datos-empresa/",
+      "/api/v1/cobros/",
+      "/api/v1/cobros/revisar/",
+      "/api/v1/cobros/1/comprobante/",
       "/despachos",
       "/seguimiento-camiones",
       "/api/v1/despachos/viajes-actuales/",
@@ -268,24 +353,52 @@ prueba(
       );
       afirmar.equal(bien.estado, 200);
       afirmar.equal(cantidad, Buffer.byteLength(cuerpo));
+      for (const ruta of ["/api/v1/mis-pagos/", "/api/v1/mis-pagos/revisar/"]) {
+        const informe = await consultar(puerto, ruta, {
+          metodo: "POST",
+          cuerpo,
+          encabezados,
+        });
+        afirmar.equal(informe.estado, 200);
+        afirmar.equal(cantidad, Buffer.byteLength(cuerpo));
+      }
       const mal = await consultar(puerto, "/api/v1/chofer/acceso/", {
         metodo: "POST",
         cuerpo,
         encabezados,
       });
       afirmar.equal(mal.estado, 415);
-      afirmar.equal(recibidas, 1);
+      afirmar.equal(recibidas, 3);
       const grande = await consultar(
         puerto,
         "/api/v1/entregas/7/pedidos/12/comprobante/",
         {
           metodo: "POST",
           cuerpo: "",
-          encabezados: { ...encabezados, "Content-Length": 9 * 1024 * 1024 },
+          encabezados: {
+            ...encabezados,
+            Connection: "close",
+            "Content-Length": 9 * 1024 * 1024,
+          },
         },
       );
       afirmar.equal(grande.estado, 413);
-      afirmar.equal(recibidas, 1);
+      afirmar.equal(recibidas, 3);
+      const informeGrande = await consultar(
+        puerto,
+        "/api/v1/mis-pagos/revisar/",
+        {
+          metodo: "POST",
+          cuerpo: "",
+          encabezados: {
+            ...encabezados,
+            Connection: "close",
+            "Content-Length": 9 * 1024 * 1024,
+          },
+        },
+      );
+      afirmar.equal(informeGrande.estado, 413);
+      afirmar.equal(recibidas, 3);
     } finally {
       pasarela.closeAllConnections();
       destino.closeAllConnections();

@@ -1,14 +1,18 @@
 from django.db import IntegrityError
 from django.db.models import Q
+from django.http import FileResponse, Http404
+from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from config.paginacion import PaginacionDiez
 from clientes.models import Cliente
 from productos.models import Producto
 from entregas.models import Entrega
-from .permisos import PermisosPrecios
+from .permisos import PermisosPrecios, es_supermercado, clientes_permitidos, acuerdos_permitidos
+from .origen_pedidos import ConsultaPedidosPrecio, productos_pedidos, version_productos
 from .consultas import acuerdos_con_vigencia
 from .serializadores import SerializadorFiltros
 from .representaciones import representar, representar_entrega
@@ -36,11 +40,11 @@ class VistaPrecios(viewsets.ViewSet):
         return paginador.get_paginated_response([representar_fila(fila) for fila in pagina])
 
     def obtener(self, pk):
-        return get_object_or_404(acuerdos_con_vigencia().select_related('anterior'), pk=pk)
+        return get_object_or_404(acuerdos_permitidos(acuerdos_con_vigencia(), self.request.user).select_related('anterior'), pk=pk)
 
     def list(self, request):
         filtros = self.filtros()
-        consulta = acuerdos_con_vigencia()
+        consulta = acuerdos_permitidos(acuerdos_con_vigencia(), request.user)
         if filtros.get('estado'):
             consulta = consulta.filter(estado=filtros['estado'])
         if filtros.get('cliente'):
@@ -97,27 +101,32 @@ class VistaPrecios(viewsets.ViewSet):
     @action(detail=True, methods=['get'])
     def historial(self, request, pk=None):
         acuerdo = self.obtener(pk)
-        return self.paginar(acuerdos_con_vigencia().filter(familia=acuerdo.familia).order_by('-creado_en', '-pk'), lambda fila: representar(fila, False))
+        return self.paginar(acuerdos_permitidos(acuerdos_con_vigencia(), request.user).filter(familia=acuerdo.familia).order_by('-creado_en', '-pk'), lambda fila: representar(fila, False))
 
     @action(detail=False, methods=['get'])
     def clientes(self, request):
         filtros = self.filtros()
-        consulta = Cliente.objects.filter(activo=True)
+        consulta = clientes_permitidos(request.user).filter(activo=True)
         if filtros.get('buscar'):
             consulta = consulta.filter(razon_social__icontains=filtros['buscar'])
         return self.paginar(consulta.order_by('razon_social', 'pk'), lambda c: {'id': c.pk, 'nombre': c.razon_social})
 
     @action(detail=False, methods=['get'])
     def productos(self, request):
+        if es_supermercado(request.user):
+            raise PermissionDenied('Consulta los productos de los pedidos del supermercado asignado.')
         filtros = self.filtros()
         consulta = Producto.objects.filter(activo=True, categoria__activo=True).select_related('categoria')
         if filtros.get('buscar'):
             consulta = consulta.filter(Q(nombre__icontains=filtros['buscar']) | Q(categoria__nombre__icontains=filtros['buscar']))
-        return self.paginar(consulta.order_by('nombre', 'pk'), lambda p: {'id': p.pk, 'nombre': p.nombre, 'categoria_nombre': p.categoria.nombre})
+        return self.paginar(consulta.order_by('nombre', 'pk'), lambda p: {'id': p.pk, 'nombre': p.nombre, 'categoria_nombre': p.categoria.nombre,
+            'imagen': f'/api/v1/precios-acordados/imagenes/{p.pk}/' if p.imagen else None})
 
     @action(detail=False, methods=['get'])
     def entregas(self, request):
         filtros = self.filtros()
+        if es_supermercado(request.user):
+            get_object_or_404(clientes_permitidos(request.user), pk=filtros.get('cliente'))
         consulta = Entrega.objects.filter(estado='confirmada', pedido__sucursal__cliente_id=filtros.get('cliente')).select_related('pedido')
         if 'seleccion' in filtros:
             consulta = consulta.filter(pk__in=filtros['seleccion'])
@@ -129,3 +138,58 @@ class VistaPrecios(viewsets.ViewSet):
                 criterio |= Q(pk=int(codigo))
             consulta = consulta.filter(criterio)
         return self.paginar(consulta.order_by('-confirmado_en', '-pk'), representar_entrega)
+
+    @action(detail=False, methods=['get'])
+    def contexto(self, request):
+        propios = es_supermercado(request.user)
+        clientes = clientes_permitidos(request.user).filter(activo=True)
+        unico = clientes.first() if propios and clientes.count() == 1 else None
+        return Response({'supermercado': propios, 'fecha_actual': timezone.localdate(),
+            'cliente': {'id': unico.pk, 'nombre': unico.razon_social} if unico else None})
+
+    def origen_pedidos(self, request):
+        entrada = ConsultaPedidosPrecio(data=request.query_params)
+        entrada.is_valid(raise_exception=True)
+        datos = entrada.validated_data
+        cliente = get_object_or_404(clientes_permitidos(request.user).filter(activo=True), pk=datos['cliente'])
+        return datos, cliente, productos_pedidos(cliente, datos['desde'], datos['hasta'])
+
+    @action(detail=False, methods=['get'], url_path='productos-pedidos')
+    def productos_del_periodo(self, request):
+        datos, cliente, consulta = self.origen_pedidos(request)
+        version = version_productos(consulta, cliente, datos['desde'], datos['hasta'])
+        if datos.get('buscar'):
+            consulta = consulta.filter(Q(nombre__icontains=datos['buscar']) | Q(categoria__nombre__icontains=datos['buscar']))
+        respuesta = self.paginar(consulta, lambda p: {'id': p.pk, 'nombre': p.nombre, 'categoria_nombre': p.categoria.nombre,
+            'imagen': f'/api/v1/precios-acordados/imagenes/{p.pk}/?cliente={cliente.pk}&desde={datos["desde"]}&hasta={datos["hasta"]}' if p.imagen else None})
+        respuesta.data['version_origen'] = version
+        respuesta['Cache-Control'] = 'no-store'
+        return respuesta
+
+    @action(detail=False, methods=['get'], url_path=r'imagenes/(?P<producto>[1-9][0-9]{0,14})')
+    def imagen(self, request, producto=None):
+        consulta = Producto.objects.all()
+        if request.query_params.get('acuerdo'):
+            identificador = request.query_params['acuerdo']
+            if not identificador.isascii() or not identificador.isdigit() or len(identificador) > 15:
+                raise ValidationError({'acuerdo': 'Indica un acuerdo válido.'})
+            acuerdo = self.obtener(identificador)
+            consulta = consulta.filter(pk__in=acuerdo.lineas.values('producto_id'))
+        elif es_supermercado(request.user):
+            _, _, consulta = self.origen_pedidos(request)
+        obj = get_object_or_404(consulta, pk=producto)
+        if not obj.imagen:
+            raise Http404
+        try:
+            respuesta = FileResponse(obj.imagen.open('rb'), content_type='image/webp')
+        except OSError as error:
+            raise Http404 from error
+        respuesta['Cache-Control'] = 'private, no-store'
+        respuesta['X-Content-Type-Options'] = 'nosniff'
+        return respuesta
+
+
+class VistaPreciosPublica(VistaPrecios):
+    def initial(self, request, *args, **kwargs):
+        request.user._precios_solo_propios = True
+        super().initial(request, *args, **kwargs)

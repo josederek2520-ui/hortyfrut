@@ -1,10 +1,31 @@
 # HTTPS del chofer y Chat con Cloudflare
 
+## Mis pagos del supermercado
+
+La lista de rutas admite también `/mis-pagos`, `/mis-pagos/nuevo` y su detalle,
+junto con la API `/api/v1/mis-pagos/`. El alcance se valida por
+`Cliente.encargado_pagos` antes de filtros y paginación, incluso con cuenta
+administradora. Solo se informa una transferencia o depósito ya realizado;
+revisar e informar admiten multipart con comprobante validado de hasta 8 MB.
+El aviso no reduce ni reserva saldo. `/pagos-por-verificar`, Cobros, Ventas y
+Empresa permanecen locales: solo la verificación de HortyFru crea el cobro.
+No se conceden permisos automáticamente. Configuración y pruebas en
+[`documentacion/mis_pagos.md`](../../documentacion/mis_pagos.md).
+
 Prueba local preparada el 4 de noviembre de 2026. El administrador sigue en
 `http://localhost:3000`. El chofer entra por una dirección temporal
 `https://...trycloudflare.com/mis-viajes`, desde datos móviles u otra red.
 Chat está disponible para todos los Usuarios activos en
 `https://...trycloudflare.com/chat`. La raíz del enlace lleva a Chat.
+
+La ruta `/precios-acordados` permite a la cuenta responsable del supermercado
+consultar y enviar sus propuestas por período de pedidos. Requiere el rol de
+precios propios y la asignación explícita en `Cliente.encargado_precios`;
+ver `documentacion/precios_acordados.md`. El alcance se impone en el backend
+incluso para administradores. La pasarela admite clientes propios, productos de
+sus pedidos y fotos limitadas; aceptar/rechazar, el catálogo global y la
+administración de Clientes siguen locales. Cambiar el código o aplicar las
+migraciones no inicia ni reinicia el túnel.
 
 Desde la raíz, en Git Bash o PowerShell:
 

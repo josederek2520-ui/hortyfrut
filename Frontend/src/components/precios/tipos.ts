@@ -19,6 +19,7 @@ export interface PermisosPrecios {
   cancelar: boolean;
 }
 export interface LineaPrecio {
+  imagen?: string | null;
   producto: number;
   producto_nombre: string;
   categoria_nombre: string;
@@ -61,6 +62,7 @@ export interface FormularioPrecio {
   entregas: number[];
 }
 export interface OpcionPrecio {
+  imagen?: string | null;
   id: number;
   nombre: string;
   categoria_nombre?: string;

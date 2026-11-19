@@ -89,6 +89,7 @@ export default function EditorCliente({
         <FormularioCliente
           key={cliente?.version || "nuevo"}
           cliente={cliente}
+          puedeAsignarEncargado={sesion.puede_asignar_encargado}
           alError={tratarError}
           alRecargar={() => {
             establecerCliente(null);

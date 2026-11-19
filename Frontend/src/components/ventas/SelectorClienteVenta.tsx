@@ -11,17 +11,18 @@ import { campoVenta, type ClienteVenta } from "./tipos";
 export default function SelectorClienteVenta({
   alElegir,
   alCerrar,
+  ruta = "ventas/clientes/",
 }: {
   alElegir: (cliente: ClienteVenta) => void;
   alCerrar: () => void;
+  ruta?: string;
 }) {
   const t = useTranslations("ventas"),
     identificador = useId();
   const [buscar, establecerBuscar] = useState(""),
     [pagina, establecerPagina] = useState(1);
   const consulta = useConsultaPaginada<ClienteVenta>(
-    "ventas/clientes/?" +
-      new URLSearchParams({ buscar, pagina: String(pagina) }),
+    ruta + "?" + new URLSearchParams({ buscar, pagina: String(pagina) }),
     () => establecerPagina(1),
   );
   return (

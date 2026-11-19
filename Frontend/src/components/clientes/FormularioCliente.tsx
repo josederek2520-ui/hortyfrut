@@ -9,16 +9,20 @@ import { api, ApiError as ErrorApi } from "@/lib/api";
 import { useFormValidation as useValidacion } from "@/hooks/useFormValidation";
 import { focusInvalidField as enfocarInvalido } from "@/lib/form-validation";
 import CampoDirectorio from "./CampoDirectorio";
+import SelectorPedido from "@/components/pedidos/SelectorPedido";
+import type { OpcionPedido } from "@/components/pedidos/tipos";
 import type { Cliente } from "./tipos";
 
 export default function FormularioCliente({
   cliente,
   alError,
   alRecargar,
+  puedeAsignarEncargado = false,
 }: {
   cliente: Cliente | null;
   alError: (error: unknown) => void;
   alRecargar: () => void;
+  puedeAsignarEncargado?: boolean;
 }) {
   const t = useTranslations("clientes");
   const navegador = useRouter();
@@ -29,6 +33,10 @@ export default function FormularioCliente({
     email: cliente?.email || "",
   };
   const [datos, establecerDatos] = useState(iniciales);
+  const [encargadoPrecios, establecerEncargadoPrecios] =
+    useState<OpcionPedido | null>(cliente?.encargado_precios ?? null);
+  const [encargadoPagos, establecerEncargadoPagos] =
+    useState<OpcionPedido | null>(cliente?.encargado_pagos ?? null);
   const [guardando, establecerGuardando] = useState(false);
   const [fallo, establecerFallo] = useState("");
   const [conflicto, establecerConflicto] = useState(false);
@@ -39,11 +47,15 @@ export default function FormularioCliente({
     changeField: cambiarCampo,
     blurField: salirCampo,
   } = useValidacion();
-  const modificado = Object.keys(datos).some(
-    (clave) =>
-      datos[clave as keyof typeof datos] !==
-      iniciales[clave as keyof typeof iniciales],
-  );
+  const modificado =
+    (encargadoPagos?.id ?? null) !== (cliente?.encargado_pagos?.id ?? null) ||
+    (encargadoPrecios?.id ?? null) !==
+      (cliente?.encargado_precios?.id ?? null) ||
+    Object.keys(datos).some(
+      (clave) =>
+        datos[clave as keyof typeof datos] !==
+        iniciales[clave as keyof typeof iniciales],
+    );
   useEffect(() => {
     if (!modificado) return;
     const avisar = (evento: BeforeUnloadEvent) => evento.preventDefault();
@@ -75,6 +87,12 @@ export default function FormularioCliente({
           method: cliente ? "PATCH" : "POST",
           body: JSON.stringify({
             ...datos,
+            ...(puedeAsignarEncargado
+              ? {
+                  encargado_precios_id: encargadoPrecios?.id ?? null,
+                  encargado_pagos_id: encargadoPagos?.id ?? null,
+                }
+              : {}),
             ...(cliente ? { version: cliente.version } : {}),
           }),
         },
@@ -232,6 +250,38 @@ export default function FormularioCliente({
               onBlur={(evento) => salirCampo(evento.currentTarget)}
             />
           </div>
+          {puedeAsignarEncargado && (
+            <div>
+              <SelectorPedido
+                ruta="clientes/encargados/?tipo=precios"
+                valor={encargadoPrecios}
+                alCambiar={establecerEncargadoPrecios}
+                etiqueta={t("encargadoPrecios")}
+                deshabilitado={guardando || conflicto}
+                error={errores.encargado_precios_id?.join(" ")}
+                alError={alError}
+              />
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                {t("encargadoPreciosAyuda")}
+              </p>
+            </div>
+          )}
+          {puedeAsignarEncargado && (
+            <div>
+              <SelectorPedido
+                ruta="clientes/encargados/?tipo=pagos"
+                valor={encargadoPagos}
+                alCambiar={establecerEncargadoPagos}
+                etiqueta={t("encargadoPagos")}
+                deshabilitado={guardando || conflicto}
+                error={errores.encargado_pagos_id?.join(" ")}
+                alError={alError}
+              />
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                {t("encargadoPagosAyuda")}
+              </p>
+            </div>
+          )}
           <p className="rounded-xl bg-gray-50 p-4 text-sm leading-6 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
             {t(cliente ? "estadoDesdeListado" : "sucursalesDespues")}
           </p>

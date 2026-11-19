@@ -16,6 +16,7 @@ export const camposRecepcion: CampoRecepcion[] = [
   "cajas_recibidas",
   "unidades_recibidas",
   "peso_recibido_kg",
+  // Campos legados: se conservan al guardar, sin captura en la interfaz.
   "cajas_rechazadas",
   "unidades_rechazadas",
   "peso_rechazado_kg",
@@ -83,6 +84,10 @@ export function prepararLineas(lineas: Record<number, LineaEditable>) {
         fila[campo] = linea[campo].trim();
         continue;
       }
+      if (campo === "unidades_recibidas" && !valor) {
+        fila[campo] = 0;
+        continue;
+      }
       if (
         (!valor && campo.endsWith("recibidas")) ||
         (!valor && campo === "peso_recibido_kg")
@@ -144,7 +149,10 @@ export function erroresLineaEntrega(linea: LineaEditable, completo = true) {
           ? BigInt(valor.trim())
           : null
         : medirEntrega(valor);
-    const cantidad = leer(linea[recibido]),
+    const cantidad =
+        recibido === "unidades_recibidas" && !linea[recibido].trim()
+          ? BigInt(0)
+          : leer(linea[recibido]),
       rechazo = leer(linea[rechazado]);
     if (cantidad === null && (completo || linea[recibido].trim()))
       errores[recibido] = [
@@ -270,6 +278,22 @@ export function resumenConciliacionEntrega(
       objetivoRecibido === recibido &&
       objetivoRechazado === rechazado,
   };
+}
+
+export function pendientesConciliacionEntrega(
+  productos: ProductoEntrega[],
+  lineas: Record<number, LineaEditable>,
+  aportes: Record<string, AporteEditable>,
+) {
+  return productos.filter(
+    (producto) =>
+      producto.aportes.length !== 1 &&
+      !resumenConciliacionEntrega(
+        producto,
+        lineas[producto.producto] ?? lineaVacia(),
+        aportes,
+      ).coincide,
+  );
 }
 
 export function resumenPesosEntrega(

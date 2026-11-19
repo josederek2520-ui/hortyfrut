@@ -6,7 +6,9 @@ documentos por consultar y no exige finalizar el recorrido.
 
 La hoja está en `/entregas/{despacho}/{pedido}`. El origen conserva las cargas
 descargadas y sus aportes, nombres históricos, cajas, unidades y peso real.
-Los campos recibidos son independientes y manuales. Aceptado en kg se obtiene
+Los campos recibidos son independientes y manuales; la web envía cero cuando
+Unidades recibidas queda en blanco, conservando el contrato legado de borradores.
+Aceptado en kg se obtiene
 restando el rechazo al peso recibido; la diferencia enviado/recibido se consulta
 por separado y nunca se transforma automáticamente en rechazo.
 
@@ -47,7 +49,12 @@ usuarios ni alterar roles existentes. Las migraciones son aditivas.
 
 ## Comprobantes y consultas
 
-Los comprobantes opcionales admiten JPG, PNG, WebP o PDF verificado, hasta 8 MB.
+Desde el 12 de noviembre de 2026 la web captura rechazos solo en kg y motivo,
+sin cantidades rechazadas ni sección de comprobante. Los campos de cajas/unidades
+rechazadas y la API de comprobantes se conservan por compatibilidad e historial;
+los datos anteriores no se convierten ni se borran al simplificar la captura.
+
+Los comprobantes del contrato legado admiten JPG, PNG, WebP o PDF verificado, hasta 8 MB.
 Se guardan con nombre aleatorio fuera de medios públicos, se descargan con
 sesión/alcance y no se incluyen en auditoría. La sustitución conserva la versión;
 un reintento del mismo archivo no crea otro. Las imágenes del catálogo se sirven

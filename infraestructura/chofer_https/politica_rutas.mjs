@@ -48,6 +48,53 @@ export function resolverDestino(ruta, metodo) {
   const lectura = ["GET", "HEAD"].includes(metodo);
   if (
     lectura &&
+    /^\/(?:(?:es|en)\/)?mis-pagos(?:\/(?:nuevo|[1-9]\d{0,14}))?\/?$/.test(
+      camino,
+    )
+  )
+    return "web";
+  if (
+    /^\/api\/v1\/mis-pagos\/?$/.test(camino) &&
+    (lectura || metodo === "POST")
+  )
+    return "api";
+  if (
+    lectura &&
+    /^\/api\/v1\/mis-pagos\/(?:clientes|ventas|[1-9]\d{0,14}(?:\/(?:aplicaciones|comprobante))?)\/?$/.test(
+      camino,
+    )
+  )
+    return "api";
+  if (metodo === "POST" && /^\/api\/v1\/mis-pagos\/revisar\/?$/.test(camino))
+    return "api";
+  if (
+    lectura &&
+    /^\/(?:(?:es|en)\/)?precios-acordados(?:\/(?:nueva|[1-9]\d{0,14}))?\/?$/.test(
+      camino,
+    )
+  )
+    return "web";
+  if (
+    /^\/api\/v1\/precios-acordados\/?$/.test(camino) &&
+    (lectura || metodo === "POST")
+  )
+    return "api";
+  if (
+    lectura &&
+    /^\/api\/v1\/precios-acordados\/(?:clientes|contexto|productos-pedidos|entregas|imagenes\/[1-9]\d{0,14}|[1-9]\d{0,14}(?:\/historial)?)\/?$/.test(
+      camino,
+    )
+  )
+    return "api";
+  if (
+    metodo === "POST" &&
+    /^\/api\/v1\/precios-acordados\/[1-9]\d{0,14}\/(?:guardar|presentar|cancelar|nueva-version)\/?$/.test(
+      camino,
+    )
+  )
+    return "api";
+  if (
+    lectura &&
     /^\/(?:(?:es|en)\/)?entregas(?:\/[1-9]\d{0,14}\/[1-9]\d{0,14})?\/?$/.test(
       camino,
     )

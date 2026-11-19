@@ -62,7 +62,7 @@ export interface Venta {
   total: string | null;
   cobrado: string | null;
   saldo: string | null;
-  estado_cobro: "pendiente" | null;
+  estado_cobro: "pendiente" | "parcial" | "pagada" | null;
   peso_aceptado_kg: string | null;
   total_entregas: number;
   total_lineas: number;

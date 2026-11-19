@@ -40,6 +40,41 @@ prueba("la recepción inicia sin autocompletar cajas, unidades ni kilos", () => 
   afirmar.equal(calculos.pesoAceptado(linea), null);
   afirmar.equal(calculos.diferenciaEntrega(hoja(), {}), null);
 });
+prueba(
+  "las unidades vacías se guardan como cero sin completar cajas ni peso",
+  () => {
+    const linea = {
+      ...calculos.lineaVacia(),
+      cajas_recibidas: "1",
+      peso_recibido_kg: "6,8",
+      unidades_recibidas: "  ",
+    };
+    afirmar.equal(Object.keys(calculos.erroresLineaEntrega(linea)).length, 0);
+    afirmar.equal(
+      calculos.prepararLineas({ 1: linea }).filas[0].unidades_recibidas,
+      0,
+    );
+    afirmar.equal(
+      calculos.progresoRecepcionEntrega(hoja(), { 1: linea }).completos,
+      1,
+    );
+    afirmar.equal(linea.unidades_recibidas, "  ");
+    const errores = calculos.erroresLineaEntrega(calculos.lineaVacia());
+    afirmar.ok(errores.cajas_recibidas);
+    afirmar.ok(errores.peso_recibido_kg);
+    afirmar.equal(errores.unidades_recibidas, undefined);
+    for (const valor of ["-1", "1.5", "texto"])
+      afirmar.ok(
+        calculos.erroresLineaEntrega({ ...linea, unidades_recibidas: valor })
+          .unidades_recibidas,
+      );
+    afirmar.equal(
+      calculos.prepararLineas({ 1: { ...linea, unidades_recibidas: "2" } })
+        .filas[0].unidades_recibidas,
+      2,
+    );
+  },
+);
 prueba("aceptado y diferencia son exactos e independientes del rechazo", () => {
   const linea = {
     ...calculos.lineaVacia(),
@@ -135,6 +170,10 @@ for (const idioma of ["es", "en"]) {
       afirmar.ok(html.includes("aria-label="));
       afirmar.ok(html.includes("entrega-tabla-1-peso_recibido_kg"));
       afirmar.ok(html.includes("entrega-tarjeta-1-peso_recibido_kg"));
+      afirmar.ok(html.includes("entrega-tabla-1-peso_rechazado_kg"));
+      afirmar.ok(html.includes("entrega-tarjeta-1-peso_rechazado_kg"));
+      afirmar.ok(!html.includes("cajas_rechazadas"));
+      afirmar.ok(!html.includes("unidades_rechazadas"));
     },
   );
 }
@@ -289,6 +328,51 @@ prueba(
     afirmar.equal(entorno.dibujar().incierto, false);
   },
 );
+prueba(
+  "enviar un borrador anterior normaliza unidades nulas antes de cambiar su estado",
+  async () => {
+    const peticiones = [];
+    let guardado = {
+      ...hoja(),
+      id: 1,
+      estado: "borrador",
+      fecha_recepcion: "2026-11-05",
+      recibido_por: "Recepción",
+      lineas: [
+        {
+          producto: 1,
+          ...calculos.lineaVacia(),
+          cajas_recibidas: 1,
+          unidades_recibidas: null,
+          peso_recibido_kg: "6.8",
+        },
+      ],
+    };
+    const entorno = escenarioGancho(async (ruta, opciones) => {
+      if (!opciones?.method) return guardado;
+      const cuerpo = JSON.parse(opciones.body);
+      peticiones.push({ ruta, cuerpo });
+      guardado = {
+        ...guardado,
+        estado: ruta.endsWith("enviar/") ? "revision" : "borrador",
+        version: `v${peticiones.length}`,
+        lineas: cuerpo.lineas ?? guardado.lineas,
+      };
+      return guardado;
+    });
+    entorno.dibujar();
+    await esperar();
+    const estado = entorno.dibujar();
+    afirmar.equal(estado.modificado, false);
+    await estado.operar("enviar");
+    afirmar.equal(peticiones.length, 2);
+    afirmar.equal(peticiones[0].cuerpo.lineas[0].unidades_recibidas, 0);
+    afirmar.equal(peticiones[0].cuerpo.version, "v0");
+    afirmar.equal(peticiones[1].cuerpo.version, "v1");
+    afirmar.equal(entorno.dibujar().hoja.estado, "revision");
+    afirmar.equal(entorno.dibujar().lineas[1].unidades_recibidas, "0");
+  },
+);
 prueba("las traducciones de Entregas contienen las mismas claves", () => {
   const claves = (objeto, prefijo = "") =>
     Object.entries(objeto)
@@ -310,49 +394,58 @@ prueba("las traducciones de Entregas contienen las mismas claves", () => {
 });
 
 prueba(
-  "el comprobante usa la versión guardada y se adjunta antes de enviar a revisión",
+  "enviar guarda la versión nueva sin adjuntar archivos y conserva los valores legados",
   async () => {
     const peticiones = [];
+    const anterior = {
+      ...hoja(),
+      id: 1,
+      estado: "borrador",
+      fecha_recepcion: "2026-11-05",
+      recibido_por: "Recepción de prueba",
+      comprobante: true,
+      lineas: [
+        {
+          producto: 1,
+          ...calculos.lineaVacia(),
+          cajas_recibidas: "2",
+          unidades_recibidas: "1",
+          peso_recibido_kg: "6.8",
+          cajas_rechazadas: "1",
+          unidades_rechazadas: "1",
+          peso_rechazado_kg: "0.3",
+          motivo_rechazo: "Golpeado",
+        },
+      ],
+    };
     const entorno = escenarioGancho(async (ruta, opciones) => {
-      if (!opciones?.method) return hoja();
+      if (!opciones?.method) return anterior;
+      const cuerpo = JSON.parse(opciones.body);
       peticiones.push({ ruta, cuerpo: opciones.body });
       return {
-        ...hoja(),
-        id: 1,
+        ...anterior,
         estado: ruta.endsWith("enviar/") ? "revision" : "borrador",
         version: `v${peticiones.length}`,
-        comprobante: peticiones.length >= 2,
+        lineas: cuerpo.lineas ?? anterior.lineas,
       };
     });
     entorno.dibujar();
     await esperar();
     let estado = entorno.dibujar();
-    const archivo = new File(["%PDF-1.4\nprueba\n%%EOF"], "recepcion.pdf", {
-      type: "application/pdf",
-    });
-    estado.cambiarArchivo(archivo);
-    estado.cambiarFecha("2026-11-05");
-    estado.cambiarRecibidoPor("Recepción de prueba");
-    estado.cambiarLineas({
-      1: {
-        ...calculos.lineaVacia(),
-        cajas_recibidas: "1",
-        unidades_recibidas: "0",
-        peso_recibido_kg: "6.8",
-      },
-    });
+    estado.cambiarCampo(1, "peso_recibido_kg", "6,7");
     estado = entorno.dibujar();
     await estado.operar("enviar");
-    afirmar.equal(peticiones.length, 3);
-    afirmar.equal(JSON.parse(peticiones[0].cuerpo).version, "v0");
-    afirmar.ok(peticiones[1].cuerpo instanceof FormData);
-    afirmar.equal(peticiones[1].cuerpo.get("version"), "v1");
-    afirmar.equal(
-      peticiones[1].cuerpo.get("comprobante").name,
-      "recepcion.pdf",
+    afirmar.equal(peticiones.length, 2);
+    const guardado = JSON.parse(peticiones[0].cuerpo);
+    afirmar.equal(guardado.version, "v0");
+    afirmar.equal(guardado.lineas[0].peso_recibido_kg, "6.7");
+    afirmar.equal(guardado.lineas[0].cajas_rechazadas, 1);
+    afirmar.equal(guardado.lineas[0].unidades_rechazadas, 1);
+    afirmar.ok(
+      peticiones.every((peticion) => !peticion.ruta.includes("comprobante")),
     );
-    afirmar.equal(JSON.parse(peticiones[2].cuerpo).version, "v2");
-    afirmar.equal(entorno.dibujar().archivo, null);
+    afirmar.equal(JSON.parse(peticiones[1].cuerpo).version, "v1");
+    afirmar.equal(entorno.dibujar().hoja.comprobante, true);
     afirmar.equal(entorno.dibujar().hoja.estado, "revision");
   },
 );

@@ -18,6 +18,9 @@ from django.contrib import admin
 from django.urls import include, path
 
 urlpatterns = [
+    path('api/v1/', include('empresa.rutas')),
+    path('api/v1/', include('cobros.rutas')),
+    path('api/v1/', include('pagos.rutas')),
     path('api/v1/', include('ventas.rutas')),
     path('api/v1/', include('precios.rutas')),
     path('api/v1/', include('devoluciones.rutas')),

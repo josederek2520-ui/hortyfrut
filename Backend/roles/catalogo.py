@@ -3,6 +3,13 @@ from django.contrib.auth.models import Permission
 from django.db.models import Q
 
 MODULOS = {
+    'pagos': {'label': 'Pagos del supermercado', 'app': 'pagos', 'model': 'avisopago', 'permissions': {
+        'consultar_pagos_propios': 'Consultar pagos de supermercados asignados', 'informar_pagos_propios': 'Informar pagos de supermercados asignados',
+        'view_avisopago': 'Consultar pagos para verificar', 'confirmar_avisopago': 'Confirmar recepción de pagos informados', 'observar_avisopago': 'Observar pagos informados'}},
+    'empresa': {'label': 'Datos de la empresa', 'app': 'empresa', 'model': 'datosempresa', 'permissions': {
+        'view_datosempresa': 'Ver datos de la empresa', 'change_datosempresa': 'Editar datos de la empresa'}},
+    'cobros': {'label': 'Cobros', 'app': 'cobros', 'model': 'cobro', 'permissions': {
+        'view_cobro': 'Ver cobros y saldos', 'add_cobro': 'Registrar cobros recibidos'}},
     'ventas': {'label': 'Ventas y saldos', 'app': 'ventas', 'model': 'venta', 'permissions': {
         'view_venta': 'Ver ventas y saldos', 'add_venta': 'Crear borradores de venta', 'change_venta': 'Editar borradores de venta',
         'emitir_venta': 'Emitir resúmenes de venta', 'cancelar_venta': 'Cancelar borradores de venta', 'descargar_venta': 'Descargar resúmenes de venta'}},
@@ -10,7 +17,7 @@ MODULOS = {
         'view_acuerdoprecio': 'Ver precios acordados', 'add_acuerdoprecio': 'Crear propuestas de precios',
         'change_acuerdoprecio': 'Editar borradores de precios', 'presentar_acuerdoprecio': 'Registrar propuestas del supermercado',
         'aceptar_acuerdoprecio': 'Aceptar precios en nombre de HortyFru', 'rechazar_acuerdoprecio': 'Rechazar propuestas de precios',
-        'cancelar_acuerdoprecio': 'Cancelar borradores de precios'}},
+        'cancelar_acuerdoprecio': 'Cancelar borradores de precios', 'proponer_precios_propios': 'Proponer precios solo de supermercados asignados'}},
     'devoluciones': {'label': 'Devoluciones', 'app': 'devoluciones', 'model': 'devolucion', 'permissions': {
         'view_devolucion': 'Ver devoluciones', 'add_devolucion': 'Crear devoluciones', 'change_devolucion': 'Editar borradores de devolución',
         'recibir_devolucion': 'Confirmar recepción de devoluciones', 'revisar_devolucion': 'Revisar aprovechable y merma',

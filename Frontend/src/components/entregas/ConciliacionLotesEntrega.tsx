@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { api } from "@/lib/api";
+import useConsultaEntrega from "./useConsultaEntrega";
 import Button from "@/components/ui/button/Button";
 import PaginadorPedidos from "@/components/pedidos/PaginadorPedidos";
 import {
@@ -29,6 +29,8 @@ export default function ConciliacionLotesEntrega({
   error,
   linea = lineaVacia(),
   soloLectura = false,
+  pagina,
+  alPagina,
 }: {
   ruta: string;
   producto: ProductoEntrega;
@@ -38,21 +40,17 @@ export default function ConciliacionLotesEntrega({
   error?: string[];
   linea?: LineaEditable;
   soloLectura?: boolean;
+  pagina: number;
+  alPagina: (pagina: number) => void;
 }) {
   const t = useTranslations("entregas"),
     idioma = useLocale();
-  const [abierto, establecerAbierto] = useState(false),
-    [pagina, establecerPagina] = useState(1),
-    [revision, establecerRevision] = useState(0);
-  const [consulta, establecerConsulta] = useState<{
-    clave: string;
-    datos?: PaginaEntrega<AporteOrigen>;
-    error?: boolean;
-  } | null>(null);
   const clave =
     ruta + "aportes/?producto=" + producto.producto + "&pagina=" + pagina;
   const resumen = resumenConciliacionEntrega(producto, linea, aportes);
   const unico = producto.aportes.length === 1;
+  const consulta = useConsultaEntrega<PaginaEntrega<AporteOrigen>>(clave);
+  const datos = consulta.datos;
   useEffect(() => {
     if (!error) return;
     const indice = producto.aportes.findIndex((aporte) => {
@@ -62,34 +60,21 @@ export default function ConciliacionLotesEntrega({
       return recibido === null || rechazado === null || rechazado > recibido;
     });
     const temporizador = setTimeout(
-      () => establecerPagina(Math.floor(Math.max(0, indice) / 10) + 1),
+      () => alPagina(Math.floor(Math.max(0, indice) / 10) + 1),
       0,
     );
     return () => clearTimeout(temporizador);
-  }, [error, producto.aportes, aportes]);
+  }, [error, producto.aportes, aportes, alPagina]);
+  const contenedor = useRef<HTMLElement>(null);
   useEffect(() => {
-    if (!abierto && !error) return;
-    const controlador = new AbortController();
-    void api<PaginaEntrega<AporteOrigen>>(clave, { signal: controlador.signal })
-      .then((datos) => {
-        if (!controlador.signal.aborted) establecerConsulta({ clave, datos });
-      })
-      .catch(() => {
-        if (!controlador.signal.aborted)
-          establecerConsulta({ clave, error: true });
-      });
-    return () => controlador.abort();
-  }, [clave, abierto, error, revision]);
-  const datos = consulta?.clave === clave ? consulta : null;
-  const contenedor = useRef<HTMLDetailsElement>(null);
-  useEffect(() => {
-    if (!error || !datos?.datos || soloLectura) return;
+    if (!error || !datos || soloLectura) return;
     const temporizador = setTimeout(() => {
       const campo = contenedor.current?.querySelector<HTMLInputElement>(
         'input[aria-invalid="true"]',
       );
-      campo?.scrollIntoView({ block: "center", behavior: "auto" });
-      campo?.focus({ preventScroll: true });
+      const objetivo = campo ?? contenedor.current;
+      objetivo?.scrollIntoView({ block: "center", behavior: "auto" });
+      objetivo?.focus({ preventScroll: true });
     }, 0);
     return () => clearTimeout(temporizador);
   }, [error, datos, soloLectura]);
@@ -116,21 +101,18 @@ export default function ConciliacionLotesEntrega({
             kilos: mostrarMedicion(valor.replace(/^-/, ""), idioma),
           });
   return (
-    <details
+    <section
       ref={contenedor}
-      open={abierto || !!error}
-      onToggle={(evento) => establecerAbierto(evento.currentTarget.open)}
-      className="border-t border-gray-100 px-5 py-3 dark:border-gray-800"
+      tabIndex={-1}
+      data-campo-entrega={"lotes_" + producto.producto}
+      aria-label={producto.nombre + " · " + t("lotes")}
+      className="min-w-0 focus-visible:outline-2 focus-visible:outline-brand-500"
     >
-      <summary
-        data-campo-entrega={"lotes_" + producto.producto}
-        className="min-h-11 cursor-pointer content-center text-sm font-medium focus-visible:outline-2 focus-visible:outline-brand-500"
-      >
-        {producto.nombre} · {t("lotes")}
+      <div className="text-sm font-medium">
         {!unico && (
           <span
             className={
-              "ms-3 inline-block text-xs " +
+              "inline-block text-xs " +
               (resumen.coincide
                 ? "text-brand-700 dark:text-brand-300"
                 : "text-gray-500 dark:text-gray-400")
@@ -142,7 +124,7 @@ export default function ConciliacionLotesEntrega({
             })}
           </span>
         )}
-      </summary>
+      </div>
       <p className="my-3 text-xs text-gray-500 dark:text-gray-400">
         {t(unico ? "loteUnico" : "ayudaLotes")}
       </p>
@@ -175,27 +157,21 @@ export default function ConciliacionLotesEntrega({
         mensajes={error}
         id={"error-lotes-" + producto.producto}
       />
-      {!datos ? (
+      {consulta.cargando ? (
         <p role="status" className="py-4">
           {t("cargando")}
         </p>
-      ) : datos.error ? (
+      ) : consulta.fallo ? (
         <div role="alert" className="space-y-3 py-4">
           <p>{t("errorConsulta")}</p>
-          <Button
-            variant="outline"
-            onClick={() => {
-              establecerConsulta(null);
-              establecerRevision((valor) => valor + 1);
-            }}
-          >
+          <Button variant="outline" onClick={consulta.reintentar}>
             {t("reintentarConsulta")}
           </Button>
         </div>
       ) : (
         <>
           <div className="space-y-3">
-            {datos.datos?.results.map((aporte) => {
+            {datos?.results.map((aporte) => {
               const anotado = aportes[aporte.carga + "-" + aporte.lote];
               const valores = unico
                 ? {
@@ -208,9 +184,9 @@ export default function ConciliacionLotesEntrega({
               return (
                 <div
                   key={aporte.carga + "-" + aporte.lote}
-                  className="grid items-start gap-3 rounded-xl border border-gray-200 p-3 sm:grid-cols-2 lg:grid-cols-[1fr_10rem_10rem] dark:border-gray-700"
+                  className="grid min-w-0 items-start gap-3 border-b border-gray-200 py-4 sm:grid-cols-2 dark:border-gray-700"
                 >
-                  <div className="sm:col-span-2 lg:col-span-1">
+                  <div className="min-w-0 break-words sm:col-span-2">
                     <p className="text-sm font-medium">{aporte.codigo_lote}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       {aporte.preparacion} · {t("enviado")}:{" "}
@@ -305,16 +281,16 @@ export default function ConciliacionLotesEntrega({
               );
             })}
           </div>
-          {!!datos.datos && datos.datos.count > 10 && (
+          {!!datos && datos.count > 10 && (
             <PaginadorPedidos
               pagina={pagina}
-              total={datos.datos.count}
-              alCambiar={establecerPagina}
+              total={datos.count}
+              alCambiar={alPagina}
               ocupado={bloqueado && !soloLectura}
             />
           )}
         </>
       )}
-    </details>
+    </section>
   );
 }

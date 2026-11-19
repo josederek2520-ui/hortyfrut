@@ -1,5 +1,6 @@
 from django.contrib.auth import login, logout
 from django.http import JsonResponse
+from django.utils import timezone
 from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
@@ -25,8 +26,11 @@ from vehiculos.permisos import permisos_vehiculos
 from despachos.permisos import permisos_despachos
 from entregas.permisos import permisos_entregas
 from devoluciones.permisos import permisos_devoluciones
-from precios.permisos import permisos_precios
+from precios.permisos import permisos_precios, es_supermercado, cliente_inicial_precios
 from ventas.permisos import permisos_ventas
+from empresa.permisos import permisos_empresa
+from cobros.permisos import permisos_cobros
+from pagos.permisos import permisos_propios as permisos_mis_pagos, permisos_oficina as permisos_pagos, cliente_inicial_pagos
 from respaldos.permisos import permisos_respaldos
 from .serializers import LoginSerializer, UsuarioListaSerializer, UsuarioDetalleSerializer, PerfilSerializer, PasswordSerializer
 
@@ -71,7 +75,15 @@ def session_data(request):
         'permisos_entregas': permisos_entregas(user),
         'permisos_devoluciones': permisos_devoluciones(user),
         'permisos_precios': permisos_precios(user),
+        'precios_supermercado': es_supermercado(user),
+        'cliente_precios': cliente_inicial_precios(user),
+        'fecha_precios': timezone.localdate().isoformat(),
         'permisos_ventas': permisos_ventas(user),
+        'permisos_empresa': permisos_empresa(user),
+        'permisos_cobros': permisos_cobros(user),
+        'permisos_mis_pagos': permisos_mis_pagos(user),
+        'cliente_pagos': cliente_inicial_pagos(user) if permisos_mis_pagos(user)['ver'] else None,
+        'permisos_pagos': permisos_pagos(user),
         'permisos_respaldos': permisos_respaldos(user),
         'permisos_proveedores': permisos_proveedores(user),
         'permisos_compras': permisos_compras(user),

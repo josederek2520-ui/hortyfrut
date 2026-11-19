@@ -7,14 +7,16 @@ CODIGOS = {'ver': 'view_venta', 'crear': 'add_venta', 'editar': 'change_venta', 
 
 
 def permisos_ventas(actor):
-    return {clave: actor.has_perm('ventas.' + codigo) for clave, codigo in CODIGOS.items()}
+    from pagos.permisos import es_responsable_pagos
+    return {clave: not es_responsable_pagos(actor) and actor.has_perm('ventas.' + codigo) for clave, codigo in CODIGOS.items()}
 
 
 def autorizar(actor, accion='ver'):
+    from pagos.permisos import es_responsable_pagos
     publico = getattr(actor, '_entregas_solo_propias', False)
     actual = get_object_or_404(get_user_model(), pk=actor.pk)
     actual._entregas_solo_propias = publico
-    if publico or not actual.is_active or not actual.has_perm('ventas.view_venta') or not actual.has_perm('ventas.' + CODIGOS[accion]):
+    if publico or es_responsable_pagos(actor) or es_responsable_pagos(actual) or not actual.is_active or not actual.has_perm('ventas.view_venta') or not actual.has_perm('ventas.' + CODIGOS[accion]):
         raise PermissionDenied('No tienes permiso para esta operación de Ventas y saldos en la administración local.')
     return actual
 

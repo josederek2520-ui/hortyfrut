@@ -25,9 +25,18 @@ export function rutaInicial(sesion: Sesion | null): string {
   if (!sesion?.acceso_publico && sesion?.permisos_devoluciones?.ver)
     return "/devoluciones";
   if (sesion?.permisos_vehiculos?.ver) return "/vehiculos";
-  if (!sesion?.acceso_publico && sesion?.permisos_precios?.ver)
+  if (
+    (!sesion?.acceso_publico || sesion?.precios_supermercado) &&
+    sesion?.permisos_precios?.ver
+  )
     return "/precios-acordados";
   if (!sesion?.acceso_publico && sesion?.permisos_ventas?.ver) return "/ventas";
+  if (!sesion?.acceso_publico && sesion?.permisos_cobros?.ver) return "/cobros";
+  if (sesion?.permisos_mis_pagos?.ver) return "/mis-pagos";
+  if (!sesion?.acceso_publico && sesion?.permisos_pagos?.ver)
+    return "/pagos-por-verificar";
+  if (!sesion?.acceso_publico && sesion?.permisos_empresa?.ver)
+    return "/datos-empresa";
   if (!sesion?.acceso_publico && sesion?.permisos_respaldos?.ver)
     return "/respaldos";
   if (sesion?.user.is_active) return "/chat";

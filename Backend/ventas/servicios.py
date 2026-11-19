@@ -27,6 +27,9 @@ def validar(clase, datos):
 
 def bloquear(actor, accion, identificador=None, cliente_id=None, entregas_ids=None):
     actor = autorizar(actor, accion)
+    if accion == 'emitir':
+        from empresa.models import DatosEmpresa
+        DatosEmpresa.objects.select_for_update().get(pk=1)
     if identificador:
         cliente_id = get_object_or_404(Venta, pk=identificador).cliente_id
     # Mismo bloqueo que aceptación/corrección de precios: ninguna emisión usa un
@@ -120,6 +123,8 @@ def actuar(actor, identificador, accion, datos):
         venta.emitido_por, venta.emitido_por_nombre = actor, nombre_responsable(actor)
         venta.cliente_nombre, venta.cliente_nit = cliente.razon_social, cliente.nit
         venta.total, venta.peso_aceptado_kg = Decimal(revision['total']), Decimal(revision['peso_aceptado_kg'])
+        from empresa.servicios import instantanea_empresa
+        venta.empresa = instantanea_empresa()
         EntregaVenta.objects.bulk_create([EntregaVenta(venta=venta, entrega_id=e['id']) for e in revision['entregas']])
         for fila in revision['lineas']:
             contenido = {k: v for k, v in fila.items() if k != 'aportes'}

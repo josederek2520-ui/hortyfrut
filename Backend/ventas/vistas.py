@@ -17,6 +17,7 @@ from .serializadores import SerializadorFiltros
 from .consultas import entregas_pendientes, calcular_entrega, revisar_venta
 from .representaciones import representar, lineas_emitidas
 from . import servicios
+from cobros.consultas import ventas_con_saldos
 
 
 class PaginacionVentas(PaginacionDiez):
@@ -43,11 +44,11 @@ class VistaVentas(viewsets.ViewSet):
         return respuesta
 
     def obtener(self, pk):
-        return get_object_or_404(Venta.objects.select_related('cliente'), pk=pk)
+        return get_object_or_404(ventas_con_saldos(Venta.objects.select_related('cliente')), pk=pk)
 
     def list(self, request):
         filtros = self.filtros()
-        consulta = Venta.objects.all()
+        consulta = ventas_con_saldos(Venta.objects.all())
         for campo in ['estado', 'cliente']:
             if filtros.get(campo):
                 consulta = consulta.filter(**{campo: filtros[campo]})
@@ -63,8 +64,10 @@ class VistaVentas(viewsets.ViewSet):
                 criterio |= Q(pk=int(codigo))
             consulta = consulta.filter(criterio)
         resumen = consulta.aggregate(emitidas=Count('pk', filter=Q(estado='emitida')), borradores=Count('pk', filter=Q(estado='borrador')),
-            total=Sum('total', filter=Q(estado='emitida')))
+            total=Sum('total', filter=Q(estado='emitida')),
+            pendiente_cobro=Sum('saldo_calculado', filter=Q(estado='emitida')))
         resumen['total'] = str(resumen['total'] or Decimal('0.00'))
+        resumen['pendiente_cobro'] = format(resumen['pendiente_cobro'] or Decimal('0.00'), '.2f')
         return self.paginar(consulta, lambda v: representar(v, False), {'resumen': resumen})
 
     def retrieve(self, request, pk=None):
@@ -133,7 +136,7 @@ class VistaVentas(viewsets.ViewSet):
         idioma = request.query_params.get('idioma', 'es')
         if idioma not in ['es', 'en']:
             raise ValidationError('Idioma de documento no admitido.')
-        contenido = generar_resumen_pdf(representar(venta), lineas_emitidas(venta), idioma)
+        contenido = generar_resumen_pdf({**representar(venta), 'empresa': venta.empresa}, lineas_emitidas(venta), idioma)
         actor = autorizar(request.user, 'descargar')
         registrar_actividad('ventas', 'descargar', actor=actor, objeto=venta, objeto_nombre=venta.codigo,
             cambios={}, descripcion='Descargar resumen de venta sin valor fiscal')

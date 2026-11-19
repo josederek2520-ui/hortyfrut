@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Search } from "lucide-react";
+import { FileText, Layers, Search } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api";
@@ -9,13 +9,15 @@ import Button from "@/components/ui/button/Button";
 import ConfirmacionLogistica from "@/components/logistica/ConfirmacionLogistica";
 import ToastViewport from "@/components/ui/toast/ToastViewport";
 import { useToast } from "@/hooks/useToast";
+import { useModal } from "@/hooks/useModal";
 import type { Session } from "@/components/users/types";
 import PaginadorPedidos from "@/components/pedidos/PaginadorPedidos";
 import useHojaEntrega from "./useHojaEntrega";
 import TablaRecepcionEntrega from "./TablaRecepcionEntrega";
-import ConciliacionLotesEntrega from "./ConciliacionLotesEntrega";
+import PanelRecepcionEntrega, {
+  type TipoPanelEntrega,
+} from "./PanelRecepcionEntrega";
 import CabeceraRecepcionEntrega from "./CabeceraRecepcionEntrega";
-import ComprobanteEntrega from "./ComprobanteEntrega";
 import ResumenRecepcionEntrega from "./ResumenRecepcionEntrega";
 import ErroresRecepcionEntrega from "./ErroresRecepcionEntrega";
 import AccionesRecepcionEntrega from "./AccionesRecepcionEntrega";
@@ -23,7 +25,7 @@ import EtapasRecepcionEntrega from "./EtapasRecepcionEntrega";
 import estilos from "./estilosEntregas.module.css";
 import {
   diferenciaEntrega,
-  lineaVacia,
+  pendientesConciliacionEntrega,
   progresoRecepcionEntrega,
   resumenPesosEntrega,
   destinoErrorEntrega,
@@ -50,6 +52,15 @@ export default function HojaRecepcionEntrega({
   const gestion = useHojaEntrega(despacho, pedido, sesion);
   const { hoja, ocupado, errores, aviso } = gestion;
   const { toasts, notify, dismiss } = useToast();
+  const {
+    isOpen: panelAbierto,
+    openModal: abrirPanel,
+    closeModal: cerrarPanel,
+  } = useModal();
+  const [tipoPanel, establecerTipoPanel] = useState<TipoPanelEntrega>("pedido");
+  const [productoPanel, establecerProductoPanel] = useState<number | null>(
+    null,
+  );
   const [pagina, establecerPagina] = useState(1),
     [buscar, establecerBuscar] = useState(""),
     [revision, establecerRevision] = useState(0);
@@ -102,13 +113,22 @@ export default function HojaRecepcionEntrega({
     (campo: string) => {
       if (!hoja) return;
       const destino = destinoErrorEntrega(hoja, campo);
+      const lotes = /^lotes_(\d+)$/.exec(destino.campo);
+      if (lotes && gestion.oficina) {
+        establecerProductoPanel(Number(lotes[1]));
+        establecerTipoPanel("lotes");
+        establecerFocoPendiente(null);
+        abrirPanel();
+        return;
+      }
+      cerrarPanel();
       if (destino.pagina !== null) {
         establecerBuscar("");
         establecerPagina(destino.pagina);
       }
       establecerFocoPendiente(destino.campo);
     },
-    [hoja],
+    [hoja, gestion.oficina, abrirPanel, cerrarPanel],
   );
   useEffect(() => {
     if (
@@ -165,10 +185,26 @@ export default function HojaRecepcionEntrega({
       : (hoja.acciones?.registrar ?? permisos.crear));
   const bloqueado = !editable || ocupado || gestion.incierto;
   const progreso = progresoRecepcionEntrega(hoja, gestion.lineas);
+  const pendientesLotes = pendientesConciliacionEntrega(
+    hoja.origen.productos,
+    gestion.lineas,
+    gestion.aportes,
+  );
+  const abrirConciliacion = () => {
+    if (
+      !hoja.origen.productos.some(
+        (producto) => producto.producto === productoPanel,
+      )
+    )
+      establecerProductoPanel(
+        (pendientesLotes[0] ?? hoja.origen.productos[0])?.producto ?? null,
+      );
+    establecerTipoPanel("lotes");
+    abrirPanel();
+  };
   const volver = () => {
     if (ocupado) return;
-    if (gestion.modificado || gestion.archivo || gestion.incierto)
-      establecerConfirmacion("salir");
+    if (gestion.modificado || gestion.incierto) establecerConfirmacion("salir");
     else navegador.push("/entregas");
   };
   return (
@@ -218,21 +254,54 @@ export default function HojaRecepcionEntrega({
         alElegir={solicitarFoco}
         alReintentar={() => void gestion.operar("reintentar")}
       />
-      <div className={panelEntrega}>
-        <div className="flex flex-wrap items-end justify-between gap-4 p-5">
-          <div>
-            <h2
-              tabIndex={-1}
-              data-campo-entrega="lineas"
-              className="text-lg font-semibold focus-visible:outline-2 focus-visible:outline-brand-500"
+      <div className={panelEntrega + " @container"}>
+        <div className="flex flex-wrap items-center gap-2 p-4 sm:p-5 @4xl:flex-nowrap @4xl:gap-3">
+          <h2
+            tabIndex={-1}
+            data-campo-entrega="lineas"
+            className="w-full shrink-0 text-lg font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 @4xl:w-auto"
+          >
+            {t("productosEntrega")}
+          </h2>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={ocupado}
+            className="shrink-0 whitespace-nowrap"
+            startIcon={<FileText className="size-4" />}
+            aria-haspopup="dialog"
+            aria-controls="panel-recepcion-contenido"
+            aria-expanded={panelAbierto && tipoPanel === "pedido"}
+            onClick={() => {
+              establecerTipoPanel("pedido");
+              abrirPanel();
+            }}
+          >
+            {t("verPedido")}
+          </Button>
+          {gestion.oficina && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={ocupado || !hoja.origen.productos.length}
+              className="max-w-full min-w-0 @4xl:shrink-0 @4xl:whitespace-nowrap"
+              startIcon={<Layers className="size-4" />}
+              aria-haspopup="dialog"
+              aria-controls="panel-recepcion-contenido"
+              aria-expanded={panelAbierto && tipoPanel === "lotes"}
+              onClick={abrirConciliacion}
             >
-              {t("productosEntrega")}
-            </h2>
-            <p className="mt-1 max-w-2xl text-xs text-gray-500 dark:text-gray-400">
-              {t(editable ? "ayudaRecepcion" : "ayudaConsultaRecepcion")}
-            </p>
-          </div>
-          <label className="relative block w-full sm:w-64">
+              {t("conciliarLotes")}
+              {!!pendientesLotes.length && editable && (
+                <span className="rounded-full bg-warning-100 px-2 py-0.5 text-theme-xs whitespace-nowrap text-warning-800 dark:bg-warning-950 dark:text-warning-200">
+                  {t("productosPendientesLotes", {
+                    total: pendientesLotes.length,
+                  })}
+                </span>
+              )}
+            </Button>
+          )}
+          <label className="relative block w-full min-w-0 @4xl:ms-auto @4xl:w-auto @4xl:max-w-64 @4xl:min-w-40 @4xl:flex-1">
             <span className="sr-only">{t("buscarProducto")}</span>
             <Search
               aria-hidden="true"
@@ -291,52 +360,26 @@ export default function HojaRecepcionEntrega({
             )}
           </>
         )}
-        {actual?.datos && (
-          <details className="border-t border-gray-100 px-5 py-3 text-sm dark:border-gray-800">
-            <summary className="min-h-11 cursor-pointer content-center font-medium focus-visible:outline-2 focus-visible:outline-brand-500">
-              {t("referenciaPedido")}
-            </summary>
-            <p className="my-2 text-xs text-gray-500 dark:text-gray-400">
-              {t("referenciaAyuda")}
-            </p>
-            {actual.datos.results.map((producto) => (
-              <p key={producto.producto} className="py-1">
-                {producto.nombre} ·{" "}
-                {t("cantidadesPedido", {
-                  cajas: producto.pedido_cajas ?? 0,
-                  unidades: producto.pedido_unidades ?? 0,
-                })}
-              </p>
-            ))}
-          </details>
-        )}
         <ResumenRecepcionEntrega
           resumen={resumenPesosEntrega(hoja, gestion.lineas)}
           diferencia={diferenciaEntrega(hoja, gestion.lineas)}
         />
-        {gestion.oficina &&
-          (actual?.datos?.results ?? []).map((producto) => (
-            <ConciliacionLotesEntrega
-              key={producto.producto}
-              ruta={gestion.ruta}
-              producto={producto}
-              linea={gestion.lineas[producto.producto] ?? lineaVacia()}
-              aportes={gestion.aportes}
-              bloqueado={bloqueado}
-              soloLectura={!editable}
-              alCambiar={gestion.cambiarAportes}
-              error={errores["lotes_" + producto.producto]}
-            />
-          ))}
       </div>
-      <ComprobanteEntrega
+      <PanelRecepcionEntrega
+        abierto={panelAbierto}
+        tipo={tipoPanel}
+        productoElegido={productoPanel}
         ruta={gestion.ruta}
-        existe={hoja.comprobante}
-        archivo={gestion.archivo}
+        hoja={hoja}
+        lineas={gestion.lineas}
+        aportes={gestion.aportes}
+        oficina={gestion.oficina}
         soloLectura={!editable}
         bloqueado={bloqueado}
-        alCambiar={gestion.cambiarArchivo}
-        alError={(mensaje) => notify(mensaje, "error")}
+        errores={errores}
+        alProducto={establecerProductoPanel}
+        alCambiarAportes={gestion.cambiarAportes}
+        alCerrar={cerrarPanel}
       />
       <AccionesRecepcionEntrega
         hoja={hoja}
@@ -346,7 +389,7 @@ export default function HojaRecepcionEntrega({
         oficina={gestion.oficina}
         ocupado={ocupado}
         incierto={gestion.incierto}
-        modificado={!!(gestion.modificado || gestion.archivo)}
+        modificado={gestion.modificado}
         alSalir={volver}
         alGuardar={() => void gestion.operar("guardar")}
         alEnviar={() => void gestion.operar("enviar")}

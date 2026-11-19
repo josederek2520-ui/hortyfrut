@@ -8,6 +8,13 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        rol_precios, creado_precios = Group.objects.get_or_create(name='Responsable de precios de supermercado')
+        if creado_precios:
+            rol_precios.permissions.set(Permission.objects.filter(content_type__app_label='precios', codename__in=[
+                'view_acuerdoprecio', 'add_acuerdoprecio', 'change_acuerdoprecio', 'presentar_acuerdoprecio',
+                'cancelar_acuerdoprecio', 'proponer_precios_propios']))
+            from auditoria.servicios import registrar_actividad
+            registrar_actividad('precios', 'crear_rol', objeto=rol_precios, objeto_nombre=rol_precios.name, origen='sistema')
         for nombre, codigos in [
             ('Encargado de recepción de sucursal', ['view_entrega', 'add_entrega', 'change_entrega', 'enviar_entrega']),
             ('Administrador de entregas', ['view_entrega', 'add_entrega', 'change_entrega', 'enviar_entrega', 'confirmar_entrega', 'ver_todas_entregas', 'gestionar_todas_entregas'])]:
@@ -71,4 +78,11 @@ class Command(BaseCommand):
         encargado, creado = Group.objects.get_or_create(name='Encargado de pedidos')
         if creado:
             encargado.permissions.set(Permission.objects.filter(content_type__app_label='pedidos', codename__in=['view_pedido', 'add_pedido', 'change_pedido', 'cancelar_pedido']))
+        pagos_propios, creado = Group.objects.get_or_create(name='Responsable de pagos de supermercado')
+        if creado:
+            pagos_propios.permissions.set(Permission.objects.filter(content_type__app_label='pagos', codename__in=['consultar_pagos_propios', 'informar_pagos_propios']))
+        verificador, creado = Group.objects.get_or_create(name='Verificador de pagos')
+        if creado:
+            verificador.permissions.set(Permission.objects.filter(content_type__app_label='pagos', codename__in=['view_avisopago', 'confirmar_avisopago', 'observar_avisopago']))
+            verificador.permissions.add(*Permission.objects.filter(content_type__app_label='cobros', codename__in=['view_cobro', 'add_cobro']))
         self.stdout.write(self.style.SUCCESS('Roles iniciales disponibles.'))

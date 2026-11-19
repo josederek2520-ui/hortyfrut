@@ -83,7 +83,7 @@ export default function GestionDespachos({ sesion }: { sesion: Sesion }) {
     consulta.cargando || (!consulta.fallo && !hayFilas && resumen.cargando);
   return (
     <>
-      <div className={`${estilos.pagina} space-y-5`}>
+      <div className={`${estilos.pagina} space-y-4`}>
         <header className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h1
@@ -173,7 +173,7 @@ export default function GestionDespachos({ sesion }: { sesion: Sesion }) {
                 <div key={consulta.clave} className={estilos.entrada}>
                   <p
                     role="status"
-                    className="border-t border-gray-100 px-5 py-3 text-theme-xs text-gray-600 sm:px-6 dark:border-gray-800 dark:text-gray-300"
+                    className={`${estilos.cantidad} px-5 py-2 text-theme-xs text-gray-600 sm:px-6 dark:text-gray-300`}
                   >
                     {t("resultadosListado", {
                       cantidad: consulta.datos!.count,
@@ -182,7 +182,7 @@ export default function GestionDespachos({ sesion }: { sesion: Sesion }) {
                   <div role="table" aria-label={t("viajesListado")}>
                     <div
                       role="rowgroup"
-                      className="hidden bg-gray-50 px-5 py-3 sm:px-6 @4xl:block dark:bg-gray-800/40"
+                      className={`${estilos.cabecera} hidden px-5 py-2.5 sm:px-6 @4xl:block`}
                     >
                       <div
                         role="row"
@@ -198,7 +198,7 @@ export default function GestionDespachos({ sesion }: { sesion: Sesion }) {
                           <div
                             role="columnheader"
                             key={clave}
-                            className="text-theme-xs font-medium text-gray-600 dark:text-gray-300"
+                            className="text-theme-xs font-semibold text-gray-700 dark:text-gray-200"
                           >
                             {t(clave)}
                           </div>
@@ -222,7 +222,7 @@ export default function GestionDespachos({ sesion }: { sesion: Sesion }) {
               )}
             </div>
             {hayFilas && !consulta.cargando && !consulta.fallo && (
-              <div className="px-5 pb-5 sm:px-6">
+              <div className={`${estilos.pie} px-5 py-3 sm:px-6`}>
                 <Paginador
                   pagina={filtros.pagina}
                   total={consulta.datos!.count}

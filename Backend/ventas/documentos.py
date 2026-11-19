@@ -34,7 +34,7 @@ TEXTOS = {
 }
 
 
-def generar_resumen_pdf(venta, lineas, idioma='es'):
+def generar_resumen_historico(venta, lineas, idioma='es'):
     t = TEXTOS[idioma]
     salida = BytesIO()
     verde, tinta, gris = colors.HexColor('#14532D'), colors.HexColor('#22332B'), colors.HexColor('#5C6D63')
@@ -100,3 +100,10 @@ def generar_resumen_pdf(venta, lineas, idioma='es'):
         parrafo(t['emitido'] + ': ' + venta['emitido_por_nombre'], pequeno)]))
     documento.build(elementos, onFirstPage=pie, onLaterPages=pie)
     return salida.getvalue()
+
+
+def generar_resumen_pdf(venta, lineas, idioma='es'):
+    if venta.get('empresa'):
+        from .comprobante import generar_comprobante_pdf
+        return generar_comprobante_pdf(venta, lineas, idioma)
+    return generar_resumen_historico(venta, lineas, idioma)

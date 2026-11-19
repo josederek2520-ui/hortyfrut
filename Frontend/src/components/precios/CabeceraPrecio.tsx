@@ -10,6 +10,7 @@ import {
 import CampoFecha from "@/components/form/CampoFecha";
 import Button from "@/components/ui/button/Button";
 import EstadoPrecio from "./EstadoPrecio";
+import ResumenPropuestaPrecio from "./ResumenPropuestaPrecio";
 import { campoPrecio, panelPrecio } from "./tipos";
 import type useGestionPrecio from "./useGestionPrecio";
 
@@ -36,6 +37,17 @@ export default function CabeceraPrecio({
     puedeAlcance = editable && !documento?.anterior;
   const fecha = (valor: string) =>
     valor ? new Date(valor + "T12:00:00").toLocaleDateString(idioma) : "—";
+  if (documento && !editable)
+    return (
+      <ResumenPropuestaPrecio
+        propuesta={documento}
+        ocupado={ocupado}
+        historialBloqueado={bloqueado || gestion.modificado}
+        alVolver={alVolver}
+        alHistorial={alHistorial}
+        alEntregas={alEntregas}
+      />
+    );
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -164,7 +176,11 @@ export default function CabeceraPrecio({
                   ) : (
                     <ClipboardList className="size-4" aria-hidden="true" />
                   )}
-                  {t("alcances." + alcance)}
+                  {t(
+                    alcance === "periodo"
+                      ? "pedidosPorFecha"
+                      : "alcances.entregas",
+                  )}
                 </button>
               ))}
             </div>

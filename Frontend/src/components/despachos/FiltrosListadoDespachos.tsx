@@ -42,12 +42,12 @@ export default function FiltrosListadoDespachos({
   const idioma = useLocale();
   const numero = new Intl.NumberFormat(idioma);
   return (
-    <div className="space-y-4 p-5 sm:p-6">
+    <div className={`${estilos.filtros} space-y-3 px-5 py-4 sm:px-6`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div
           role="group"
           aria-label={t("vistasListado")}
-          className="inline-flex max-w-full flex-wrap gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800"
+          className={`${estilos.vistas} inline-flex max-w-full flex-wrap gap-1 rounded-xl p-1`}
         >
           {(["activos", "historial"] as const).map((vista) => {
             const cantidad = resumen

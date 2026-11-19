@@ -7,7 +7,7 @@ from rest_framework.exceptions import APIException, ValidationError, PermissionD
 from auditoria.servicios import registrar_actividad, diferencias
 from .models import Cliente, Sucursal
 
-CAMPOS_CLIENTE = ('razon_social', 'nit', 'telefono', 'email')
+CAMPOS_CLIENTE = ('razon_social', 'nit', 'telefono', 'email', 'encargado_precios_id', 'encargado_pagos_id')
 CAMPOS_SUCURSAL = ('nombre', 'direccion', 'telefono', 'referencia', 'latitud', 'longitud', 'encargado_pedidos_id', 'encargado_recepcion_id')
 
 
@@ -65,15 +65,22 @@ def guardar_registro(modelo, actor, datos, instancia=None, cliente_id=None):
             antes = estado_registro(registro) if instancia else {}
             for campo in campos_registro(modelo):
                 if campo in datos:
-                    if campo in ('encargado_pedidos_id', 'encargado_recepcion_id'):
-                        if not actor.has_perm('clientes.asignar_encargado'):
+                    if campo in ('encargado_pedidos_id', 'encargado_recepcion_id', 'encargado_precios_id', 'encargado_pagos_id'):
+                        from django.contrib.auth import get_user_model
+                        asignador = get_object_or_404(get_user_model(), pk=actor.pk, is_active=True)
+                        if not asignador.has_perm('clientes.asignar_encargado'):
                             raise PermissionDenied('No tienes permiso para asignar encargados.')
                         if datos[campo] is not None:
                             from django.contrib.auth import get_user_model
                             encargado = get_object_or_404(get_user_model().objects.select_for_update(), pk=datos[campo], is_active=True)
-                            aplicacion, modelo_permiso = ('pedidos', 'pedido') if campo == 'encargado_pedidos_id' else ('entregas', 'entrega')
-                            if not encargado.has_perm(f'{aplicacion}.view_{modelo_permiso}') or not encargado.has_perm(f'{aplicacion}.add_{modelo_permiso}'):
+                            aplicacion, modelo_permiso = ('precios', 'acuerdoprecio') if campo == 'encargado_precios_id' else ('pedidos', 'pedido') if campo == 'encargado_pedidos_id' else ('entregas', 'entrega')
+                            if campo == 'encargado_pagos_id':
+                                if encargado.is_superuser or not encargado.has_perm('pagos.consultar_pagos_propios') or not encargado.has_perm('pagos.informar_pagos_propios'):
+                                    raise ValidationError({campo: 'Elige una cuenta con permisos de consultar e informar pagos propios.'})
+                            elif not encargado.has_perm(f'{aplicacion}.view_{modelo_permiso}') or not encargado.has_perm(f'{aplicacion}.add_{modelo_permiso}'):
                                 raise ValidationError({campo: 'El encargado necesita los permisos de consultar y registrar en el módulo correspondiente.'})
+                            if campo == 'encargado_precios_id' and (encargado.is_superuser or not encargado.has_perm('precios.proponer_precios_propios')):
+                                raise ValidationError({campo: 'Elige una cuenta con acceso de precios propios del supermercado.'})
                     setattr(registro, campo, datos[campo])
             try:
                 registro.full_clean(validate_unique=False, validate_constraints=False)

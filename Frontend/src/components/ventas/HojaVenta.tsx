@@ -8,7 +8,7 @@ import {
   Save as IconoGuardar,
   FileCheck2 as IconoEmitir,
 } from "lucide-react";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import Button from "@/components/ui/button/Button";
 import ConfirmacionLogistica from "@/components/logistica/ConfirmacionLogistica";
 import ToastViewport from "@/components/ui/toast/ToastViewport";
@@ -189,6 +189,28 @@ export default function HojaVenta({
           <DescargarVenta venta={documento} />
         )}
       </header>
+      {documento?.estado === "emitida" && sesion.permisos_cobros?.ver && (
+        <div className="flex flex-wrap justify-end gap-3">
+          <Link className={enlaceVenta} href={"/cobros?venta=" + documento.id}>
+            {t("verCobros")}
+          </Link>
+          {sesion.permisos_cobros.registrar &&
+            documento.estado_cobro !== "pagada" && (
+              <Link
+                className={enlaceVenta + " control-suave-hortyfru"}
+                href="/cobros/nuevo"
+              >
+                {t("registrarCobro")}
+              </Link>
+            )}
+        </div>
+      )}
+      {documento?.incidencias.includes("empresa_incompleta") &&
+        sesion.permisos_empresa?.ver && (
+          <Link href="/datos-empresa" className={enlaceVenta}>
+            {t("datosEmpresa")}
+          </Link>
+        )}
       {gestion.fallo && (
         <div
           ref={error}
@@ -420,6 +442,16 @@ export default function HojaVenta({
                 }
               >
                 {t("revisarVenta")}
+              </Button>
+            ) : modificado && editable ? (
+              <Button
+                disabled={bloqueado}
+                onClick={() => void actuar("revisar")}
+                startIcon={
+                  <IconoGuardar className="size-4" aria-hidden="true" />
+                }
+              >
+                {t(ocupado ? "guardando" : "actualizarRevision")}
               </Button>
             ) : (
               documento &&

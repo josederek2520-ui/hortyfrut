@@ -28,7 +28,7 @@ export default async function PaginaPrecios({
   if (!sesion) redirect({ href: "/signin", locale: idioma });
   const t = await getTranslations("precios");
   if (
-    sesion!.acceso_publico ||
+    (sesion!.acceso_publico && !sesion!.precios_supermercado) ||
     !sesion!.permisos_precios?.ver ||
     (modo === "nueva" && !sesion!.permisos_precios?.crear)
   )

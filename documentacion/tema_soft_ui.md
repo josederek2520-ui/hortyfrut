@@ -1,10 +1,61 @@
-# Tema Cristal salvia claro de HortyFru
+# Tema Cristal menta claro de HortyFru
 
 El 8 de noviembre de 2026 el tema compartido evolucionó de Soft UI y Aurora
 menta a la propuesta Cristal salvia claro elegida por el usuario. Conserva las
 variantes claras y oscuras y la identidad verde/naranja existente.
 
+## Tipografía local
+
+Outfit se conserva en `Frontend/src/app/fuentes/` como WOFF2 variable de 100 a
+900, con los subconjuntos latino y latino ampliado y su licencia OFL. La
+disposición principal importa `fuentes.css`; el tema, el menú, los formularios
+y los gráficos mantienen el nombre de familia `Outfit`. La compilación emite
+los archivos bajo `/_next/static/media/` y los sirve desde el propio sistema.
+El arranque y la compilación no necesitan consultar Google Fonts. Se comprobaron
+ambos archivos por HTTP, sus huellas y los grosores, además de la compilación
+con la salida a internet por proxy deshabilitada.
+
 ## Superficies
+
+El ajuste del 13 de noviembre de 2026 aplica el verde menta claro elegido por
+el usuario en la propuesta visual, con un efecto glass suave. El fondo combina
+`#c8ecd3`, `#dff6e5` y `#d8f4dc` con luces verdes estáticas; retira el matiz azul
+del tema claro. Las tarjetas usan un velo menta al 72 % y un reflejo blanco al
+22 %, con alternativa sólida `#edf8ef`. El sidebar usa cristal menta al 62 % y
+la barra superior al 64 %, con desenfoque de 20 px, saturación del 125 %, borde
+iluminado y sombras verdes discretas. Los campos usan `#e8f6eb`, los bordes
+`#6f9177` y la selección del menú `#d0edcf`. El menú móvil conserva mayor opacidad
+para mantener la legibilidad sobre el velo de la aplicación.
+
+Solo la navegación desenfoca: las tarjetas mantienen su transparencia sin crear
+contextos de apilado que afecten selectores o menús. Diálogos y capas flotantes
+siguen opacos. Se mantienen tema oscuro, colores de validación, foco, movimiento
+reducido, alternativa sólida sin desenfoque o con transparencia reducida y colores
+del sistema en alto contraste. El cambio se concentra en los tokens compartidos;
+no cambia la distribución ni las operaciones de los módulos.
+
+Esta actualización pasó compilación de producción con TypeScript, formato CSS,
+análisis de PostCSS y validación UTF-8. La lectura HTTP de localhost confirmó los
+tokens nuevos en el CSS servido. Se comprobaron las parejas de texto secundario
+con el fondo (5,27:1), texto de campos (13,14:1), borde de campos (3,14:1), selección
+del menú (7,06:1) y texto secundario oscuro (7,60:1). La revisión visual queda a
+cargo del usuario; no se automatizó su navegador ni el escritorio.
+
+Los ajustes anteriores se conservan a continuación como historial visual.
+
+El ajuste del 12 de noviembre de 2026 refuerza el fondo salvia y reduce la luz
+casi blanca del centro, conservando el degradado menta y azul suave existente.
+El menú lateral usa blanco suave con un matiz salvia ligero y una selección
+menta con contorno tenue, con alternativa sólida y variante móvil de mayor
+opacidad. Sus secciones permanecen siempre abiertas, con encabezados fijos sin
+botones ni flechas de despliegue; en modo reducido conserva todos los accesos
+por icono. Chat y Mi cuenta
+permanecen al pie. Se conserva el orden operativo y el filtrado por permisos,
+con desplazamiento visible para las pantallas pequeñas. Despachos
+separa sus filtros en menta, los encabezados en un salvia más marcado y las
+filas alternas y el pie en salvia claro; compacta los espacios verticales y
+destaca «Pendiente de salida» en ámbar. Las nuevas superficies usan tokens
+compartidos con variantes oscuras y colores del sistema en contraste forzado.
 
 El ajuste del 11 de noviembre de 2026 usa un fondo menta claro (`#e9f1ed`),
 luces verdes suaves en los extremos y un toque cálido naranja arriba. Las luces

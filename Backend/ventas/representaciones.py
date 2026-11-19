@@ -1,5 +1,6 @@
 from decimal import Decimal
 from .consultas import version_venta, revisar_venta
+from cobros.consultas import saldo_venta
 
 
 def lineas_emitidas(venta):
@@ -9,19 +10,17 @@ def lineas_emitidas(venta):
 
 
 def representar(venta, completo=True):
-    # Cobros es una etapa independiente. No existe escritura de pagos ni un
-    # indicador manual de "pagado"; hoy ninguna venta tiene cobros aplicados.
+    saldos = saldo_venta(venta) if venta.estado == 'emitida' else {'cobrado': None, 'saldo': None, 'estado_cobro': None}
     datos = {'id': venta.pk, 'codigo': venta.codigo, 'estado': venta.estado, 'version': version_venta(venta),
         'cliente': venta.cliente_id, 'cliente_nombre': venta.cliente_nombre, 'cliente_nit': venta.cliente_nit,
         'desde': venta.desde, 'hasta': venta.hasta, 'fecha_emision': venta.fecha_emision, 'vencimiento': venta.vencimiento,
         'total': str(venta.total) if venta.estado == 'emitida' else None,
-        'cobrado': '0.00' if venta.estado == 'emitida' else None,
-        'saldo': str(venta.total) if venta.estado == 'emitida' else None,
-        'estado_cobro': 'pendiente' if venta.estado == 'emitida' else None,
+        **saldos,
         'peso_aceptado_kg': str(venta.peso_aceptado_kg) if venta.estado == 'emitida' else None,
         'total_entregas': venta.selecciones.count(), 'creado_en': venta.creado_en,
         'registrado_por_nombre': venta.registrado_por_nombre, 'emitido_por_nombre': venta.emitido_por_nombre, 'emitido_en': venta.emitido_en}
     if completo:
+        datos['empresa'] = {k: v for k, v in venta.empresa.items() if k != 'logo_base64'}
         datos['seleccion'] = list(venta.selecciones.order_by('entrega_id').values_list('entrega_id', flat=True))
         if venta.estado != 'emitida':
             revision = revisar_venta(venta)

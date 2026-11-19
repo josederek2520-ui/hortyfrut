@@ -6,6 +6,8 @@ export interface RegistroComercial {
   version: string;
 }
 export interface Cliente extends RegistroComercial {
+  encargado_pagos?: { id: number; nombre: string; activo: boolean } | null;
+  encargado_precios?: { id: number; nombre: string; activo: boolean } | null;
   razon_social: string;
   nit: string;
   email: string;

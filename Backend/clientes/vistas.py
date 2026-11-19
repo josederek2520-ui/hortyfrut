@@ -106,8 +106,12 @@ class VistaClientes(VistaDirectorio):
         if not request.user.has_perm('clientes.asignar_encargado') or not request.user.has_perm('clientes.view_cliente'):
             raise PermissionDenied()
         consulta = get_user_model().objects.filter(is_active=True)
-        aplicacion, modelo = ('entregas', 'entrega') if request.query_params.get('tipo') == 'recepcion' else ('pedidos', 'pedido')
-        for codigo in (f'view_{modelo}', f'add_{modelo}'):
+        tipo = request.query_params.get('tipo')
+        aplicacion, modelo = ('pagos', 'avisopago') if tipo == 'pagos' else ('precios', 'acuerdoprecio') if tipo == 'precios' else ('entregas', 'entrega') if tipo == 'recepcion' else ('pedidos', 'pedido')
+        codigos = ('consultar_pagos_propios', 'informar_pagos_propios') if tipo == 'pagos' else (f'view_{modelo}', f'add_{modelo}', 'proponer_precios_propios') if tipo == 'precios' else (f'view_{modelo}', f'add_{modelo}')
+        if tipo in ['precios', 'pagos']:
+            consulta = consulta.filter(is_superuser=False)
+        for codigo in codigos:
             consulta = consulta.filter(Q(is_superuser=True) | Q(user_permissions__content_type__app_label=aplicacion, user_permissions__codename=codigo) | Q(groups__permissions__content_type__app_label=aplicacion, groups__permissions__codename=codigo))
         buscar = request.query_params.get('buscar', '')[:150]
         consulta = consulta.filter(Q(first_name__icontains=buscar) | Q(last_name__icontains=buscar)).distinct().order_by('first_name', 'last_name', 'pk')

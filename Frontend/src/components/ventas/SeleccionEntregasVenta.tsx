@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import {
   PackageCheck as IconoEntrega,
   Check as IconoElegida,
+  Search as IconoBuscar,
 } from "lucide-react";
 import Button from "@/components/ui/button/Button";
 import PaginadorPedidos from "@/components/pedidos/PaginadorPedidos";
@@ -74,45 +75,49 @@ export default function SeleccionEntregasVenta({
     );
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-gray-100 p-5 dark:border-gray-800">
-        <div>
+      <div className="border-b border-gray-100 p-5 dark:border-gray-800">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-semibold">{t("entregasDisponibles")}</h2>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {t("entregasAyuda")}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="text-sm">
-            <span className="sr-only">{t("buscarEntrega")}</span>
-            <input
-              type="search"
-              maxLength={150}
-              className={campoVenta}
-              value={buscar}
-              placeholder={t("buscarEntrega")}
-              onChange={(evento) => {
-                establecerBuscar(evento.target.value);
+          <div className="flex w-full items-center gap-3 sm:w-auto">
+            <label className="relative min-w-0 flex-1 text-sm sm:w-60 sm:flex-none">
+              <span className="sr-only">{t("buscarEntrega")}</span>
+              <IconoBuscar
+                className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-gray-500 dark:text-gray-400"
+                aria-hidden="true"
+              />
+              <input
+                type="search"
+                maxLength={150}
+                className={campoVenta + " h-11 ps-9"}
+                value={buscar}
+                placeholder={t("buscarEntrega")}
+                onChange={(evento) => {
+                  establecerBuscar(evento.target.value);
+                  establecerPagina(1);
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              aria-pressed={soloElegidas}
+              className={
+                "h-11 shrink-0 rounded-xl border px-3 text-sm font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:outline-brand-500 " +
+                (soloElegidas
+                  ? "border-brand-200 bg-brand-50 text-brand-800 dark:border-brand-700 dark:bg-brand-500/10 dark:text-brand-200"
+                  : "border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-300")
+              }
+              onClick={() => {
+                establecerSoloElegidas(!soloElegidas);
                 establecerPagina(1);
               }}
-            />
-          </label>
-          <button
-            type="button"
-            aria-pressed={soloElegidas}
-            className={
-              "min-h-11 rounded-xl border px-3 text-sm font-medium " +
-              (soloElegidas
-                ? "border-brand-200 bg-brand-50 text-brand-800 dark:border-brand-700 dark:bg-brand-500/10 dark:text-brand-200"
-                : "border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-300")
-            }
-            onClick={() => {
-              establecerSoloElegidas(!soloElegidas);
-              establecerPagina(1);
-            }}
-          >
-            {t("elegidas", { cantidad: formulario.entregas.length })}
-          </button>
+            >
+              {t("elegidas", { cantidad: formulario.entregas.length })}
+            </button>
+          </div>
         </div>
+        <p className="mt-2 text-xs leading-5 text-gray-500 dark:text-gray-400">
+          {t("entregasAyuda")}
+        </p>
       </div>
       {!formulario.desde ||
       !formulario.hasta ||
